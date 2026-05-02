@@ -1,0 +1,98 @@
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'node:path';
+import {
+  createPcBox,
+  deletePcBox,
+  deletePcPokemon,
+  deleteTeam,
+  initRivalsDb,
+  listPcBoxes,
+  listPcPokemon,
+  listTeams,
+  loadTeam,
+  movePcPokemon,
+  renamePcBox,
+  savePcPokemon,
+  saveTeam,
+} from './rivalsDb';
+import { createCobblemonBridge, registerBridgeIpc } from './cobblemonBridge';
+
+const isDev = !app.isPackaged;
+
+const cobblemonBridge = createCobblemonBridge();
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    minWidth: 1100,
+    minHeight: 700,
+    backgroundColor: '#0f172a',
+    title: 'Cobblemon Assistant',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  if (isDev) {
+    win.loadURL('http://localhost:5173');
+  } else {
+    win.loadFile(path.join(__dirname, '../../dist/index.html'));
+  }
+
+  win.setMenuBarVisibility(false);
+
+  cobblemonBridge.attachWindow(win);
+}
+
+async function bootstrap() {
+  await initRivalsDb();
+
+  ipcMain.handle('teams:list', () => listTeams());
+  ipcMain.handle('teams:load', (_e, id: string) => loadTeam(id));
+  ipcMain.handle('teams:save', (_e, payload: unknown) => saveTeam(payload as Parameters<typeof saveTeam>[0]));
+  ipcMain.handle('teams:delete', (_e, id: string) => {
+    deleteTeam(id);
+    return undefined;
+  });
+
+  ipcMain.handle('pc:boxes:list', () => listPcBoxes());
+  ipcMain.handle('pc:boxes:create', (_e, name: string) => createPcBox(name));
+  ipcMain.handle('pc:boxes:rename', (_e, id: string, name: string) => {
+    renamePcBox(id, name);
+    return undefined;
+  });
+  ipcMain.handle('pc:boxes:delete', (_e, id: string) => {
+    deletePcBox(id);
+    return undefined;
+  });
+  ipcMain.handle('pc:pokemon:list', (_e, boxId: string) => listPcPokemon(boxId));
+  ipcMain.handle('pc:pokemon:save', (_e, payload: unknown) =>
+    savePcPokemon(payload as Parameters<typeof savePcPokemon>[0]),
+  );
+  ipcMain.handle('pc:pokemon:delete', (_e, id: string) => {
+    deletePcPokemon(id);
+    return undefined;
+  });
+  ipcMain.handle('pc:pokemon:move', (_e, id: string, boxId: string, slot: number) => {
+    movePcPokemon(id, boxId, slot);
+    return undefined;
+  });
+
+  registerBridgeIpc(cobblemonBridge);
+
+  createWindow();
+}
+
+app.whenReady().then(bootstrap);
+
+app.on('window-all-closed', () => {
+  void cobblemonBridge.stop();
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});

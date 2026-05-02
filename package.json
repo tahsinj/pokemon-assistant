@@ -1,0 +1,79 @@
+{
+  "name": "cobblemon-assistant",
+  "version": "0.1.0",
+  "description": "Cobblemon Rivals assistant - Pokédex, team builder, moveset recommender, EV/IV planner",
+  "main": "dist-electron/main/main.js",
+  "author": "Tahsin",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && electron .",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run build:renderer && npm run build:electron",
+    "pack:win": "npm run build && electron-builder --win --x64",
+    "fetch-data": "node scripts/fetch-data.mjs",
+    "fetch-items": "node scripts/fetch-items.mjs",
+    "parse-spawns": "node scripts/spawn-parser.mjs",
+    "diff-cobblemon": "node scripts/diff-cobblemon.mjs",
+    "mod-mock-client": "node scripts/mod-mock-client.mjs",
+    "bench": "node scripts/bench-recommend.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "@types/ws": "^8.18.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/ui": "^4.1.6",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.5",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "vitest": "^4.1.6",
+    "wait-on": "^8.0.0"
+  },
+  "dependencies": {
+    "@smogon/calc": "^0.11.0",
+    "fuse.js": "^7.3.0",
+    "immer": "^11.1.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.14.1",
+    "ws": "^8.20.1"
+  },
+  "build": {
+    "appId": "com.tahsin.cobblemonassistant",
+    "productName": "Cobblemon Assistant",
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "CobblemonAssistant-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    }
+  }
+}
