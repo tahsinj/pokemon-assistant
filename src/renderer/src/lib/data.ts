@@ -1,5 +1,5 @@
 import type { Pokemon, Move, SpawnEntry, HeldItem } from './types';
-import { syncCobblemonSpecies, type SyncResult } from './battle/cobblemonSync';
+import type { SyncResult } from './battle/cobblemonSync';
 import {
   getGlobalRegistry,
   registerMoveOverride,
@@ -74,6 +74,9 @@ export async function loadData() {
   // Auto-sync Cobblemon species into the override registry. This is the
   // main source of overrides: every base-stat / typing / ability divergence
   // gets propagated to the damage engine without manual curation.
+  // Dynamic import keeps the battle engine (and @smogon/calc's data tables)
+  // out of the entry chunk; the sync still completes before loadData resolves.
+  const { syncCobblemonSpecies } = await import('./battle/cobblemonSync');
   const syncResult = syncCobblemonSpecies(pokemon);
   await loadRuntimeOverrides();
 

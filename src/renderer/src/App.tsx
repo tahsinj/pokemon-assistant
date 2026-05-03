@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { loadDesignFonts } from './lib/loadDesignFonts';
 import { loadData } from './lib/data';
 import type { Pokemon, Move, SpawnEntry, HeldItem } from './lib/types';
@@ -14,15 +14,34 @@ import { SyncCore } from './components/hud/SyncCore';
 import { TeamColumn } from './components/hud/TeamColumn';
 import { FocusLens } from './components/hud/FocusLens';
 import { TelemetryStrip } from './components/hud/TelemetryStrip';
-import { PokedexPage } from './pages/PokedexPage';
-import { TeamBuilderPage } from './pages/TeamBuilderPage';
-import { BattlePage } from './pages/BattlePage';
-import { BattleSessionPage } from './pages/BattleSessionPage';
-import { CounterPage } from './pages/CounterPage';
-import { PlannerPage } from './pages/PlannerPage';
-import { PcPage } from './pages/PcPage';
-import { SpawnPage } from './pages/SpawnPage';
-import { BreedingPage } from './pages/BreedingPage';
+// Tool pages are lazy so the entry chunk stays lean - the battle pages alone
+// pull in the whole battle engine (@smogon/calc data tables included). Each
+// page chunk loads on first dive-in.
+const PokedexPage = lazy(() =>
+  import('./pages/PokedexPage').then((m) => ({ default: m.PokedexPage })),
+);
+const TeamBuilderPage = lazy(() =>
+  import('./pages/TeamBuilderPage').then((m) => ({ default: m.TeamBuilderPage })),
+);
+const BattlePage = lazy(() =>
+  import('./pages/BattlePage').then((m) => ({ default: m.BattlePage })),
+);
+const BattleSessionPage = lazy(() =>
+  import('./pages/BattleSessionPage').then((m) => ({ default: m.BattleSessionPage })),
+);
+const CounterPage = lazy(() =>
+  import('./pages/CounterPage').then((m) => ({ default: m.CounterPage })),
+);
+const PlannerPage = lazy(() =>
+  import('./pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
+);
+const PcPage = lazy(() => import('./pages/PcPage').then((m) => ({ default: m.PcPage })));
+const SpawnPage = lazy(() =>
+  import('./pages/SpawnPage').then((m) => ({ default: m.SpawnPage })),
+);
+const BreedingPage = lazy(() =>
+  import('./pages/BreedingPage').then((m) => ({ default: m.BreedingPage })),
+);
 
 type ToolId =
   | 'pokedex'
@@ -339,7 +358,19 @@ export function App() {
           className={`dive-content ${staggerIn ? 'dive-stagger-in' : ''}`}
           key={openTool || 'empty'}
         >
-          <div className="ds">{diveModule}</div>
+          <div className="ds">
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-full">
+                  <div className="mono-panel px-4 py-2 rounded-full text-[14px]">
+                    ◢ LOADING MODULE…
+                  </div>
+                </div>
+              }
+            >
+              {diveModule}
+            </Suspense>
+          </div>
         </div>
       </div>
     </div>
