@@ -210,7 +210,7 @@ export function App() {
       case 'spawns':
         return <SpawnPage pokemon={pokemon} spawns={spawns} />;
       case 'breeding':
-        return <BreedingPage />;
+        return <BreedingPage pokemon={pokemon} />;
       default:
         return null;
     }

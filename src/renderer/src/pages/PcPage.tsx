@@ -493,13 +493,13 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, minWidth: 0 }}>
             <input
               type="text"
               placeholder="New box name"
               value={newBoxName}
               onChange={(e) => setNewBoxName(e.target.value)}
-              style={{ flex: 1 }}
+              style={{ flex: 1, minWidth: 0, width: '100%' }}
             />
             <button
               type="button"

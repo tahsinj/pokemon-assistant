@@ -459,7 +459,10 @@
   color: var(--hud-accent-2);
   border: none;
 }
-.ds .pc-page .box-tab {
+/* Specificity note: styles.css loads after hud.css and styles these same
+   classes at (0,3,0) - the extra .pc-box-tabs link here is what lets the
+   HUD pill look win the cascade. */
+.ds .pc-page .pc-box-tabs .box-tab {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
@@ -469,25 +472,37 @@
   text-transform: uppercase;
   color: var(--ink-1);
 }
-.ds .pc-page .box-tab:hover {
+.ds .pc-page .pc-box-tabs .box-tab:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--ink-0);
 }
-.ds .pc-page .box-tab.box-tab-active {
+.ds .pc-page .pc-box-tabs .box-tab.box-tab-active {
   background: var(--hud-accent);
   border-color: transparent;
   color: #100b06;
 }
-.ds .pc-page .box-tab .box-count {
+.ds .pc-page .pc-box-tabs .box-tab .box-count {
   color: inherit;
   opacity: 0.75;
 }
-.ds .pc-page .box-cell {
-  aspect-ratio: 1 / 1;
+.ds .pc-page .pc-grid-panel .box-cell {
+  /* Explicit centered-card layout - the design centers cell content in all
+     views; don't depend on design-system base rules for it. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ds .pc-page .pc-grid-panel .cell-gender {
+  position: absolute;
+  top: 4px;
+  right: 6px;
 }
 .ds .pc-page .box-cell:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -507,11 +522,12 @@
 .ds .pc-page .box-cell.pc-drag-source {
   opacity: 0.45;
 }
-.ds .pc-page .cell-name {
+.ds .pc-page .pc-grid-panel .cell-name {
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-size: 11px;
   font-weight: 700;
   color: var(--ink-0);
+  text-align: center;
 }
 .ds .pc-page .cell-meta {
   font-family: 'VT323', ui-monospace, Menlo, monospace;
