@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Pokemon, BaseStats, StatKey } from '../lib/types';
 import { SpeciesList } from '../components/SpeciesList';
 import { NATURES, calcAllStats, STAT_LABELS } from '../lib/stats';
+import { ModuleFrame, SpriteFrame } from '../components/hud/ModuleFrame';
 
 const ZERO: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 const MAX_IVS: BaseStats = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
@@ -53,6 +54,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
   const [ivs, setIvs] = useState<BaseStats>(MAX_IVS);
 
   const evTotal = ORDER.reduce((a, k) => a + evs[k], 0);
+  const perfectIvs = ORDER.filter((k) => ivs[k] === 31).length;
   const computed = useMemo(
     () => (species ? calcAllStats(species.baseStats, ivs, evs, level, nature) : null),
     [species, ivs, evs, level, nature],
@@ -74,77 +76,178 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
   };
 
   return (
-    <div>
-      <h1 className="page-title">EV / IV Planner</h1>
-      <p className="page-sub">Pick a species, set EVs/IVs/nature/level, see live-computed stats. Use presets for classic builds.</p>
-      <div className="page-grid">
-        <div className="panel">
+    <ModuleFrame
+      kicker="◢ EV / IV PLANNER"
+      title="Stat Sculptor"
+      subtitle={species ? `${species.name} · ${nature} · LV ${level}` : 'Pick a species'}
+      side={
+        <div
+          className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px]"
+          style={{ color: evTotal > 510 ? 'var(--hud-danger)' : 'var(--ink-1)' }}
+        >
+          EV {evTotal}/510 · IV 31×{perfectIvs}
+        </div>
+      }
+    >
+      <div className="grid grid-cols-[minmax(250px,310px),200px,1fr] gap-5 items-start">
+        <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={species?.id} onSelect={setSpecies} />
         </div>
-        <div className="panel">
-          {species && computed && (
-            <>
-              <h3 style={{ marginTop: 0 }}>{species.name}</h3>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-                <label>Level <input type="number" min={1} max={100} value={level} onChange={(e) => setLevel(+e.target.value || 1)} style={{ width: 60 }} /></label>
-                <label>Nature{' '}
-                  <select value={nature} onChange={(e) => setNature(e.target.value)}>
-                    {Object.entries(NATURES).map(([n, v]) => (
-                      <option key={n} value={n}>
-                        {n}{v.plus ? ` (+${STAT_LABELS[v.plus]} −${STAT_LABELS[v.minus!]})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span style={{ color: evTotal > 510 ? 'var(--danger)' : 'var(--fg-dim)' }}>
-                  EVs: {evTotal} / 510
+
+        {species && computed && (
+          <>
+            {/* Holo sprite + level/nature controls */}
+            <div className="flex flex-col gap-2.5">
+              <SpriteFrame dex={species.dex} name={species.name} />
+              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-2)]">
+                Level
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={level}
+                  onChange={(e) => setLevel(+e.target.value || 1)}
+                  className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[15px] text-white text-right outline-none focus:border-[var(--hud-accent-2)]"
+                />
+              </label>
+              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-2)]">
+                Nature
+                <select
+                  value={nature}
+                  onChange={(e) => setNature(e.target.value)}
+                  className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[14px] text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)]"
+                >
+                  {Object.entries(NATURES).map(([n, v]) => (
+                    <option key={n} value={n}>
+                      {n}
+                      {v.plus ? ` (+${STAT_LABELS[v.plus]} −${STAT_LABELS[v.minus!]})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-[var(--ink-1)] leading-snug">
+                EV YIELD ·{' '}
+                <span className="text-white">
+                  {Object.entries(species.evYield || {})
+                    .filter(([, v]) => v)
+                    .map(([k, v]) => `+${v} ${k}`)
+                    .join(', ') || 'none'}
                 </span>
               </div>
-              {evTotal > 510 && (
-                <span className="ev-warning" role="status">
-                  Total EVs exceed 510 - trim values until the total is 510 or less.
-                </span>
-              )}
+            </div>
 
-              <div className="section-head">Presets</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {/* Stat sculptor rows */}
+            <div className="flex flex-col gap-2.5 min-w-0">
+              {evTotal > 510 && (
+                <div
+                  role="status"
+                  className="font-mono-hud text-[14px] uppercase tracking-wider px-3 py-1.5 rounded-[8px]"
+                  style={{
+                    color: 'var(--hud-danger)',
+                    background: 'rgba(255,91,108,.10)',
+                    border: '1px solid rgba(255,91,108,.4)',
+                  }}
+                >
+                  Total EVs exceed 510 - trim values.
+                </div>
+              )}
+              <div className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] px-0.5">
+                <span>Stat</span>
+                <span>Base</span>
+                <span>IV</span>
+                <span>EV</span>
+                <span />
+                <span className="text-right">Final</span>
+              </div>
+              {ORDER.map((k) => {
+                const ev = evs[k];
+                const final = computed[k];
+                const natureMod =
+                  NATURES[nature]?.plus === k ? '+' : NATURES[nature]?.minus === k ? '−' : '';
+                return (
+                  <div
+                    key={k}
+                    className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3"
+                  >
+                    <div className="font-mono-hud text-[14px] uppercase text-[var(--ink-1)]">
+                      {STAT_LABELS[k]}
+                    </div>
+                    <div className="font-mono-hud text-[15px] text-white">
+                      {species.baseStats[k]}
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      max={31}
+                      value={ivs[k]}
+                      onChange={(e) => setIv(k, +e.target.value)}
+                      aria-label={`${STAT_LABELS[k]} IV`}
+                      className="w-full bg-black/40 border border-white/15 rounded-[8px] px-1.5 py-0.5 font-mono-hud text-[14px] text-[var(--ink-0)] text-right outline-none focus:border-[var(--hud-accent-2)]"
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={252}
+                      step={4}
+                      value={ev}
+                      onChange={(e) => setEv(k, +e.target.value)}
+                      aria-label={`${STAT_LABELS[k]} EV`}
+                      className="ev-slider w-full"
+                      style={{
+                        background: `linear-gradient(90deg, var(--hud-accent) 0%, var(--hud-accent-2) ${(ev / 252) * 100}%, rgba(255,255,255,.08) ${(ev / 252) * 100}%)`,
+                      }}
+                    />
+                    <div className="font-mono-hud text-[14px] text-[var(--hud-accent-2)] text-right">
+                      {ev} EV
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-2 flex-1 rounded-full bg-black/40 overflow-hidden">
+                        <div
+                          className="absolute inset-y-0 left-0"
+                          style={{
+                            width: `${Math.min(100, (final / 400) * 100)}%`,
+                            background: 'var(--hud-accent)',
+                          }}
+                        />
+                      </div>
+                      <div
+                        className="font-mono-hud text-[16px] w-10 text-right"
+                        style={{
+                          color:
+                            natureMod === '+'
+                              ? '#7cd87b'
+                              : natureMod === '−'
+                                ? 'var(--hud-danger)'
+                                : 'var(--ink-0)',
+                        }}
+                        title={natureMod ? `${nature} nature ${natureMod}10%` : undefined}
+                      >
+                        {final}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Presets */}
+              <div className="mt-2 flex flex-wrap gap-2">
                 {Object.entries(PRESETS).map(([name, p]) => (
-                  <button key={name} type="button" className="tooltip" onClick={() => applyPreset(name)}>
-                    {name}<span className="tip">{p.note}</span>
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => applyPreset(name)}
+                    title={p.note}
+                    className="chunky ghost font-display text-[12px]"
+                    style={{ padding: '8px 10px' }}
+                  >
+                    {name}
                   </button>
                 ))}
               </div>
-
-              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: 'var(--fg-dim)', textAlign: 'left' }}>
-                    <th>Stat</th><th>Base</th><th>IV</th><th>EV</th><th>Final</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ORDER.map((k) => (
-                    <tr key={k}>
-                      <td>{STAT_LABELS[k]}</td>
-                      <td>{species.baseStats[k]}</td>
-                      <td><input type="number" min={0} max={31} value={ivs[k]} onChange={(e) => setIv(k, +e.target.value)} className="ev-input" /></td>
-                      <td><input type="number" min={0} max={252} step={4} value={evs[k]} onChange={(e) => setEv(k, +e.target.value)} className="ev-input" /></td>
-                      <td style={{
-                        color: NATURES[nature]?.plus === k ? 'var(--ok)'
-                          : NATURES[nature]?.minus === k ? 'var(--danger)'
-                          : undefined,
-                        fontWeight: 600,
-                      }}>{computed[k]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ marginTop: 12, fontSize: 11, color: 'var(--fg-dim)' }}>
-                EV yield from defeating this species: {Object.entries(species.evYield || {}).filter(([,v]) => v).map(([k,v]) => `+${v} ${k}`).join(', ') || 'none'}
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </ModuleFrame>
   );
 }

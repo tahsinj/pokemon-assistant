@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Pokemon } from '../lib/types';
 import type { LoadedTeamRecord, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
-import { TypeBadge } from '../components/TypeBadge';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { TYPES, effectiveness } from '../lib/typechart';
@@ -12,6 +11,9 @@ import {
 } from '../lib/showdownTeam';
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { massiveSharedWeaknesses, weaknessCounts } from '../lib/teamWeaknessSummary';
+import { ModuleFrame } from '../components/hud/ModuleFrame';
+import { TypeChip } from '../components/hud/HudPrimitives';
+import { bst } from '../lib/stats';
 
 const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -28,6 +30,7 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(undefined);
   const [paste, setPaste] = useState('');
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; rivenTag: string; updatedAt: number }[]>([]);
   const [lastParsedExport, setLastParsedExport] = useState<string | null>(null);
 
@@ -93,6 +96,7 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
     return rows;
   }, [teamMembers]);
 
+  const coverageCount = offensive.filter((o) => o.bestMult >= 2).length;
   const weakTypes = defensive.filter((d) => d.weakCount >= 2).map((d) => d.type);
   const suggestions = useMemo(() => {
     if (!weakTypes.length) return [];
@@ -212,220 +216,332 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
     await refreshSaved();
   };
 
+  const sectionHead = (label: string, extra?: string) => (
+    <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+      ◢ {label}
+      {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
+    </div>
+  );
+
   return (
-    <div>
-      <h1 className="page-title">Team Builder</h1>
-      <p className="page-sub">
-        Showdown-style import/export, defensive/offensive coverage, shared-weakness alerts, and saved teams (SQLite via
-        Electron).
-      </p>
-
-      <div className="panel" style={{ marginBottom: 16 }}>
-        <div className="section-head">Rivals preset</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-          <label>
-            Team name{' '}
-            <input value={teamName} onChange={(e) => setTeamName(e.target.value)} style={{ minWidth: 180 }} />
-          </label>
-          <label>
-            Tag{' '}
-            <select value={teamTag} onChange={(e) => setTeamTag(e.target.value as RivalsTeamTag)}>
-              {RIVALS_TAGS.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
-              ))}
-            </select>
-          </label>
-          <button type="button" className="btn btn-primary" onClick={() => void onSave()}>Save team</button>
-        </div>
-        {savedTeams.length > 0 && (
-          <div>
-            <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6 }}>Saved locally</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
-              {savedTeams.map((t) => (
-                <li key={t.id} style={{ marginBottom: 6 }}>
-                  <button type="button" onClick={() => void onLoad(t.id)} style={{ marginRight: 8 }}>
-                    Load
-                  </button>
-                  <button type="button" onClick={() => void onDelete(t.id)} style={{ marginRight: 8 }}>
-                    Delete
-                  </button>
-                  <span>{t.name}</span>
-                  <span className="pill" style={{ marginLeft: 6 }}>{t.rivenTag}</span>
-                  <span style={{ color: 'var(--fg-dim)', fontSize: 11, marginLeft: 6 }}>
-                    {new Date(t.updatedAt).toLocaleString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div className="panel" style={{ marginBottom: 16 }}>
-        <div className="section-head">Pokémon Showdown paste</div>
-        <textarea
-          value={paste}
-          onChange={(e) => setPaste(e.target.value)}
-          placeholder={'Paste a Showdown export…\n\nGarchomp @ Leftovers\nAbility: Rough Skin\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Earthquake'}
-          rows={10}
-          style={{ width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: 12, marginBottom: 8 }}
-        />
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-primary" onClick={onImportPaste}>Import into slots</button>
-          <button type="button" onClick={() => void onExportCopy()}>Copy export</button>
-        </div>
-        {importMsg && (
-          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--fg-dim)' }} role="status">{importMsg}</p>
-        )}
-      </div>
-
-      {massiveWeak.length > 0 && (
-        <div
-          className="panel"
-          style={{ marginBottom: 16, borderColor: 'var(--danger)', background: 'rgba(239,68,68,0.06)' }}
-          role="status"
-        >
-          <div className="section-head" style={{ color: 'var(--danger)' }}>Heavy shared weaknesses</div>
-          <p style={{ fontSize: 13, marginTop: 0 }}>
-            {massiveWeak.map((w) => (
-              <span key={w.attackType} style={{ marginRight: 12 }}>
-                <TypeBadge type={w.attackType} /> hits <strong>{w.weakCount}</strong> of {teamMembers.length} super-effectively
-              </span>
-            ))}
-          </p>
-        </div>
-      )}
-
-      {notableWeak.length > 0 && teamMembers.length > 0 && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div className="section-head">Shared weaknesses (2+ Pokémon)</div>
-          <p style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 0 }}>
-            Attacking types where multiple teammates are weak (Showdown-style defensive read).
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {notableWeak.slice(0, 12).map((w) => (
-              <span key={w.attackType} className="pill">
-                <TypeBadge type={w.attackType} /> ×{w.weakCount}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 16 }}>
-        {team.map((p, i) => (
-          <div
-            key={i}
-            className={`team-slot ${!p ? 'empty' : ''}`}
-            onClick={() => setPickingSlot(i)}
-            style={pickingSlot === i ? { borderColor: 'var(--accent)' } : undefined}
+    <ModuleFrame
+      kicker="◢ TEAM BUILDER"
+      title="Squad Six"
+      subtitle={`Shared weakness · ${notableWeak.length} · type coverage ${coverageCount}/18`}
+      side={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="chunky ghost font-display text-[12px]"
+            style={{ padding: '6px 12px' }}
+            onClick={() => setImportOpen((v) => !v)}
+            aria-expanded={importOpen}
           >
-            {p ? (
-              <>
-                <PokemonSprite dex={p.dex} name={p.name} size="sm" />
-                <strong>{p.name}</strong>
-                <div>{p.types.map((t) => <TypeBadge key={t} type={t} />)}</div>
-                <button
-                  type="button"
-                  style={{ position: 'absolute', top: 4, right: 4, padding: '2px 6px', fontSize: 10 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSlot(i, null);
-                  }}
-                  aria-label={`Remove ${p.name} from slot ${i + 1}`}
-                >×</button>
-              </>
-            ) : (
-              <span>+ slot {i + 1}</span>
+            IMPORT
+          </button>
+          <button
+            type="button"
+            className="chunky font-display text-[12px]"
+            style={{ padding: '6px 12px' }}
+            onClick={() => void onSave()}
+          >
+            SAVE TEAM
+          </button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {/* Import / save drawer */}
+        {importOpen && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            {sectionHead('SHOWDOWN PASTE / TEAM META')}
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+                Name
+                <input
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[14px] text-white outline-none focus:border-[var(--hud-accent-2)] min-w-[180px]"
+                />
+              </label>
+              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+                Tag
+                <select
+                  value={teamTag}
+                  onChange={(e) => setTeamTag(e.target.value as RivalsTeamTag)}
+                  className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+                >
+                  {RIVALS_TAGS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <textarea
+              value={paste}
+              onChange={(e) => setPaste(e.target.value)}
+              placeholder={'Paste a Showdown export…\n\nGarchomp @ Leftovers\nAbility: Rough Skin\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Earthquake'}
+              rows={8}
+              className="w-full bg-black/40 border border-white/15 rounded-[10px] px-3 py-2 font-mono-hud text-[14px] text-[var(--ink-0)] placeholder:text-[var(--ink-2)] outline-none focus:border-[var(--hud-accent-2)] mb-2"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="chunky font-display text-[12px]"
+                style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
+                onClick={onImportPaste}
+              >
+                IMPORT INTO SLOTS
+              </button>
+              <button
+                type="button"
+                className="chunky ghost font-display text-[12px]"
+                style={{ padding: '6px 12px' }}
+                onClick={() => void onExportCopy()}
+              >
+                COPY EXPORT
+              </button>
+            </div>
+            {savedTeams.length > 0 && (
+              <div className="mt-3">
+                <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+                  Saved locally
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {savedTeams.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03]"
+                    >
+                      <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                        {t.name}
+                      </span>
+                      <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]">
+                        {t.rivenTag}
+                      </span>
+                      <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">
+                        {new Date(t.updatedAt).toLocaleString()}
+                      </span>
+                      <button
+                        type="button"
+                        className="chunky ghost font-display text-[11px]"
+                        style={{ padding: '3px 8px' }}
+                        onClick={() => void onLoad(t.id)}
+                      >
+                        LOAD
+                      </button>
+                      <button
+                        type="button"
+                        className="chunky ghost font-display text-[11px]"
+                        style={{ '--c': 'var(--hud-danger)', padding: '3px 8px' } as React.CSSProperties}
+                        onClick={() => void onDelete(t.id)}
+                      >
+                        DEL
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        ))}
-      </div>
+        )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <div className="panel">
-          <div className="section-head">Defensive profile (rows = attacker type)</div>
-          <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 8 }}>
-            Red bar length = how many team members are weak. Green = resist.
+        {importMsg && (
+          <div role="status" className="font-mono-hud text-[14px] text-[var(--ink-1)] px-1">
+            › {importMsg}
           </div>
-          {defensive.map((d) => (
-            <div key={d.type} className="stat-row tooltip">
-              <span style={{ width: 64 }}><TypeBadge type={d.type} /></span>
-              <div className="stat-bar" style={{ background: '#111' }}>
+        )}
+
+        {/* Heavy shared weakness alert */}
+        {massiveWeak.length > 0 && (
+          <div
+            role="status"
+            className="px-3 py-2 rounded-[10px] flex flex-wrap items-center gap-3 font-mono-hud text-[14px]"
+            style={{
+              color: 'var(--hud-danger)',
+              background: 'rgba(255,91,108,.10)',
+              border: '1px solid rgba(255,91,108,.4)',
+            }}
+          >
+            <span className="uppercase tracking-widest">⚠ Heavy shared weakness</span>
+            {massiveWeak.map((w) => (
+              <span key={w.attackType} className="inline-flex items-center gap-1 text-[var(--ink-0)]">
+                <TypeChip t={w.attackType.toLowerCase()} /> hits {w.weakCount}/{teamMembers.length}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Squad cards - design TeamModule grid */}
+        <div className="grid grid-cols-3 gap-3">
+          {team.map((p, i) => {
+            if (!p) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setPickingSlot(i)}
+                  className={`rounded-[14px] border border-dashed p-3 min-h-[88px] flex items-center justify-center font-mono-hud text-[14px] uppercase tracking-widest transition ${
+                    pickingSlot === i
+                      ? 'border-[var(--hud-accent)] text-[var(--hud-accent)]'
+                      : 'border-white/15 text-[var(--ink-2)] hover:border-white/30 hover:text-[var(--ink-1)]'
+                  }`}
+                >
+                  + Slot {i + 1}
+                </button>
+              );
+            }
+            const t1 = p.types[0].toLowerCase();
+            const t2 = (p.types[1] || p.types[0]).toLowerCase();
+            return (
+              <div
+                key={i}
+                onClick={() => setPickingSlot(i)}
+                className={`relative overflow-hidden rounded-[14px] border bg-white/[.04] hover:bg-white/[.07] transition group cursor-pointer ${
+                  pickingSlot === i ? 'border-[var(--hud-accent)]' : 'border-white/10'
+                }`}
+              >
                 <div
-                  className="fill"
-                  style={{
-                    width: `${(d.weakCount / Math.max(teamMembers.length, 1)) * 100}%`,
-                    background: d.weakCount >= 2 ? 'var(--danger)' : 'var(--warn)',
-                  }}
+                  className="absolute inset-0 opacity-[.10] group-hover:opacity-[.18] transition"
+                  style={{ background: `var(--t-${t1})` }}
                 />
+                <div className="relative p-3 flex items-center gap-3">
+                  <div className="relative w-[52px] h-[60px] flex-shrink-0">
+                    <div
+                      className="absolute inset-0 hex"
+                      style={{
+                        background: `linear-gradient(160deg, var(--t-${t1}), var(--t-${t2}))`,
+                      }}
+                    />
+                    <div className="absolute inset-[2px] hex" style={{ background: 'rgba(8,18,26,.9)' }} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <PokemonSprite dex={p.dex} name={p.name} size="sm" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display text-[15px] font-bold flex items-center justify-between text-[var(--ink-0)]">
+                      <span className="truncate">{p.name}</span>
+                      <span className="font-mono-hud text-[12px] text-[var(--ink-2)] flex-shrink-0 ml-2">
+                        #{String(p.dex).padStart(4, '0')}
+                      </span>
+                    </div>
+                    <div className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase">
+                      BST {bst(p.baseStats)}
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      {p.types.map((t) => (
+                        <TypeChip key={t} t={t.toLowerCase()} />
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${p.name} from slot ${i + 1}`}
+                    className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-[var(--ink-1)] hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSlot(i, null);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
-              <span className="value" style={{ color: d.weakCount >= 2 ? 'var(--danger)' : 'var(--fg-dim)' }}>
-                {d.weakCount}w / {d.resistCount}r
-              </span>
-              <span className="tip">
-                {d.weakCount} team members take super-effective damage from {d.type}. {d.resistCount} resist it.
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="panel">
-          <div className="section-head">Offensive coverage (best STAB vs defender type)</div>
-          <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 8 }}>
-            Gaps = no team member has a STAB type super-effective against that defender.
-          </div>
-          {teamMembers.length === 0 ? (
-            <div className="species-empty" style={{ padding: '24px 12px' }}>
-              Add Pokémon to your team to see STAB coverage per defending type.
+        {/* Slot picker */}
+        {pickingSlot !== null && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            {sectionHead(`PICK SPECIES FOR SLOT ${pickingSlot + 1}`)}
+            <div className="h-[320px]">
+              <SpeciesList
+                pokemon={pokemon}
+                onSelect={(p) => {
+                  setSlot(pickingSlot, p);
+                  setPickingSlot(null);
+                }}
+              />
             </div>
-          ) : (
-            offensive.map((o) => (
-              <div key={o.type} className="stat-row">
-                <span style={{ width: 64 }}><TypeBadge type={o.type} /></span>
-                <div className="stat-bar">
-                  <div
-                    className="fill"
-                    style={{
-                      width: `${Math.min(100, (o.bestMult / 2) * 100)}%`,
-                      background: o.bestMult >= 2 ? 'var(--ok)' : o.bestMult === 1 ? 'var(--fg-dim)' : 'var(--danger)',
-                    }}
-                  />
-                </div>
-                <span className="value">×{o.bestMult}</span>
-              </div>
-            ))
-          )}
+          </div>
+        )}
 
-          {suggestions.length > 0 && (
-            <>
-              <div className="section-head">Suggested additions</div>
-              <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6 }}>
-                Picks that resist your most-shared weaknesses: {weakTypes.join(', ')}
+        {/* Coverage rows - design coverage grid, real numbers */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="mono-panel p-3 rounded-[10px]">
+            {sectionHead('DEFENSIVE COVERAGE', 'resists − weaknesses per attacking type')}
+            <div className="grid grid-cols-9 gap-1.5">
+              {defensive.map((d) => {
+                const score = d.resistCount - d.weakCount;
+                const c = score > 0 ? '#7cd87b' : score < 0 ? 'var(--hud-danger)' : 'var(--ink-1)';
+                return (
+                  <div
+                    key={d.type}
+                    className="flex flex-col items-center gap-1"
+                    title={`${d.weakCount} weak · ${d.resistCount} resist vs ${d.type}`}
+                  >
+                    <TypeChip t={d.type.toLowerCase()} />
+                    <div className="font-mono-hud text-[13px]" style={{ color: c }}>
+                      {score > 0 ? `+${score}` : score}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mono-panel p-3 rounded-[10px]">
+            {sectionHead('OFFENSIVE COVERAGE', 'best STAB vs defender')}
+            {teamMembers.length === 0 ? (
+              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+                Add Pokémon to see STAB coverage.
               </div>
+            ) : (
+              <div className="grid grid-cols-9 gap-1.5">
+                {offensive.map((o) => {
+                  const c =
+                    o.bestMult >= 2 ? '#7cd87b' : o.bestMult >= 1 ? 'var(--ink-1)' : 'var(--hud-danger)';
+                  return (
+                    <div
+                      key={o.type}
+                      className="flex flex-col items-center gap-1"
+                      title={`Best STAB multiplier vs ${o.type}: ×${o.bestMult}`}
+                    >
+                      <TypeChip t={o.type.toLowerCase()} />
+                      <div className="font-mono-hud text-[13px]" style={{ color: c }}>
+                        ×{o.bestMult}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Suggested additions */}
+        {suggestions.length > 0 && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            {sectionHead('SUGGESTED ADDITIONS', `covers ${weakTypes.join(', ')}`)}
+            <div className="grid grid-cols-4 gap-2">
               {suggestions.map(({ p, score }) => (
-                <div key={p.id} className="badge-counter">
-                  <span>{p.name} {p.types.map((t) => <TypeBadge key={t} type={t} />)}</span>
-                  <span className="score">+{score}</span>
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04]"
+                >
+                  <PokemonSprite dex={p.dex} name={p.name} size="xs" />
+                  <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                    {p.name}
+                  </span>
+                  <span className="font-mono-hud text-[14px] text-[var(--hud-accent-2)]">+{score}</span>
                 </div>
               ))}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {pickingSlot !== null && (
-        <div className="panel" style={{ marginTop: 16, height: 420 }}>
-          <div className="section-head">Pick species for slot {pickingSlot + 1}</div>
-          <SpeciesList
-            pokemon={pokemon}
-            onSelect={(p) => {
-              setSlot(pickingSlot, p);
-              setPickingSlot(null);
-            }}
-          />
-        </div>
-      )}
-    </div>
+    </ModuleFrame>
   );
 }

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Pokemon } from '../lib/types';
 import type { PcBoxSummary, PcPokemonRecord, PcGender, SavePcPokemonPayload } from '../lib/bridgeTypes';
 import { SpeciesList } from '../components/SpeciesList';
-import { TypeBadge } from '../components/TypeBadge';
 import { PokemonSprite } from '../components/PokemonSprite';
+import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
+import { TypeChip } from '../components/hud/HudPrimitives';
 import { GenderIcon } from '../components/GenderIcon';
 import { ItemSearchInput } from '../components/ItemSearchInput';
 import type { HeldItem } from '../lib/types';
@@ -395,42 +396,46 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
 
   if (!hasPc) {
     return (
-      <div>
-        <h1 className="page-title">PC Storage</h1>
-        <p className="page-sub">PC storage requires the desktop app (Electron). Run with <code>npm run dev</code>.</p>
-      </div>
+      <ModuleFrame kicker="◢ PC STORAGE" title="PC Storage" subtitle="desktop app required">
+        <p className="font-mono-hud text-[15px] text-[var(--ink-2)] m-0">
+          PC storage requires the desktop app (Electron). Run with <code>npm run dev</code>.
+        </p>
+      </ModuleFrame>
     );
   }
 
   return (
-    <div className="pc-page">
-      <h1 className="page-title">PC Storage</h1>
-      <p className="page-sub">
-        Store Pokémon with full sets (level, IVs, EVs, nature, ability, gender, moves). Data is saved locally.
-        Drag Pokémon to another slot or box tab to move (drop on an occupied slot to swap). Export the current box or
-        your entire PC as Markdown or plain text.
-      </p>
-
-      <div className="pc-toolbar panel" style={{ marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={exportCurrentBoxMd} disabled={!activeBox}>
-          Export box · Markdown
-        </button>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={exportCurrentBoxTxt} disabled={!activeBox}>
-          Export box · TXT
-        </button>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={exportCurrentBoxShowdown} disabled={!activeBox}>
-          Export box · Showdown
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void exportAllMd()} disabled={!boxes.length}>
-          Export all boxes · Markdown
-        </button>
-        {statusMsg && (
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--fg-dim)' }} role="status">
-            {statusMsg}
-          </span>
-        )}
-      </div>
-
+    <ModuleFrame
+      kicker="◢ PC STORAGE"
+      title={activeBox?.name ?? 'PC Storage'}
+      subtitle={
+        activeBox
+          ? `${occupants.length} / ${PC_SLOTS_PER_BOX} · stored locally`
+          : 'drag to move · drop on occupied slot to swap'
+      }
+      side={
+        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxMd} disabled={!activeBox}>
+            MD
+          </button>
+          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxTxt} disabled={!activeBox}>
+            TXT
+          </button>
+          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxShowdown} disabled={!activeBox}>
+            SHOWDOWN
+          </button>
+          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={() => void exportAllMd()} disabled={!boxes.length}>
+            ALL · MD
+          </button>
+        </div>
+      }
+    >
+      <div className="pc-page mod-page hud-form">
+      {statusMsg && (
+        <div className="font-mono-hud text-[14px] text-[var(--ink-1)] mb-3" role="status">
+          › {statusMsg}
+        </div>
+      )}
       <div className="pc-layout">
         <div className="panel pc-box-tabs">
           <div className="box-tabs" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
@@ -763,7 +768,8 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ModuleFrame>
   );
 }
 
@@ -824,11 +830,11 @@ function PcEditor({
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0 }}>{species.name}</h3>
+        <h3 className="font-display text-[17px] font-bold m-0 text-[var(--ink-0)]">{species.name}</h3>
         {species.types.map((t) => (
-          <TypeBadge key={t} type={t} />
+          <TypeChip key={t} t={t.toLowerCase()} />
         ))}
-        <span className="mono" style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
+        <span className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase tracking-wider">
           Slot {draft.slot + 1}
         </span>
       </div>

@@ -25,6 +25,7 @@ import { suggestMoveset } from '../lib/recommender';
 import { TYPES } from '../lib/typechart';
 import { useModBridge } from '../lib/battle/mod/useModBridge';
 import type { ModBridgeStatus } from '../lib/bridgeTypes';
+import { ModuleFrame } from '../components/hud/ModuleFrame';
 
 type Terrain = '' | 'Electric' | 'Grassy' | 'Misty' | 'Psychic';
 type Weather =
@@ -207,14 +208,51 @@ export function BattleSessionPage({
   // -------------------------------------------------------------------------
   const matrix = useMemo(() => (battleStarted ? teamDamageVsOpponent(state) : []), [state, battleStarted]);
 
+  const bridgeKind = modBridge.status.kind;
   return (
-    <div>
-      <h1 className="page-title">Battle Session</h1>
-      <p className="page-sub">
-        Live battle tracker. Load your team, reveal what the opponent sends in, and record events as the battle
-        unfolds. The state flows through an immutable reducer (Immer) and the damage panel re-reads it on every change.
-      </p>
-
+    <ModuleFrame
+      kicker="◢ LIVE SESSION"
+      title="Battle Tracker"
+      subtitle={
+        battleStarted
+          ? `Turn ${state.turn}${state.field.weather ? ` · ${state.field.weather}` : ''}${
+              state.field.terrain ? ` · ${state.field.terrain} terrain` : ''
+            }`
+          : 'Load your team, reveal the opponent, record events as the battle unfolds'
+      }
+      side={
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-full"
+            style={
+              bridgeKind === 'connected'
+                ? {
+                    background: 'var(--hud-danger)',
+                    boxShadow: '0 0 8px var(--hud-danger)',
+                    animation: 'hud-breathe 1s ease-in-out infinite',
+                  }
+                : bridgeKind === 'listening'
+                  ? { background: 'var(--hud-accent)', boxShadow: '0 0 8px var(--hud-accent)' }
+                  : { background: 'var(--ink-2)' }
+            }
+          />
+          <span
+            className="font-mono-hud text-[14px] uppercase tracking-widest"
+            style={{
+              color:
+                bridgeKind === 'connected'
+                  ? 'var(--hud-danger)'
+                  : bridgeKind === 'listening'
+                    ? 'var(--hud-accent)'
+                    : 'var(--ink-2)',
+            }}
+          >
+            {bridgeKind === 'connected' ? 'LIVE' : bridgeKind === 'listening' ? 'LINK READY' : 'OFFLINE'}
+          </span>
+        </div>
+      }
+    >
+      <div className="mod-page hud-form">
       <TopBar state={state} dispatch={dispatch} battleStarted={battleStarted} onReset={onResetBattle} />
 
       <ModBridgePanel
@@ -260,7 +298,8 @@ export function BattleSessionPage({
       {battleStarted && <DamageMatrix matrix={matrix} state={state} />}
 
       <EventLog state={state} />
-    </div>
+      </div>
+    </ModuleFrame>
   );
 }
 
@@ -584,15 +623,23 @@ function SlotCard({
     <div
       style={{
         padding: 10,
-        borderRadius: 6,
-        border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-        background: isActive ? 'rgba(56,189,248,0.08)' : fainted ? 'rgba(239,68,68,0.05)' : 'var(--bg-3)',
+        borderRadius: 10,
+        border: `1px solid ${isActive ? 'var(--hud-accent)' : 'rgba(255,255,255,.10)'}`,
+        background: isActive
+          ? 'rgba(255,198,54,0.07)'
+          : fainted
+            ? 'rgba(255,91,108,0.05)'
+            : 'rgba(255,255,255,.04)',
         opacity: fainted ? 0.55 : 1,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <strong style={{ fontSize: 13 }}>{pokemon.identity.species}</strong>
-        <span style={{ fontSize: 10, color: 'var(--fg-dim)' }}>L{pokemon.identity.level}</span>
+        <strong className="font-display" style={{ fontSize: 14, color: 'var(--ink-0)' }}>
+          {pokemon.identity.species}
+        </strong>
+        <span className="font-mono-hud" style={{ fontSize: 12, color: 'var(--ink-2)' }}>
+          L{pokemon.identity.level}
+        </span>
         {pokemon.battle.status && (
           <span
             style={{
@@ -616,7 +663,21 @@ function SlotCard({
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)' }}>FAINTED</span>
         )}
         {isActive && (
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--accent)', fontWeight: 700 }}>ACTIVE</span>
+          <span
+            className="font-mono-hud"
+            style={{
+              marginLeft: 'auto',
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              padding: '0 6px',
+              borderRadius: 999,
+              background: 'var(--hud-accent)',
+              color: '#100b06',
+            }}
+          >
+            ACTIVE
+          </span>
         )}
         {!isActive && battleStarted && !fainted && (
           <button
@@ -628,12 +689,13 @@ function SlotCard({
           </button>
         )}
       </div>
-      <div style={{ height: 6, background: '#111', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ height: 6, background: 'rgba(0,0,0,.6)', borderRadius: 999, overflow: 'hidden' }}>
         <div
           style={{
             width: `${pct}%`,
             height: '100%',
-            background: pct > 50 ? 'var(--ok)' : pct > 20 ? 'var(--warn)' : 'var(--danger)',
+            background: pct > 50 ? '#7cd87b' : pct > 20 ? '#ffb84d' : '#ff5b6c',
+            boxShadow: `0 0 6px ${pct > 50 ? '#7cd87b' : pct > 20 ? '#ffb84d' : '#ff5b6c'}`,
             transition: 'width 0.2s',
           }}
         />
@@ -1359,13 +1421,19 @@ function DamageRow({ d }: { d: DamageOutcome }) {
 function EventLog({ state }: { state: BattleState }) {
   return (
     <div className="panel" style={{ marginTop: 16 }}>
-      <div className="section-head">Event log ({state.log.length})</div>
-      <div style={{ maxHeight: 240, overflow: 'auto', fontSize: 12, fontFamily: 'ui-monospace, monospace' }}>
-        {state.log.length === 0 && <div style={{ color: 'var(--fg-dim)' }}>No events recorded yet.</div>}
+      <div className="section-head">◢ Turn log · {state.log.length} events</div>
+      <div
+        className="font-mono-hud"
+        style={{ maxHeight: 240, overflow: 'auto', fontSize: 14, lineHeight: 1.45 }}
+      >
+        {state.log.length === 0 && (
+          <div style={{ color: 'var(--ink-2)' }}>No events recorded yet.</div>
+        )}
         {state.log.map((e, i) => (
-          <div key={i} style={{ padding: '2px 0', borderBottom: '1px dashed var(--border)' }}>
-            <span style={{ color: 'var(--fg-dim)', marginRight: 8 }}>#{i + 1}</span>
-            <strong>{e.type}</strong> <span style={{ color: 'var(--fg-dim)' }}>{summarizeEvent(e)}</span>
+          <div key={i} style={{ padding: '1px 0', color: 'var(--ink-1)' }}>
+            <span style={{ color: 'var(--ink-2)', marginRight: 8 }}>› #{i + 1}</span>
+            <span style={{ color: 'var(--ink-0)' }}>{e.type}</span>{' '}
+            <span style={{ color: 'var(--ink-2)' }}>{summarizeEvent(e)}</span>
           </div>
         ))}
       </div>

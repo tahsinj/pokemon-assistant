@@ -160,11 +160,17 @@ export function createCobblemonBridge(): CobblemonBridge {
     getStatus: () => status,
 
     attachWindow(win) {
-      attached.add(win.webContents);
-      win.on('closed', () => attached.delete(win.webContents));
+      // Capture webContents up front: by the time 'closed' fires the window
+      // is destroyed and any property access on it throws
+      // "Object has been destroyed".
+      const wc = win.webContents;
+      attached.add(wc);
+      win.on('closed', () => attached.delete(wc));
       // Push the current snapshot so the renderer can render an
       // accurate indicator on mount.
-      win.webContents.once('did-finish-load', () => win.webContents.send('cobblemon:status', status));
+      wc.once('did-finish-load', () => {
+        if (!wc.isDestroyed()) wc.send('cobblemon:status', status);
+      });
     },
 
     async start(config = {}) {

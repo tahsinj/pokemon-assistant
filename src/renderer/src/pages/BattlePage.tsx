@@ -14,12 +14,13 @@ import { parseShowdownTeam, type ParsedShowdownMon } from '../lib/showdownTeam';
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { NATURES } from '../lib/stats';
 import { TYPES } from '../lib/typechart';
-import { TypeBadge } from '../components/TypeBadge';
 import { ItemSearchInput } from '../components/ItemSearchInput';
 import type { HeldItem } from '../lib/types';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { suggestMoveset } from '../lib/recommender';
 import { dexForSpeciesName } from '../lib/pokemonSprite';
+import { ModuleFrame, SectionHead, SpriteFrame } from '../components/hud/ModuleFrame';
+import { TypeChip } from '../components/hud/HudPrimitives';
 
 type StatusCode = '' | 'brn' | 'par' | 'psn' | 'tox' | 'slp' | 'frz';
 
@@ -135,16 +136,8 @@ function nHKOText(d: DamageOutcome): string {
 
 function rangeText(d: DamageOutcome): string {
   if (d.error) return d.error;
-  if (d.isZero) return '0 damage';
+  if (d.isZero) return '0 dmg';
   return `${d.pctMin.toFixed(1)}–${d.pctMax.toFixed(1)}%`;
-}
-
-function damageColor(d: DamageOutcome): string {
-  if (d.error || d.isZero) return 'var(--fg-dim)';
-  if (d.ko.chance >= 1 && d.ko.n === 1) return 'var(--danger)';
-  if (d.ko.n === 1) return 'var(--warn)';
-  if (d.pctMax >= 50) return 'var(--accent)';
-  return 'var(--fg)';
 }
 
 export function BattlePage({
@@ -161,6 +154,12 @@ export function BattlePage({
     for (const p of pokemon) m[p.name.toLowerCase()] = p;
     return m;
   }, [pokemon]);
+
+  const movesByName = useMemo(() => {
+    const m: Record<string, Move> = {};
+    for (const mv of Object.values(moves)) m[mv.name.toLowerCase()] = mv;
+    return m;
+  }, [moves]);
 
   const fuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
 
@@ -183,6 +182,7 @@ export function BattlePage({
   const teamSpecs = useMemo(() => team.map((c) => (c ? toBattleSpec(c) : null)), [team]);
 
   const opponentReady = opponent.speciesName.trim().length > 0;
+  const opponentSpecies = pokemonByName[opponent.speciesName.toLowerCase()];
 
   const teamDamage = useMemo(() => {
     if (!opponentReady) return [];
@@ -246,176 +246,286 @@ export function BattlePage({
     setSlot(idx, spec);
   };
 
+  const evsLine = (evs: BaseStats) =>
+    `${evs.hp}/${evs.atk}/${evs.def}/${evs.spa}/${evs.spd}/${evs.spe}`;
+
   return (
-    <div>
-      <h1 className="page-title">Battle Assistant</h1>
-      <p className="page-sub">
-        Enter the current opponent and field, then see live damage for every move on every member of your team,
-        using <code>@smogon/calc</code> over Cobblemon-aware data.
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <CombatPanel
-          title="Opponent"
-          spec={opponent}
-          onChange={setOpponent}
-          pokemonByName={pokemonByName}
-          pokemon={pokemon}
-          moves={moves}
-          items={items}
-        />
-        <FieldPanel field={field} onChange={setField} />
-      </div>
-
-      <div className="panel" style={{ marginBottom: 16 }}>
-        <div className="section-head">Your team</div>
-        <p style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 0 }}>
-          Paste a Showdown export or click a slot to drop a species in with a suggested moveset. Each slot's moves are
-          calc'd against the opponent below.
-        </p>
-        <textarea
-          value={paste}
-          onChange={(e) => setPaste(e.target.value)}
-          placeholder={
-            'Paste a Showdown export…\n\nGarchomp @ Choice Band\nAbility: Rough Skin\nEVs: 4 HP / 252 Atk / 252 Spe\nJolly Nature\n- Earthquake\n- Outrage\n- Stone Edge\n- Iron Head'
-          }
-          rows={6}
-          style={{ width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: 12, marginBottom: 8 }}
-        />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-primary" onClick={onImportPaste}>
-            Import paste
-          </button>
-          <button type="button" onClick={() => setTeam([null, null, null, null, null, null])}>
-            Clear team
-          </button>
-          {parseMsg && <span style={{ fontSize: 12, color: 'var(--fg-dim)' }}>{parseMsg}</span>}
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: 8,
-            marginTop: 12,
-          }}
-        >
-          {team.map((slot, i) => (
-            <SlotChip
-              key={i}
-              idx={i}
-              slot={slot}
-              active={activeSlot === i}
-              pokemon={pokemon}
-              onActivate={() => setActiveSlot(i)}
-              onPick={(name) => fillSlotFromSpecies(i, name)}
-              onClear={() => setSlot(i, null)}
+    <ModuleFrame
+      kicker="◢ BATTLE ASSISTANT"
+      title="Damage Calc"
+      subtitle={
+        opponentReady
+          ? `vs ${opponent.speciesName} · LV ${opponent.level}${field.weather ? ` · ${field.weather}` : ''}`
+          : 'Pick an opponent and field'
+      }
+      side={
+        opponentReady && (
+          <div className="flex items-center gap-2 mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
+            <span
+              className="w-2 h-2 rounded-full bg-[var(--hud-danger)]"
+              style={{ boxShadow: '0 0 8px var(--hud-danger)' }}
             />
-          ))}
-        </div>
-      </div>
-
-      {!opponentReady && (
-        <div className="panel" style={{ marginBottom: 16, color: 'var(--fg-dim)' }}>
-          Pick an opponent species above to see damage calculations.
-        </div>
-      )}
-
-      {opponentReady && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div className="section-head">
-            Your moves vs {opponent.speciesName || 'opponent'} ({opponent.currentHPPercent}% HP)
+            OPP. HP {opponent.currentHPPercent}%
           </div>
-          {team.every((s) => !s) && (
-            <p style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Add at least one team member to see damage rows.</p>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {teamDamage.map(({ idx, outcomes }) => {
-              const slot = team[idx];
-              if (!slot) return null;
-              const sorted = [...outcomes]
-                .map((o, i) => ({ o, i }))
-                .sort((a, b) => {
-                  const ka = a.o.ko.chance + a.o.pctMax / 1000;
-                  const kb = b.o.ko.chance + b.o.pctMax / 1000;
-                  return kb - ka;
-                });
-              return (
-                <div key={idx} className={`team-slot ${activeSlot === idx ? '' : ''}`} style={{ padding: 12, background: 'var(--bg-2)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <strong>{slot.speciesName}</strong>
-                    <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
-                      L{slot.level} {slot.nature}
-                      {slot.item ? ` · ${slot.item}` : ''}
-                      {slot.ability ? ` · ${slot.ability}` : ''}
-                    </span>
-                    <button
-                      type="button"
-                      style={{ marginLeft: 'auto' }}
-                      onClick={() => setActiveSlot(idx)}
-                      className={activeSlot === idx ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
-                    >
-                      {activeSlot === idx ? 'Active' : 'Make active'}
-                    </button>
+        )
+      }
+    >
+      <div className="flex flex-col gap-4 hud-form">
+        <div className="grid grid-cols-2 gap-4">
+          <CombatPanel
+            title="Opponent"
+            spec={opponent}
+            onChange={setOpponent}
+            pokemonByName={pokemonByName}
+            pokemon={pokemon}
+            moves={moves}
+            items={items}
+          />
+          <FieldPanel field={field} onChange={setField} />
+        </div>
+
+        {/* Your team */}
+        <div className="mono-panel p-3 rounded-[10px]">
+          <SectionHead label="YOUR TEAM" extra="paste a Showdown export or fill slots by species" />
+          <textarea
+            value={paste}
+            onChange={(e) => setPaste(e.target.value)}
+            placeholder={
+              'Paste a Showdown export…\n\nGarchomp @ Choice Band\nAbility: Rough Skin\nEVs: 4 HP / 252 Atk / 252 Spe\nJolly Nature\n- Earthquake\n- Outrage\n- Stone Edge\n- Iron Head'
+            }
+            rows={6}
+            className="w-full mb-2"
+          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="chunky font-display text-[12px]"
+              style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
+              onClick={onImportPaste}
+            >
+              IMPORT PASTE
+            </button>
+            <button
+              type="button"
+              className="chunky ghost font-display text-[12px]"
+              style={{ padding: '6px 12px' }}
+              onClick={() => setTeam([null, null, null, null, null, null])}
+            >
+              CLEAR TEAM
+            </button>
+            {parseMsg && (
+              <span className="font-mono-hud text-[14px] text-[var(--ink-2)]">› {parseMsg}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-6 gap-2 mt-3">
+            {team.map((slot, i) => (
+              <SlotChip
+                key={i}
+                idx={i}
+                slot={slot}
+                active={activeSlot === i}
+                pokemon={pokemon}
+                onActivate={() => setActiveSlot(i)}
+                onPick={(name) => fillSlotFromSpecies(i, name)}
+                onClear={() => setSlot(i, null)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {!opponentReady && (
+          <div className="font-mono-hud text-[15px] text-[var(--ink-2)] text-center py-4">
+            Pick an opponent species above to see damage calculations.
+          </div>
+        )}
+
+        {/* Damage matrix - design BattleModule layout */}
+        {opponentReady && (
+          <div className="grid grid-cols-[200px,1fr] gap-5">
+            {/* Opponent holo card */}
+            <div>
+              {opponentSpecies ? (
+                <SpriteFrame
+                  dex={opponentSpecies.dex}
+                  name={opponentSpecies.name}
+                  corner="TARGET"
+                  cornerColor="var(--hud-danger)"
+                />
+              ) : (
+                <div className="sprite-frame rounded-[14px] aspect-square flex items-center justify-center font-mono-hud text-[15px] text-[var(--ink-2)]">
+                  UNKNOWN SPECIES
+                </div>
+              )}
+              <div className="font-display text-[15px] font-bold mt-2 text-[var(--ink-0)]">
+                {opponent.speciesName}
+              </div>
+              {opponentSpecies && (
+                <div className="flex gap-1 mt-1">
+                  {opponentSpecies.types.map((t) => (
+                    <TypeChip key={t} t={t.toLowerCase()} />
+                  ))}
+                </div>
+              )}
+              <div className="mono-panel mt-2 p-2 rounded-[8px] font-mono-hud text-[14px] text-[var(--ink-1)] leading-relaxed">
+                ABL · {(opponent.ability || opponentSpecies?.abilities[0] || '?').toUpperCase()}
+                <br />
+                ITM · {(opponent.item || 'none').toUpperCase()}
+                <br />
+                EVS · {evsLine(opponent.evs)}
+              </div>
+            </div>
+
+            {/* Per-member damage rows */}
+            <div className="flex flex-col gap-4 min-w-0">
+              <div>
+                <SectionHead
+                  label={`YOUR MOVES → ${opponent.speciesName.toUpperCase()}`}
+                  extra={`${opponent.currentHPPercent}% HP`}
+                />
+                {team.every((s) => !s) ? (
+                  <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3">
+                    Add at least one team member to see damage rows.
                   </div>
-                  {outcomes.length === 0 ? (
-                    <div style={{ fontSize: 12, color: 'var(--fg-dim)' }}>No moves configured.</div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {teamDamage.map(({ idx, outcomes }) => {
+                      const slot = team[idx];
+                      if (!slot) return null;
+                      const sorted = [...outcomes]
+                        .map((o, i) => ({ o, i }))
+                        .sort((a, b) => {
+                          const ka = a.o.ko.chance + a.o.pctMax / 1000;
+                          const kb = b.o.ko.chance + b.o.pctMax / 1000;
+                          return kb - ka;
+                        });
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-[12px] border p-3 ${
+                            activeSlot === idx
+                              ? 'border-[var(--hud-accent)]/60 bg-white/[.05]'
+                              : 'border-white/10 bg-white/[.03]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <span className="font-display text-[15px] font-bold text-[var(--ink-0)]">
+                              {slot.speciesName}
+                            </span>
+                            <span className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase">
+                              L{slot.level} {slot.nature}
+                              {slot.item ? ` · ${slot.item}` : ''}
+                              {slot.ability ? ` · ${slot.ability}` : ''}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveSlot(idx)}
+                              className={`ml-auto chunky font-display text-[11px] ${activeSlot === idx ? '' : 'ghost'}`}
+                              style={{ padding: '3px 10px' }}
+                            >
+                              {activeSlot === idx ? 'ACTIVE' : 'MAKE ACTIVE'}
+                            </button>
+                          </div>
+                          {outcomes.length === 0 ? (
+                            <div className="font-mono-hud text-[13px] text-[var(--ink-2)]">
+                              No moves configured.
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {sorted.map(({ o, i }) => (
+                                <DamageRow
+                                  key={`${o.moveName}-${i}`}
+                                  d={o}
+                                  moveType={movesByName[o.moveName.toLowerCase()]?.type}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Reverse threat */}
+              {activeSpec && team[activeSlot] && (
+                <div>
+                  <SectionHead
+                    label={`${opponent.speciesName.toUpperCase()} → ${team[activeSlot]!.speciesName.toUpperCase()}`}
+                    extra={`${team[activeSlot]!.currentHPPercent}% HP`}
+                  />
+                  {reverseDamage.length === 0 ? (
+                    <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-2">
+                      Add moves to the opponent above to see what they might hit you with.
+                    </div>
                   ) : (
-                    <div>
-                      {sorted.map(({ o, i }) => (
-                        <DamageRow key={`${o.moveName}-${i}`} d={o} />
+                    <div className="flex flex-col gap-2">
+                      {reverseDamage.map((o, i) => (
+                        <DamageRow
+                          key={`${o.moveName}-${i}`}
+                          d={o}
+                          moveType={movesByName[o.moveName.toLowerCase()]?.type}
+                          danger
+                        />
                       ))}
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {opponentReady && activeSpec && team[activeSlot] && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <div className="section-head">
-            {opponent.speciesName || 'Opponent'} → {team[activeSlot]?.speciesName} ({team[activeSlot]?.currentHPPercent}% HP)
-          </div>
-          {reverseDamage.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--fg-dim)' }}>
-              Add moves to the opponent above to see what they might hit you with.
-            </p>
-          ) : (
-            <div>
-              {reverseDamage.map((o, i) => (
-                <DamageRow key={`${o.moveName}-${i}`} d={o} />
-              ))}
+              )}
             </div>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </ModuleFrame>
   );
 }
 
-function DamageRow({ d }: { d: DamageOutcome }) {
+/** Design BattleModule damage row: name+chip · PWR · roll bar · range/KO. */
+function DamageRow({ d, moveType, danger }: { d: DamageOutcome; moveType?: string; danger?: boolean }) {
+  const pct = Math.min(100, d.pctMax);
+  const ohko = !d.isZero && !d.error && d.ko.n === 1 && d.ko.chance >= 1;
+  const nearOhko = !d.isZero && !d.error && d.ko.n === 1;
+  const barBg = ohko
+    ? 'linear-gradient(90deg,#ff5b6c,#ffb84d)'
+    : danger
+      ? 'linear-gradient(90deg,#ff5b6c,var(--hud-accent))'
+      : pct >= 50
+        ? 'linear-gradient(90deg,var(--hud-accent),var(--hud-accent-2))'
+        : 'linear-gradient(90deg,#5ea7ff,var(--hud-accent-2))';
+  const valueColor = ohko
+    ? 'var(--hud-danger)'
+    : nearOhko
+      ? '#ffb84d'
+      : d.isZero || d.error
+        ? 'var(--ink-2)'
+        : '#fff';
   return (
     <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1.4fr 60px 90px 100px 110px 1fr',
-        gap: 8,
-        alignItems: 'center',
-        padding: '6px 8px',
-        borderBottom: '1px solid var(--border)',
-        fontSize: 12,
-      }}
+      className="grid grid-cols-[minmax(0,1.2fr),90px,1fr,150px] items-center gap-3 px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]"
+      title={d.desc}
     >
-      <span style={{ fontWeight: 600 }}>{d.moveName}</span>
-      <span style={{ color: 'var(--fg-dim)' }}>{d.category[0]}</span>
-      <span style={{ color: 'var(--fg-dim)' }}>BP {d.basePower || '-'}</span>
-      <span style={{ color: damageColor(d), fontWeight: 600 }}>{rangeText(d)}</span>
-      <span style={{ color: damageColor(d) }}>{nHKOText(d)}</span>
-      <span style={{ color: 'var(--fg-dim)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {d.desc}
-      </span>
+      <div className="font-display text-[15px] font-semibold flex items-center gap-2 min-w-0 text-[var(--ink-0)]">
+        <span className="truncate">{d.moveName}</span>
+        {moveType && <TypeChip t={moveType.toLowerCase()} />}
+      </div>
+      <div className="font-mono-hud text-[14px] text-[var(--ink-2)]">
+        {d.category[0]} · {d.basePower || '-'}
+      </div>
+      <div className="relative h-[14px] rounded-[4px] bg-black/40 overflow-hidden">
+        {!d.isZero && !d.error && (
+          <div
+            className="absolute inset-y-0 left-0 rounded-[3px]"
+            style={{
+              width: `${pct}%`,
+              background: barBg,
+              boxShadow: `0 0 8px ${ohko ? '#ff5b6c' : 'var(--hud-accent-2)'}`,
+            }}
+          />
+        )}
+      </div>
+      <div className="font-mono-hud text-[14px] text-right" style={{ color: valueColor }}>
+        {rangeText(d)} · {nHKOText(d)}
+      </div>
     </div>
   );
 }
@@ -441,12 +551,12 @@ function SlotChip({
   const datalistId = `species-slot-${idx}`;
   return (
     <div
-      className="team-slot"
-      style={{
-        borderColor: active ? 'var(--accent)' : undefined,
-        background: active ? 'rgba(56,189,248,0.08)' : undefined,
-      }}
       onClick={onActivate}
+      className={`relative rounded-[12px] border p-2 min-h-[92px] flex flex-col items-center justify-center gap-1 text-center cursor-pointer transition group ${
+        active
+          ? 'border-[var(--hud-accent)] bg-[rgba(255,198,54,.06)]'
+          : 'border-white/10 bg-white/[.03] hover:bg-white/[.06]'
+      }`}
     >
       {slot ? (
         <>
@@ -454,28 +564,32 @@ function SlotChip({
             const dex = dexForSpeciesName(pokemon, slot.speciesName);
             return dex ? <PokemonSprite dex={dex} name={slot.speciesName} size="xs" /> : null;
           })()}
-          <strong style={{ fontSize: 13 }}>{slot.speciesName}</strong>
-          <div style={{ fontSize: 10, color: 'var(--fg-dim)' }}>
+          <span className="font-display text-[13px] font-bold leading-tight text-[var(--ink-0)]">
+            {slot.speciesName}
+          </span>
+          <span className="font-mono-hud text-[11px] text-[var(--ink-2)] uppercase">
             L{slot.level} · {slot.nature}
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--fg-dim)' }}>
+          </span>
+          <span className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-tight line-clamp-2">
             {slot.moves.filter(Boolean).join(', ') || 'no moves'}
-          </div>
+          </span>
           <button
             type="button"
-            style={{ position: 'absolute', top: 4, right: 4, padding: '2px 6px', fontSize: 10 }}
+            aria-label={`Clear slot ${idx + 1}`}
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-[var(--ink-1)] hover:text-white font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
             onClick={(e) => {
               e.stopPropagation();
               onClear();
             }}
-            aria-label={`Clear slot ${idx + 1}`}
           >
             ×
           </button>
         </>
       ) : (
         <>
-          <span style={{ fontSize: 11 }}>slot {idx + 1}</span>
+          <span className="font-mono-hud text-[12px] uppercase tracking-widest text-[var(--ink-2)]">
+            Slot {idx + 1}
+          </span>
           <input
             list={datalistId}
             placeholder="Species…"
@@ -494,7 +608,8 @@ function SlotChip({
                 setText('');
               }
             }}
-            style={{ fontSize: 11, padding: '3px 6px' }}
+            className="w-full text-center"
+            style={{ fontSize: 13, padding: '3px 8px' }}
           />
           <datalist id={datalistId}>
             {pokemon.map((p) => (
@@ -504,6 +619,14 @@ function SlotChip({
         </>
       )}
     </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+      {children}
+    </span>
   );
 }
 
@@ -555,11 +678,11 @@ function CombatPanel({
   };
 
   return (
-    <div className="panel">
-      <div className="section-head">{title}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, marginBottom: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Species</span>
+    <div className="mono-panel p-3 rounded-[10px]">
+      <SectionHead label={title.toUpperCase()} />
+      <div className="grid grid-cols-[2fr,1fr] gap-2 mb-2">
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Species</FieldLabel>
           <input
             list={`species-${title}`}
             value={spec.speciesName}
@@ -576,8 +699,8 @@ function CombatPanel({
             ))}
           </datalist>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Level</span>
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Level</FieldLabel>
           <input
             type="number"
             min={1}
@@ -588,9 +711,9 @@ function CombatPanel({
         </label>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Ability</span>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Ability</FieldLabel>
           <input
             list={`abil-${title}`}
             value={spec.ability}
@@ -605,15 +728,15 @@ function CombatPanel({
             </datalist>
           )}
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Held item</span>
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Held item</FieldLabel>
           <ItemSearchInput value={spec.item} onChange={(v) => update('item', v)} items={items} />
         </label>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Nature</span>
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Nature</FieldLabel>
           <select value={spec.nature} onChange={(e) => update('nature', e.target.value)}>
             {Object.keys(NATURES).map((n) => (
               <option key={n} value={n}>
@@ -622,8 +745,8 @@ function CombatPanel({
             ))}
           </select>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Status</span>
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Status</FieldLabel>
           <select value={spec.status} onChange={(e) => update('status', e.target.value as StatusCode)}>
             {STATUSES.map((s) => (
               <option key={s.id} value={s.id}>
@@ -632,8 +755,8 @@ function CombatPanel({
             ))}
           </select>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>HP %</span>
+        <label className="flex flex-col gap-1">
+          <FieldLabel>HP %</FieldLabel>
           <input
             type="number"
             min={1}
@@ -644,9 +767,9 @@ function CombatPanel({
         </label>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Tera</span>
+      <div className="grid grid-cols-3 gap-2 mb-2 items-end">
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Tera</FieldLabel>
           <select value={spec.teraType} onChange={(e) => update('teraType', e.target.value)}>
             {ALL_TERA_TYPES.map((t) => (
               <option key={t || 'none'} value={t}>
@@ -655,7 +778,7 @@ function CombatPanel({
             ))}
           </select>
         </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, marginTop: 14 }}>
+        <label className="flex items-center gap-2 pb-1">
           <input
             type="checkbox"
             checked={spec.isTera}
@@ -667,11 +790,11 @@ function CombatPanel({
         <div />
       </div>
 
-      <div className="section-head">EVs</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 6 }}>
+      <SectionHead label="EVS" />
+      <div className="grid grid-cols-6 gap-1.5 mb-2">
         {(['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as StatKey[]).map((k) => (
-          <label key={k} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 10, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>{k}</span>
+          <label key={k} className="flex flex-col gap-1">
+            <FieldLabel>{k}</FieldLabel>
             <input
               type="number"
               min={0}
@@ -679,36 +802,34 @@ function CombatPanel({
               step={4}
               value={spec.evs[k]}
               onChange={(e) => setEv(k, Number(e.target.value))}
-              className="ev-input"
-              style={{ width: '100%' }}
+              className="w-full"
             />
           </label>
         ))}
       </div>
 
-      <div className="section-head">Boosts (stages)</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginBottom: 6 }}>
+      <SectionHead label="BOOSTS" extra="stages" />
+      <div className="grid grid-cols-5 gap-1.5 mb-2">
         {BOOST_KEYS.map((k) => (
-          <label key={k} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 10, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>{k}</span>
+          <label key={k} className="flex flex-col gap-1">
+            <FieldLabel>{k}</FieldLabel>
             <input
               type="number"
               min={-6}
               max={6}
               value={spec.boosts[k] ?? 0}
               onChange={(e) => setBoost(k, Number(e.target.value))}
-              className="ev-input"
-              style={{ width: '100%' }}
+              className="w-full"
             />
           </label>
         ))}
       </div>
 
-      <div className="section-head">Moves</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+      <SectionHead label="MOVES" />
+      <div className="grid grid-cols-2 gap-1.5">
         {[0, 1, 2, 3].map((i) => (
-          <label key={i} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 10, color: 'var(--fg-dim)' }}>Move {i + 1}</span>
+          <label key={i} className="flex flex-col gap-1">
+            <FieldLabel>Move {i + 1}</FieldLabel>
             <input
               list={`moves-${title}-${i}`}
               value={spec.moves[i]}
@@ -727,11 +848,11 @@ function CombatPanel({
       </div>
 
       {species && (
-        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--fg-dim)' }}>
+        <div className="mt-2 flex items-center gap-1.5 font-mono-hud text-[13px] text-[var(--ink-2)]">
           {species.types.map((t) => (
-            <TypeBadge key={t} type={t} />
-          ))}{' '}
-          · BST {Object.values(species.baseStats).reduce((a, b) => a + b, 0)}
+            <TypeChip key={t} t={t.toLowerCase()} />
+          ))}
+          <span>· BST {Object.values(species.baseStats).reduce((a, b) => a + b, 0)}</span>
         </div>
       )}
     </div>
@@ -744,11 +865,11 @@ function FieldPanel({ field, onChange }: { field: FieldSpec; onChange: (f: Field
     onChange({ ...field, [side]: { ...field[side], ...patch } });
 
   return (
-    <div className="panel">
-      <div className="section-head">Field</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Weather</span>
+    <div className="mono-panel p-3 rounded-[10px]">
+      <SectionHead label="FIELD" />
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Weather</FieldLabel>
           <select value={field.weather} onChange={(e) => update('weather', e.target.value as Weather)}>
             {WEATHERS.map((w) => (
               <option key={w.id || 'none'} value={w.id}>
@@ -757,8 +878,8 @@ function FieldPanel({ field, onChange }: { field: FieldSpec; onChange: (f: Field
             ))}
           </select>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Terrain</span>
+        <label className="flex flex-col gap-1">
+          <FieldLabel>Terrain</FieldLabel>
           <select value={field.terrain} onChange={(e) => update('terrain', e.target.value as Terrain)}>
             {TERRAINS.map((t) => (
               <option key={t.id || 'none'} value={t.id}>
@@ -768,12 +889,12 @@ function FieldPanel({ field, onChange }: { field: FieldSpec; onChange: (f: Field
           </select>
         </label>
       </div>
-      <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+      <label className="flex items-center gap-2 mb-3">
         <input type="checkbox" checked={field.isGravity} onChange={(e) => update('isGravity', e.target.checked)} />
         Gravity active
       </label>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div className="grid grid-cols-2 gap-3">
         <SidePanel
           label="Your side"
           side={field.attackerSide}
@@ -800,10 +921,12 @@ function SidePanel({
 }) {
   return (
     <div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-        <label>
-          Spikes:{' '}
+      <div className="font-mono-hud text-[13px] uppercase tracking-widest text-[var(--ink-2)] mb-1.5">
+        {label}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-2">
+          Spikes
           <select
             value={side.spikes}
             onChange={(e) => onChange({ spikes: Number(e.target.value) as 0 | 1 | 2 | 3 })}
@@ -814,48 +937,48 @@ function SidePanel({
             <option value={3}>3</option>
           </select>
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={side.stealthRock}
             onChange={(e) => onChange({ stealthRock: e.target.checked })}
-          />{' '}
+          />
           Stealth Rock
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={side.steelsurge}
             onChange={(e) => onChange({ steelsurge: e.target.checked })}
-          />{' '}
+          />
           Steelsurge
         </label>
-        <label>
-          <input type="checkbox" checked={side.isReflect} onChange={(e) => onChange({ isReflect: e.target.checked })} />{' '}
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={side.isReflect} onChange={(e) => onChange({ isReflect: e.target.checked })} />
           Reflect
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={side.isLightScreen}
             onChange={(e) => onChange({ isLightScreen: e.target.checked })}
-          />{' '}
+          />
           Light Screen
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={side.isAuroraVeil}
             onChange={(e) => onChange({ isAuroraVeil: e.target.checked })}
-          />{' '}
+          />
           Aurora Veil
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={side.isTailwind}
             onChange={(e) => onChange({ isTailwind: e.target.checked })}
-          />{' '}
+          />
           Tailwind
         </label>
       </div>

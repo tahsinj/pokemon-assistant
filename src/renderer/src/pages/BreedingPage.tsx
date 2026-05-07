@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 
 const FLAME_BODY_MULT = 0.75;
 
@@ -30,17 +31,22 @@ export function BreedingPage() {
   };
 
   return (
-    <div>
-      <h1 className="page-title">Breeding &amp; grind</h1>
-      <p className="page-sub">
-        Cobblemon Rivals breeding is slow (often ~1–2h per egg even with optimizations). Use the timer as a wall-clock
-        reminder; times are estimates - confirm in-game.
-      </p>
-
-      <div className="page-grid" style={{ maxHeight: 'none', gridTemplateColumns: '1fr 1fr' }}>
-        <div className="panel">
-          <div className="section-head">Egg hatch timer</div>
-          <label style={{ display: 'block', marginBottom: 10 }}>
+    <ModuleFrame
+      kicker="◢ BREEDING"
+      title="Hatchery"
+      subtitle="egg timer + material grind checklist · times are estimates"
+      side={
+        eta && (
+          <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--hud-accent-2)]">
+            ETA · {eta.toLocaleTimeString()}
+          </div>
+        )
+      }
+    >
+      <div className="grid grid-cols-2 gap-4 hud-form">
+        <div className="mono-panel p-3 rounded-[10px]">
+          <SectionHead label="EGG HATCH TIMER" />
+          <label className="flex items-center gap-2 mb-2.5">
             Base hatch time (minutes)
             <input
               type="number"
@@ -48,53 +54,78 @@ export function BreedingPage() {
               max={600}
               value={baseMinutes}
               onChange={(e) => setBaseMinutes(Math.max(1, Number(e.target.value) || 1))}
-              style={{ width: 80, marginLeft: 8 }}
+              className="w-20"
             />
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <label className="flex items-center gap-2 mb-3">
             <input type="checkbox" checked={flameBody} onChange={(e) => setFlameBody(e.target.checked)} />
             Flame Body / ~25% faster
           </label>
-          <p style={{ fontSize: 13, color: 'var(--fg-dim)', margin: '0 0 12px' }}>
-            Effective estimate: <strong style={{ color: 'var(--accent)' }}>{effectiveMinutes.toFixed(0)}</strong> minutes
+          <p className="font-mono-hud text-[15px] text-[var(--ink-1)] m-0 mb-3">
+            Effective estimate:{' '}
+            <strong className="text-[var(--hud-accent)]">{effectiveMinutes.toFixed(0)}</strong> minutes
           </p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-primary" onClick={() => setStartedAt(Date.now())}>
-              Start timer (now)
+          <div className="flex gap-2 flex-wrap">
+            <button
+              type="button"
+              className="chunky font-display text-[12px]"
+              style={{ '--c': 'var(--hud-accent-2)', padding: '8px 14px' } as React.CSSProperties}
+              onClick={() => setStartedAt(Date.now())}
+            >
+              START TIMER
             </button>
-            <button type="button" onClick={() => setStartedAt(null)}>Clear</button>
+            <button
+              type="button"
+              className="chunky ghost font-display text-[12px]"
+              style={{ padding: '8px 14px' }}
+              onClick={() => setStartedAt(null)}
+            >
+              CLEAR
+            </button>
           </div>
           {eta && (
-            <p style={{ marginTop: 14, fontSize: 14 }}>
-              Target done around:{' '}
-              <strong>{eta.toLocaleString()}</strong>
+            <p className="font-mono-hud text-[15px] text-[var(--ink-0)] mt-3 mb-0">
+              Target done around: <strong>{eta.toLocaleString()}</strong>
             </p>
           )}
-          <p style={{ marginTop: 12, fontSize: 11, color: 'var(--fg-dim)' }}>
+          <p className="font-mono-hud text-[13px] text-[var(--ink-2)] mt-3 mb-0">
             In-app ping when time is up is not wired yet - use your OS alarm or phone for now.
           </p>
         </div>
 
-        <div className="panel">
-          <div className="section-head">Material checklist</div>
-          <p style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 0 }}>
-            Track what you still need. Boss drop rates on Rivals change with patches - treat notes as generic.
-          </p>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+        <div className="mono-panel p-3 rounded-[10px]">
+          <SectionHead label="MATERIAL CHECKLIST" extra="boss drop rates change with patches" />
+          <div className="flex flex-col gap-2.5">
             {BREEDING_CHECKLIST.map((row) => (
-              <li key={row.id} style={{ marginBottom: 12 }}>
-                <label style={{ cursor: 'pointer', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                  <input type="checkbox" checked={!!checked[row.id]} onChange={() => toggle(row.id)} />
-                  <span>
-                    <strong>{row.label}</strong>
-                    <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 2 }}>{row.note}</div>
+              <label
+                key={row.id}
+                className={`flex gap-2.5 items-start px-3 py-2 rounded-[10px] border cursor-pointer transition ${
+                  checked[row.id]
+                    ? 'border-[var(--hud-accent-2)]/40 bg-white/[.06]'
+                    : 'border-white/10 bg-white/[.03] hover:bg-white/[.06]'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!checked[row.id]}
+                  onChange={() => toggle(row.id)}
+                  className="mt-1"
+                />
+                <span>
+                  <span
+                    className={`font-display text-[14px] font-semibold ${
+                      checked[row.id] ? 'line-through text-[var(--ink-2)]' : 'text-[var(--ink-0)]'
+                    }`}
+                  >
+                    {row.label}
                   </span>
-                </label>
-              </li>
+                  <div className="font-mono-hud text-[13px] text-[var(--ink-2)] mt-0.5">{row.note}</div>
+                </span>
+              </label>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </ModuleFrame>
   );
 }

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { Pokemon } from '../lib/types';
 import { buildSpeciesFuse } from '../lib/fuzzySpecies';
+import { bst } from '../lib/stats';
 import { TYPES } from '../lib/typechart';
-import { TypeBadge } from './TypeBadge';
+import { TypeChip } from './hud/HudPrimitives';
+import { SearchPill } from './hud/ModuleFrame';
 import { PokemonSprite } from './PokemonSprite';
 
 export function SpeciesList({
@@ -43,54 +45,72 @@ export function SpeciesList({
   }, [pokemon, q, typeFilter, fuse]);
 
   return (
-    <div className="species-list-shell">
-      <div className="species-list-filters">
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <input
-            placeholder="Search species…"
+    <div className="flex flex-col min-h-0 h-full">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <SearchPill
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Search species by name"
-            style={{ flex: 1 }}
+            onChange={setQ}
+            placeholder="Search species…"
+            width="100%"
+            ariaLabel="Search species by name"
           />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            aria-label="Filter by type"
-          >
-            <option value="">All types</option>
-            {TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6 }}>
-          {filtered.length} species
-        </div>
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          aria-label="Filter by type"
+          className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+        >
+          <option value="">All types</option>
+          {TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="species-list-scroll">
+      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-2 px-1">
+        {filtered.length} species
+      </div>
+      <div className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar">
         {filtered.length === 0 ? (
-          <div className="species-empty">No species match your filters.</div>
+          <div className="font-mono-hud text-[14px] text-[var(--ink-2)] px-2 py-4 text-center">
+            No species match your filters.
+          </div>
         ) : (
-          <ul className="species-ul">
-            {filtered.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  aria-pressed={selectedId === p.id}
-                  className={`species-row ${selectedId === p.id ? 'selected' : ''}`}
-                  onClick={() => onSelect(p)}
-                >
-                  <PokemonSprite dex={p.dex} name={p.name} size="xs" />
-                  <span className="dex">#{String(p.dex).padStart(4, '0')}</span>
-                  <span className="name">{p.name}</span>
-                  <span>{p.types.map((t) => <TypeBadge key={t} type={t} />)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          filtered.map((p) => {
+            const isSel = selectedId === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                aria-pressed={isSel}
+                onClick={() => onSelect(p)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-[10px] text-left transition border ${
+                  isSel
+                    ? 'bg-white/10 border-[var(--hud-accent-2)]/40'
+                    : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
+                }`}
+              >
+                <PokemonSprite dex={p.dex} name={p.name} size="xs" />
+                <span className="font-mono-hud text-[14px] text-[var(--ink-2)] w-12 flex-shrink-0">
+                  #{String(p.dex).padStart(4, '0')}
+                </span>
+                <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                  {p.name}
+                </span>
+                <span className="flex gap-1 flex-shrink-0">
+                  {p.types.map((t) => (
+                    <TypeChip key={t} t={t.toLowerCase()} />
+                  ))}
+                </span>
+                <span className="font-mono-hud text-[13px] text-[var(--ink-1)] w-10 text-right flex-shrink-0">
+                  {bst(p.baseStats)}
+                </span>
+              </button>
+            );
+          })
         )}
       </div>
     </div>

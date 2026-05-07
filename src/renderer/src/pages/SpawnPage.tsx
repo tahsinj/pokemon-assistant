@@ -11,12 +11,14 @@ import {
   type SpawnTimeBucket,
   type SpawnWeather,
 } from '../lib/spawnQuery';
+import { ModuleFrame } from '../components/hud/ModuleFrame';
 
+/** Atlas card gradient base per rarity bucket (design SpawnModule palette). */
 const BUCKET_COLORS: Record<string, string> = {
-  common: 'var(--ok)',
-  uncommon: 'var(--warn)',
-  rare: 'var(--accent)',
-  'ultra-rare': 'var(--accent-alt-2)',
+  common: '#5ea7ff',
+  uncommon: '#ffd34d',
+  rare: '#ff7a59',
+  'ultra-rare': '#ffa6c8',
 };
 
 function formatCondition(s: SpawnEntry): string[] {
@@ -34,6 +36,43 @@ function formatCondition(s: SpawnEntry): string[] {
   return out;
 }
 
+function HudSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: [string, string][];
+}) {
+  return (
+    <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+      {label}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+      >
+        {options.map(([v, lbl]) => (
+          <option key={v} value={v}>
+            {lbl}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function CondPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/50 text-[var(--hud-accent-2)]">
+      {children}
+    </span>
+  );
+}
+
 export function SpawnPage({
   pokemon,
   spawns,
@@ -45,6 +84,10 @@ export function SpawnPage({
   const [contextF, setContextF] = useState<SpawnContext | 'any'>('any');
 
   const entries = selected ? spawns[selected.id] || [] : [];
+  const totalRules = useMemo(
+    () => Object.values(spawns).reduce((a, b) => a + b.length, 0),
+    [spawns],
+  );
 
   const filters: SpawnFilters = useMemo(
     () => ({
@@ -62,103 +105,146 @@ export function SpawnPage({
   );
 
   return (
-    <div>
-      <h1 className="page-title">Spawn Locations</h1>
-      <p className="page-sub">
-        Biome tags, time, weather, rarity, and rough context (surface / water / cave hints from presets). Data comes
-        from bundled spawn JSON - replace via <code style={{ fontSize: 12 }}>scripts/spawn-parser.mjs</code> when you
-        have Rivals datapack exports.
-      </p>
-      <div className="page-grid">
-        <div className="panel">
+    <ModuleFrame
+      kicker="◢ SPAWN LOCATIONS"
+      title="Biome Atlas"
+      subtitle={`${totalRules} active spawn rules`}
+      side={
+        selected && (
+          <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
+            {selected.name.toUpperCase()} · {filteredEntries.length}/{entries.length} RULES
+          </div>
+        )
+      }
+    >
+      <div className="grid grid-cols-[minmax(260px,340px),1fr] gap-5 items-start">
+        <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={selected?.id} onSelect={setSelected} />
         </div>
-        <div className="panel">
+
+        <div className="min-w-0">
           {selected && (
             <>
-              <h3 style={{ marginTop: 0, fontSize: '1.2rem', fontWeight: 650 }}>{selected.name}</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14, fontSize: 12 }}>
-                <label>
-                  Rarity{' '}
-                  <select value={bucket} onChange={(e) => setBucket(e.target.value)}>
-                    <option value="">Any</option>
-                    <option value="common">common</option>
-                    <option value="uncommon">uncommon</option>
-                    <option value="rare">rare</option>
-                    <option value="ultra-rare">ultra-rare</option>
-                  </select>
-                </label>
-                <label>
-                  Time hint{' '}
-                  <select value={timeF} onChange={(e) => setTimeF(e.target.value as SpawnTimeBucket | 'any')}>
-                    <option value="any">Any</option>
-                    <option value="day">Day</option>
-                    <option value="night">Night</option>
-                    <option value="dawn">Dawn</option>
-                    <option value="dusk">Dusk</option>
-                  </select>
-                </label>
-                <label>
-                  Weather{' '}
-                  <select value={weatherF} onChange={(e) => setWeatherF(e.target.value as SpawnWeather | 'any')}>
-                    <option value="any">Any</option>
-                    <option value="clear">Clear</option>
-                    <option value="rain">Rain</option>
-                    <option value="storm">Storm</option>
-                  </select>
-                </label>
-                <label>
-                  Context{' '}
-                  <select value={contextF} onChange={(e) => setContextF(e.target.value as SpawnContext | 'any')}>
-                    <option value="any">Any</option>
-                    <option value="surface">Surface</option>
-                    <option value="water">Water / fishing</option>
-                    <option value="underground">Underground / cave</option>
-                    <option value="fishing">Fishing preset</option>
-                    <option value="unknown">Unknown</option>
-                  </select>
-                </label>
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <HudSelect
+                  label="Rarity"
+                  value={bucket}
+                  onChange={setBucket}
+                  options={[
+                    ['', 'Any'],
+                    ['common', 'common'],
+                    ['uncommon', 'uncommon'],
+                    ['rare', 'rare'],
+                    ['ultra-rare', 'ultra-rare'],
+                  ]}
+                />
+                <HudSelect
+                  label="Time"
+                  value={timeF}
+                  onChange={(v) => setTimeF(v as SpawnTimeBucket | 'any')}
+                  options={[
+                    ['any', 'Any'],
+                    ['day', 'Day'],
+                    ['night', 'Night'],
+                    ['dawn', 'Dawn'],
+                    ['dusk', 'Dusk'],
+                  ]}
+                />
+                <HudSelect
+                  label="Weather"
+                  value={weatherF}
+                  onChange={(v) => setWeatherF(v as SpawnWeather | 'any')}
+                  options={[
+                    ['any', 'Any'],
+                    ['clear', 'Clear'],
+                    ['rain', 'Rain'],
+                    ['storm', 'Storm'],
+                  ]}
+                />
+                <HudSelect
+                  label="Context"
+                  value={contextF}
+                  onChange={(v) => setContextF(v as SpawnContext | 'any')}
+                  options={[
+                    ['any', 'Any'],
+                    ['surface', 'Surface'],
+                    ['water', 'Water / fishing'],
+                    ['underground', 'Underground / cave'],
+                    ['fishing', 'Fishing preset'],
+                    ['unknown', 'Unknown'],
+                  ]}
+                />
               </div>
+
               {entries.length === 0 ? (
-                <div style={{ color: 'var(--fg-dim)' }}>No spawn entries found - may be evolution-only or Rivals custom spawn.</div>
+                <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-6 text-center">
+                  No spawn entries found - may be evolution-only or a custom spawn.
+                </div>
               ) : filteredEntries.length === 0 ? (
-                <div style={{ color: 'var(--fg-dim)' }}>No entries match these filters.</div>
+                <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-6 text-center">
+                  No entries match these filters.
+                </div>
               ) : (
-                filteredEntries.map((s, i) => (
-                  <div key={i} style={{ background: 'var(--bg-3)', padding: 12, borderRadius: 6, marginBottom: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
-                      <strong style={{ color: BUCKET_COLORS[s.bucket || ''] || 'var(--fg)' }}>
-                        {s.bucket || 'unknown'}
-                      </strong>
-                      <span style={{ color: 'var(--fg-dim)', fontSize: 11 }}>
-                        Lv {s.level || '?'} · weight {s.weight ?? '?'}
-                        {' · '}
-                        <span className="pill">{inferWeather(s)}</span>
-                        <span className="pill">{inferTimeBucket(s)}</span>
-                        <span className="pill">{inferSpawnContext(s)}</span>
-                      </span>
-                    </div>
-                    {s.biomes.length > 0 && (
-                      <div style={{ marginBottom: 4 }}>
-                        <span style={{ fontSize: 10, color: 'var(--fg-dim)' }}>BIOMES: </span>
-                        {s.biomes.map((b) => <span key={b} className="pill">{b.replace('#cobblemon:', '').replace('is_', '')}</span>)}
+                <div className="grid grid-cols-2 gap-3 max-h-[54vh] overflow-y-auto pr-1 no-scrollbar">
+                  {filteredEntries.map((s, i) => {
+                    const color = BUCKET_COLORS[s.bucket || ''] || '#8a9aa6';
+                    return (
+                      <div
+                        key={i}
+                        className="relative rounded-[14px] overflow-hidden border border-white/10 group"
+                      >
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(160deg, ${color}, #08131c 80%)`,
+                            opacity: 0.7,
+                          }}
+                        />
+                        <div className="absolute inset-0 stripes opacity-[.4]" />
+                        <div className="relative p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-display text-[16px] font-bold text-white">
+                              Lv {s.level || '?'}{' '}
+                              <span className="font-mono-hud text-[13px] text-white/70">
+                                · weight {s.weight ?? '?'}
+                              </span>
+                            </div>
+                            <span
+                              className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0"
+                              style={{ background: 'rgba(0,0,0,.5)', color }}
+                            >
+                              {s.bucket || 'unknown'}
+                            </span>
+                          </div>
+                          <div className="font-mono-hud text-[13px] uppercase tracking-wider text-white/70 mt-0.5">
+                            {inferWeather(s)} · {inferTimeBucket(s)} · {inferSpawnContext(s)}
+                          </div>
+                          {s.biomes.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1">
+                              {s.biomes.map((b) => (
+                                <CondPill key={b}>
+                                  {b.replace('#cobblemon:', '').replace('is_', '')}
+                                </CondPill>
+                              ))}
+                            </div>
+                          )}
+                          {formatCondition(s).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {formatCondition(s).map((c, ci) => (
+                                <CondPill key={`${i}-cond-${ci}-${c}`}>{c}</CondPill>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {formatCondition(s).length > 0 && (
-                      <div>
-                        <span style={{ fontSize: 10, color: 'var(--fg-dim)' }}>CONDITIONS: </span>
-                        {formatCondition(s).map((c, ci) => (
-                          <span key={`${i}-cond-${ci}-${c}`} className="pill">{c}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
         </div>
       </div>
-    </div>
+    </ModuleFrame>
   );
 }

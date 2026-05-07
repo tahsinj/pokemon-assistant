@@ -401,6 +401,181 @@
 }
 .mod-in { animation: hud-mod-in .35s cubic-bezier(.2, .9, .25, 1); }
 
+/* HUD form chrome - scoped re-skin for dense input panels (Battle calc etc.) */
+.hud-form input:not([type='checkbox']):not([type='range']),
+.hud-form select {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 15px;
+  color: var(--ink-0);
+  outline: none;
+}
+.hud-form textarea {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 15px;
+  color: var(--ink-0);
+  outline: none;
+}
+.hud-form input:not([type='checkbox']):focus,
+.hud-form select:focus,
+.hud-form textarea:focus {
+  border-color: var(--hud-accent-2);
+}
+.hud-form input::placeholder,
+.hud-form textarea::placeholder {
+  color: var(--ink-2);
+}
+.hud-form input[type='checkbox'] {
+  accent-color: var(--hud-accent-2);
+}
+.hud-form label {
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 14px;
+  color: var(--ink-1);
+}
+.hud-form option {
+  background: var(--hud-bg-1);
+}
+
+/* PC Storage re-skin - keeps the drag/drop class hooks, swaps the look.
+   Box pills + square slot grid. */
+.ds .mod-page .panel {
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+.ds .mod-page .section-head {
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hud-accent-2);
+  border: none;
+}
+.ds .pc-page .box-tab {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+}
+.ds .pc-page .box-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink-0);
+}
+.ds .pc-page .box-tab.box-tab-active {
+  background: var(--hud-accent);
+  border-color: transparent;
+  color: #100b06;
+}
+.ds .pc-page .box-tab .box-count {
+  color: inherit;
+  opacity: 0.75;
+}
+.ds .pc-page .box-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ds .pc-page .box-cell:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.ds .pc-page .box-cell-empty {
+  color: var(--ink-2);
+}
+.ds .pc-page .box-cell-selected {
+  border-color: rgba(86, 230, 194, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+}
+.ds .pc-page .box-cell.pc-drag-over,
+.ds .pc-page .box-tab.pc-drag-over {
+  border-color: var(--hud-accent);
+  box-shadow: 0 0 10px rgba(255, 198, 54, 0.45);
+}
+.ds .pc-page .box-cell.pc-drag-source {
+  opacity: 0.45;
+}
+.ds .pc-page .cell-name {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-0);
+}
+.ds .pc-page .cell-meta {
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.ds .pc-page .pc-box-rename-trigger {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: var(--ink-0);
+}
+.ds .mod-page .btn {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+}
+.ds .mod-page .btn:hover:not(:disabled) {
+  border-color: var(--hud-accent-2);
+  color: var(--hud-accent-2);
+}
+.ds .mod-page .btn.btn-primary {
+  background: var(--hud-accent);
+  border-color: transparent;
+  color: #100b06;
+}
+.ds .mod-page .btn.btn-primary:hover:not(:disabled) {
+  color: #100b06;
+  filter: brightness(1.1);
+}
+.ds .mod-page .btn.btn-danger {
+  border-color: rgba(255, 91, 108, 0.5);
+  color: var(--hud-danger);
+}
+.ds .pc-page .pc-stat-field {
+  font-family: 'VT323', ui-monospace, Menlo, monospace;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* EV slider (Stat Sculptor) - gradient track set inline, thumb here */
+.ev-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+.ev-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-0);
+  border: 2px solid var(--hud-accent-2);
+  box-shadow: 0 0 8px rgba(86, 230, 194, 0.6);
+}
+
 .stripes {
   background-image: repeating-linear-gradient(
     45deg,

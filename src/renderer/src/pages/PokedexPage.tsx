@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import { SpeciesList } from '../components/SpeciesList';
-import { TypeBadge } from '../components/TypeBadge';
-import { StatBars } from '../components/StatBars';
 import { bst } from '../lib/stats';
 import { suggestMoveset } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
 import { getMergedSpecies } from '../lib/battle/dex';
 import { summarizeSpeciesDivergence } from '../lib/battle/overrides';
-import { PokemonSprite } from '../components/PokemonSprite';
+import { ModuleFrame, MoveCard, SpriteFrame } from '../components/hud/ModuleFrame';
+import { StatBar, TypeChip } from '../components/hud/HudPrimitives';
 
 export function PokedexPage({
   pokemon,
@@ -16,18 +15,27 @@ export function PokedexPage({
 }: { pokemon: Pokemon[]; moves: Record<string, Move> }) {
   const [selected, setSelected] = useState<Pokemon | null>(pokemon[0] || null);
   return (
-    <div>
-      <h1 className="page-title">Pokédex</h1>
-      <p className="page-sub">Browse species, stats, abilities, learnsets, and recommended movesets.</p>
-      <div className="page-grid">
-        <div className="panel">
+    <ModuleFrame
+      kicker="◢ POKÉDEX"
+      title="Field Index"
+      subtitle={`${pokemon.length} species · Cobblemon dataset`}
+      side={
+        selected && (
+          <div className="flex gap-1.5">
+            {selected.types.map((t) => (
+              <TypeChip key={t} t={t.toLowerCase()} size="md" />
+            ))}
+          </div>
+        )
+      }
+    >
+      <div className="grid grid-cols-[minmax(280px,380px),1fr] gap-5 items-start">
+        <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={selected?.id} onSelect={setSelected} />
         </div>
-        <div className="panel">
-          {selected && <PokemonDetail p={selected} moves={moves} />}
-        </div>
+        <div className="min-w-0">{selected && <PokemonDetail p={selected} moves={moves} />}</div>
       </div>
-    </div>
+    </ModuleFrame>
   );
 }
 
@@ -41,94 +49,165 @@ function PokemonDetail({ p, moves }: { p: Pokemon; moves: Record<string, Move> }
     .map((lm) => ({ learn: lm.learn, mv: moves[lm.move] }))
     .filter((x) => x.mv);
   return (
-    <div>
-      <div className="pokedex-species-heading">
-        <PokemonSprite dex={p.dex} name={p.name} size="lg" variant="artwork" />
-        <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 650, letterSpacing: '-0.02em' }}>
-          #{String(p.dex).padStart(4, '0')} {p.name}
-        </h2>
-        {p.types.map((t) => <TypeBadge key={t} type={t} />)}
-        <CobblemonOverrideBadge name={p.name} />
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <div>
-          <div className="section-head">Base stats (BST {bst(p.baseStats)})</div>
-          <StatBars stats={p.baseStats} />
-          <div className="section-head">Abilities</div>
-          <div>
-            {p.abilities.filter((a) => !p.hiddenAbilities.includes(a)).map((a) => (
-              <span className="pill" key={a}>{a}</span>
-            ))}
-            {p.hiddenAbilities.map((a) => (
-              <span className="pill" key={a} style={{ borderLeft: '2px solid var(--accent-alt-2)' }}>{a} (H)</span>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-[200px,1fr] gap-5">
+        {/* Holo sprite + identity */}
+        <div className="flex flex-col gap-2">
+          <SpriteFrame dex={p.dex} name={p.name} />
+          <div className="font-display text-[17px] font-bold leading-tight text-[var(--ink-0)]">
+            {p.name}
+            <CobblemonOverrideBadge name={p.name} />
+          </div>
+          <div className="flex gap-1.5">
+            {p.types.map((t) => (
+              <TypeChip key={t} t={t.toLowerCase()} />
             ))}
           </div>
-          <div className="section-head">Height / Weight</div>
-          <div style={{ fontSize: 12, color: 'var(--fg-dim)' }}>
+          <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[14px] text-[var(--ink-1)]">
+            BST <span className="text-white">{bst(p.baseStats)}</span> ·{' '}
             {(p.height / 10).toFixed(1)}m · {(p.weight / 10).toFixed(1)}kg
           </div>
         </div>
-        <div>
-          <div className="section-head">Type matchups (defending)</div>
-          {weaks.length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              <span style={{ color: 'var(--danger)', fontSize: 11 }}>Weak to: </span>
-              {weaks.map(([t, m]) => (
-                <span key={t} style={{ fontSize: 11, marginRight: 6 }}>
-                  <TypeBadge type={t} /> ×{m}
-                </span>
+
+        {/* Stats + abilities + matchups */}
+        <div className="flex flex-col gap-3 min-w-0">
+          <div className="mono-panel p-3 rounded-[10px]">
+            <div className="flex items-center justify-between mb-1.5 font-mono-hud">
+              <div className="text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+                BASE STATS
+              </div>
+              <div className="text-[14px] text-[var(--ink-2)]">BST {bst(p.baseStats)}</div>
+            </div>
+            <div className="flex flex-col gap-1">
+              {Object.entries(p.baseStats).map(([k, v]) => (
+                <StatBar
+                  key={k}
+                  label={k}
+                  value={v}
+                  max={180}
+                  color={
+                    v >= 100
+                      ? 'linear-gradient(90deg,#7cd87b,var(--hud-accent-2))'
+                      : v >= 70
+                        ? 'linear-gradient(90deg,var(--hud-accent),var(--hud-accent-2))'
+                        : 'linear-gradient(90deg,#ff7e8d,var(--hud-accent))'
+                  }
+                />
               ))}
             </div>
-          )}
-          {resists.length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              <span style={{ color: 'var(--ok)', fontSize: 11 }}>Resists: </span>
-              {resists.map(([t, m]) => (
-                <span key={t} style={{ fontSize: 11, marginRight: 6 }}>
-                  <TypeBadge type={t} /> ×{m}
-                </span>
-              ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1">
+                Abilities
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {p.abilities
+                  .filter((a) => !p.hiddenAbilities.includes(a))
+                  .map((a) => (
+                    <span
+                      key={a}
+                      className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)]"
+                    >
+                      {a}
+                    </span>
+                  ))}
+                {p.hiddenAbilities.map((a) => (
+                  <span
+                    key={a}
+                    className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-[var(--hud-accent)]/50 bg-black/30 text-[var(--hud-accent)]"
+                  >
+                    {a} (H)
+                  </span>
+                ))}
+              </div>
             </div>
-          )}
-          {immunes.length > 0 && (
-            <div>
-              <span style={{ color: 'var(--fg-dim)', fontSize: 11 }}>Immune: </span>
-              {immunes.map(([t]) => <TypeBadge key={t} type={t} />)}
+            <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1">
+                Defending
+              </div>
+              <div className="flex flex-col gap-1 font-mono-hud text-[13px]">
+                {weaks.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span style={{ color: 'var(--hud-danger)' }}>WEAK</span>
+                    {weaks.map(([t, m]) => (
+                      <span key={t} className="inline-flex items-center gap-0.5">
+                        <TypeChip t={t.toLowerCase()} />
+                        <span className="text-[var(--ink-2)]">×{m}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {resists.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span style={{ color: '#7cd87b' }}>RESIST</span>
+                    {resists.map(([t, m]) => (
+                      <span key={t} className="inline-flex items-center gap-0.5">
+                        <TypeChip t={t.toLowerCase()} />
+                        <span className="text-[var(--ink-2)]">×{m}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {immunes.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[var(--ink-2)]">IMMUNE</span>
+                    {immunes.map(([t]) => (
+                      <TypeChip key={t} t={t.toLowerCase()} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      <div className="section-head" style={{ marginTop: 22 }}>Recommended moveset</div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6 }}>
-        Auto-picked from learnset using STAB, coverage, and {p.baseStats.atk >= p.baseStats.spa ? 'physical' : 'special'} attacker bias. Hover for reasoning.
-      </div>
+      {/* Recommended moveset */}
       <div>
-        {suggested.map(({ move, reasons }) => (
-          <div key={move.id} className="move-row tooltip">
-            <span>{move.name}</span>
-            <TypeBadge type={move.type} />
-            <span>{move.category[0]}</span>
-            <span>{move.power || '-'}</span>
-            <span>{move.accuracy === true ? '-' : move.accuracy}</span>
-            <span className="desc">{move.desc}</span>
-            <span className="tip">{reasons.join(' · ')}</span>
-          </div>
-        ))}
+        <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+          ◢ RECOMMENDED MOVESET ·{' '}
+          <span className="text-[var(--ink-2)]">
+            STAB + coverage, {p.baseStats.atk >= p.baseStats.spa ? 'physical' : 'special'} bias
+          </span>
+        </div>
+        <div className="grid grid-cols-4 gap-2.5">
+          {suggested.map(({ move, reasons }) => (
+            <MoveCard key={move.id} m={move} hint={reasons.join(' · ')} />
+          ))}
+        </div>
       </div>
 
-      <div className="section-head">Full learnset ({learnable.length})</div>
-      <div style={{ maxHeight: 200, overflow: 'auto', fontSize: 11 }}>
-        {learnable.map(({ learn, mv }) => (
-          <div key={`${learn}-${mv.id}`} className="move-row">
-            <span>{mv.name} <span style={{ color: 'var(--fg-dim)' }}>({learn})</span></span>
-            <TypeBadge type={mv.type} />
-            <span>{mv.category[0]}</span>
-            <span>{mv.power || '-'}</span>
-            <span>{mv.accuracy === true ? '-' : mv.accuracy}</span>
-            <span className="desc">{mv.desc}</span>
-          </div>
-        ))}
+      {/* Full learnset */}
+      <div>
+        <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+          ◢ FULL LEARNSET · <span className="text-[var(--ink-2)]">{learnable.length} MOVES</span>
+        </div>
+        <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto pr-1 no-scrollbar">
+          {learnable.map(({ learn, mv }) => (
+            <div
+              key={`${learn}-${mv.id}`}
+              className="grid grid-cols-[1fr,auto,52px,56px,56px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
+              title={mv.desc}
+            >
+              <div className="font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                {mv.name}{' '}
+                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase">
+                  {learn}
+                </span>
+              </div>
+              <TypeChip t={mv.type.toLowerCase()} />
+              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">{mv.category[0]}</span>
+              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+                PWR {mv.power || '-'}
+              </span>
+              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+                ACC {mv.accuracy === true ? '-' : mv.accuracy}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -147,19 +226,14 @@ function CobblemonOverrideBadge({ name }: { name: string }) {
   return (
     <span
       title={`Cobblemon variant\n\n${lines.join('\n')}`}
+      className="ml-2 align-middle font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full cursor-help"
       style={{
-        marginLeft: 8,
-        padding: '2px 6px',
-        borderRadius: 4,
-        fontSize: 11,
-        fontWeight: 600,
-        background: 'rgba(255, 196, 0, 0.12)',
-        border: '1px solid rgba(255, 196, 0, 0.5)',
-        color: '#d9a200',
-        cursor: 'help',
+        background: 'rgba(255, 198, 54, 0.12)',
+        border: '1px solid rgba(255, 198, 54, 0.5)',
+        color: 'var(--hud-accent)',
       }}
     >
-      Cobblemon variant
+      Variant
     </span>
   );
 }
