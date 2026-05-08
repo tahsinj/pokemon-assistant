@@ -72,6 +72,8 @@ for (const f of speciesFiles) {
       },
       evYield: data.evYield,
       catchRate: data.catchRate,
+      // Fraction of males 0..1; -1 = genderless (Cobblemon convention).
+      maleRatio: typeof data.maleRatio === 'number' ? data.maleRatio : undefined,
       eggGroups: data.eggGroups || [],
       height: data.height,
       weight: data.weight,

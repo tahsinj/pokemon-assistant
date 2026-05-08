@@ -100,31 +100,40 @@
   to   { transform: translate3d(-200px, -120px, 0); }
 }
 
+/* Soft glow comes from the gradient itself - a per-frame filter: blur(80px)
+   on three ~500px animated layers is what killed perf on weak GPUs. */
 .biome-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: .55;
+  opacity: .5;
   mix-blend-mode: screen;
   animation: hud-float 18s ease-in-out infinite;
+  will-change: transform;
 }
-.biome-blob.a { width: 520px; height: 520px; left: -120px; top: -100px;
-  background: radial-gradient(circle, var(--biome-c), transparent 65%); animation-delay: -2s; }
-.biome-blob.b { width: 640px; height: 640px; right: -180px; top: 18%;
-  background: radial-gradient(circle, var(--biome-b), transparent 65%); animation-delay: -8s; }
-.biome-blob.c { width: 480px; height: 480px; left: 20%; bottom: -160px;
-  background: radial-gradient(circle, var(--hud-accent-2), transparent 65%); animation-delay: -14s; }
+.biome-blob.a { width: 560px; height: 560px; left: -140px; top: -120px;
+  background: radial-gradient(circle, var(--biome-c),
+    color-mix(in oklab, var(--biome-c) 35%, transparent) 38%, transparent 68%);
+  animation-delay: -2s; }
+.biome-blob.b { width: 680px; height: 680px; right: -200px; top: 16%;
+  background: radial-gradient(circle, var(--biome-b),
+    color-mix(in oklab, var(--biome-b) 35%, transparent) 38%, transparent 68%);
+  animation-delay: -8s; }
+.biome-blob.c { width: 520px; height: 520px; left: 19%; bottom: -180px;
+  background: radial-gradient(circle, var(--hud-accent-2),
+    color-mix(in oklab, var(--hud-accent-2) 35%, transparent) 38%, transparent 68%);
+  animation-delay: -14s; }
 
+/* Translate-only: adding scale forces blur/layer re-rasterization per frame. */
 @keyframes hud-float {
-  0%, 100% { transform: translate(0,0) scale(1); }
-  50%      { transform: translate(40px, -30px) scale(1.08); }
+  0%, 100% { transform: translate(0,0); }
+  50%      { transform: translate(40px, -30px); }
 }
 
 /* ─── Glass / Slant / Hex / Notch ────────────────────────────── */
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   border: 1px solid var(--hairline);
   box-shadow:
     0 1px 0 rgba(255,255,255,.06) inset,
@@ -139,8 +148,8 @@
 .slant > .slant-body {
   transform: skewX(calc(-1 * var(--s)));
   background: var(--glass);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   border: 1px solid var(--hairline);
   box-shadow:
     0 1px 0 rgba(255,255,255,.06) inset,
@@ -669,8 +678,8 @@
   background:
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
     rgba(10, 22, 32, 0.88);
-  backdrop-filter: blur(30px) saturate(170%);
-  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
   border: 1px solid var(--hairline);
   box-shadow:
     0 1px 0 rgba(255,255,255,.08) inset,
@@ -845,8 +854,8 @@
   background:
     linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
     rgba(8, 18, 26, .72);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   border: 1px solid var(--hairline);
   overflow: hidden;
   box-shadow:
@@ -1062,8 +1071,8 @@
   background:
     linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
     rgba(8, 18, 26, .72);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
   border: 1px solid var(--hairline);
   overflow: hidden;
   box-shadow:
@@ -1638,4 +1647,48 @@
 .no-motion *, .no-motion *::before, .no-motion *::after {
   animation-duration: 0.001s !important;
   transition-duration: 0.05s !important;
+}
+
+/* ─── Performance ───────────────────────────────────────────── */
+/* While a dive is open the backdrop is dimmed and blurred anyway - pausing
+   the background animations lets backdrop-filter surfaces cache instead of
+   re-sampling every frame. */
+.dive-open .biome::before,
+.dive-open .biome-blob,
+.dive-open .core-glow {
+  animation-play-state: paused;
+}
+
+/* FX-lite mode (auto-enabled on low measured FPS / prefers-reduced-motion,
+   manual toggle in the telemetry row). Kills the GPU-expensive effects:
+   backdrop blurs, glow filters, and infinite ambient animations. */
+.perf-lite *,
+.perf-lite *::before,
+.perf-lite *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.perf-lite .glass { background: rgba(8, 18, 26, 0.86); }
+.perf-lite .dive-stage { background: rgba(7, 14, 21, 0.96); }
+.perf-lite .biome::before,
+.perf-lite .biome::after,
+.perf-lite .biome-blob,
+.perf-lite .breathe,
+.perf-lite .float-y,
+.perf-lite .spin-slow,
+.perf-lite .spin-slower,
+.perf-lite .pulse-ring::after,
+.perf-lite .scanline::before,
+.perf-lite .core-glow {
+  animation: none !important;
+}
+.perf-lite .biome-blob { opacity: .3; }
+.perf-lite .core-glow,
+.perf-lite .dive-halo,
+.perf-lite .lens-v-sprite .halo {
+  filter: none !important;
+  opacity: .18;
+}
+.perf-lite.dive-open .base-layer {
+  filter: brightness(.45);
 }

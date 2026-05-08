@@ -121,7 +121,16 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
     [femaleSpecies, female.ability],
   );
 
-  const ratio = GENDER_RATIOS[genderRatioIdx];
+  // Offspring gender ratio comes from the ♀ species (offspring = mother's
+  // line). pokemon.json carries maleRatio (-1 = genderless) via fetch-gender;
+  // the manual selector only kicks in when species data is missing.
+  const speciesMaleP: number | null | undefined =
+    femaleSpecies && typeof femaleSpecies.maleRatio === 'number'
+      ? femaleSpecies.maleRatio === -1
+        ? null
+        : femaleSpecies.maleRatio
+      : undefined;
+  const maleP = speciesMaleP !== undefined ? speciesMaleP : GENDER_RATIOS[genderRatioIdx].maleP;
 
   // Egg-group compatibility (Ditto pairs with anything breedable).
   const compatibility = useMemo(() => {
@@ -154,11 +163,11 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
   const targetGenderP =
     targetGender === ''
       ? 1
-      : ratio.maleP === null
+      : maleP === null
         ? 0
         : targetGender === 'male'
-          ? ratio.maleP
-          : 1 - ratio.maleP;
+          ? maleP
+          : 1 - maleP;
   const targetP = targetIvP * targetNatureP * targetAbilityP * targetGenderP;
 
   const slots = female.item === 'destiny-knot' || male.item === 'destiny-knot' ? 5 : 3;
@@ -281,21 +290,28 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   GENDER ·
-                  <select
-                    value={genderRatioIdx}
-                    onChange={(e) => setGenderRatioIdx(Number(e.target.value))}
-                    aria-label="Species gender ratio"
-                  >
-                    {GENDER_RATIOS.map((r, i) => (
-                      <option key={r.label} value={i}>
-                        {r.label}
-                      </option>
-                    ))}
-                  </select>
-                  {ratio.maleP !== null && (
+                  {speciesMaleP !== undefined ? (
                     <span className="text-[var(--ink-0)]">
-                      ♂ {pct(ratio.maleP)} · ♀ {pct(1 - ratio.maleP)}
+                      {speciesMaleP === null
+                        ? 'genderless'
+                        : `♂ ${pct(speciesMaleP)} · ♀ ${pct(1 - speciesMaleP)}`}{' '}
+                      <span className="text-[var(--ink-2)]">({femaleSpecies!.name} data)</span>
                     </span>
+                  ) : (
+                    <>
+                      <select
+                        value={genderRatioIdx}
+                        onChange={(e) => setGenderRatioIdx(Number(e.target.value))}
+                        aria-label="Species gender ratio"
+                      >
+                        {GENDER_RATIOS.map((r, i) => (
+                          <option key={r.label} value={i}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-[var(--ink-2)]">(set ♀ species for exact data)</span>
+                    </>
                   )}
                 </div>
               </div>

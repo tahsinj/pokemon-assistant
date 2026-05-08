@@ -94,6 +94,48 @@ export function App() {
   const [biome] = useState<BiomeName>('Verdant Dusk');
   const [coreSize, setCoreSize] = useState(360);
 
+  // FX-lite drops the GPU-expensive effects (backdrop blurs, glows, ambient
+  // animations). Explicit user choice persists; otherwise honor
+  // prefers-reduced-motion and auto-enable when measured FPS is low.
+  const [perfLite, setPerfLite] = useState(() => {
+    const saved = localStorage.getItem('cobblemon-fx');
+    if (saved === 'lite') return true;
+    if (saved === 'full') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (localStorage.getItem('cobblemon-fx')) return; // user decided
+    let raf = 0;
+    let frames = 0;
+    let start = 0;
+    const sample = (now: number) => {
+      if (!start) start = now;
+      frames++;
+      if (now - start < 1500) {
+        raf = requestAnimationFrame(sample);
+        return;
+      }
+      const fps = (frames * 1000) / (now - start);
+      if (fps < 40) setPerfLite(true);
+    };
+    // Wait out the startup jank (data load + first paint) before sampling.
+    const timer = window.setTimeout(() => {
+      raf = requestAnimationFrame(sample);
+    }, 3000);
+    return () => {
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const toggleFx = () => {
+    setPerfLite((prev) => {
+      localStorage.setItem('cobblemon-fx', prev ? 'full' : 'lite');
+      return !prev;
+    });
+  };
+
   const focusMon =
     HUD_TEAM.find((m) => m.id === (hoverMonId || activeMonId)) || HUD_TEAM[1];
 
@@ -220,7 +262,7 @@ export function App() {
     <div
       className={`hud-root hud-perspective relative w-screen overflow-hidden ${
         openTool ? 'dive-open' : ''
-      }`}
+      } ${perfLite ? 'perf-lite' : ''}`}
       style={{ height: '100vh' }}
     >
       <div className="biome">
@@ -320,18 +362,38 @@ export function App() {
           className="flex items-end justify-between gap-4 flex-wrap"
         >
           <TelemetryStrip biomeName={biome} />
-          <div className="key-hint">
-            <span>
-              <span style={{ color: 'var(--hud-accent)' }}>HEX</span> dive
-            </span>
-            <span className="sep">·</span>
-            <span>
-              <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> back
-            </span>
-            <span className="sep">·</span>
-            <span>
-              <span style={{ color: '#fff' }}>1–6</span> lead
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleFx}
+              title={
+                perfLite
+                  ? 'Effects reduced for performance - click for full visuals'
+                  : 'Click to reduce effects (faster on weak GPUs)'
+              }
+              className="key-hint cursor-pointer"
+              style={{ border: 'none' }}
+            >
+              <span>
+                <span style={{ color: perfLite ? 'var(--hud-accent)' : 'var(--hud-accent-2)' }}>
+                  FX
+                </span>{' '}
+                {perfLite ? 'lite' : 'full'}
+              </span>
+            </button>
+            <div className="key-hint">
+              <span>
+                <span style={{ color: 'var(--hud-accent)' }}>HEX</span> dive
+              </span>
+              <span className="sep">·</span>
+              <span>
+                <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> back
+              </span>
+              <span className="sep">·</span>
+              <span>
+                <span style={{ color: '#fff' }}>1–6</span> lead
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -14,6 +14,8 @@ export interface Pokemon {
   baseStats: BaseStats;
   evYield?: Record<string, number>;
   catchRate?: number;
+  /** Fraction of males 0..1; -1 = genderless. Absent when source data lacked it. */
+  maleRatio?: number;
   eggGroups: string[];
   height: number;
   weight: number;

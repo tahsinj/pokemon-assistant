@@ -14,6 +14,7 @@
     "pack:win": "npm run build && electron-builder --win --x64",
     "fetch-data": "node scripts/fetch-data.mjs",
     "fetch-items": "node scripts/fetch-items.mjs",
+    "fetch-gender": "node scripts/fetch-gender.mjs",
     "parse-spawns": "node scripts/spawn-parser.mjs",
     "diff-cobblemon": "node scripts/diff-cobblemon.mjs",
     "mod-mock-client": "node scripts/mod-mock-client.mjs",
