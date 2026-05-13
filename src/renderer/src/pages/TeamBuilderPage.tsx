@@ -483,7 +483,7 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
                     className="flex flex-col items-center gap-1"
                     title={`${d.weakCount} weak · ${d.resistCount} resist vs ${d.type}`}
                   >
-                    <TypeChip t={d.type.toLowerCase()} />
+                    <TypeChip t={d.type.toLowerCase()} fill />
                     <div className="font-mono-hud text-[13px]" style={{ color: c }}>
                       {score > 0 ? `+${score}` : score}
                     </div>
@@ -509,7 +509,7 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
                       className="flex flex-col items-center gap-1"
                       title={`Best STAB multiplier vs ${o.type}: ×${o.bestMult}`}
                     >
-                      <TypeChip t={o.type.toLowerCase()} />
+                      <TypeChip t={o.type.toLowerCase()} fill />
                       <div className="font-mono-hud text-[13px]" style={{ color: c }}>
                         ×{o.bestMult}
                       </div>

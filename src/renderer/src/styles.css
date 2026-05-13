@@ -46,7 +46,7 @@ body {
   box-shadow: var(--focus-ring);
 }
 
-.ds input,
+.ds input:not([type='range']),
 .ds select,
 .ds textarea {
   background: var(--bg-2);
@@ -57,7 +57,7 @@ body {
   font-size: 13px;
   font-family: var(--font-body);
 }
-.ds input:focus,
+.ds input:not([type='range']):focus,
 .ds select:focus,
 .ds textarea:focus {
   outline: none;

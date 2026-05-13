@@ -122,6 +122,8 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
   const [newBoxName, setNewBoxName] = useState('');
   const [renamingBox, setRenamingBox] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
+  const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
+  const [tabRenameDraft, setTabRenameDraft] = useState('');
   const [boxCounts, setBoxCounts] = useState<Record<string, number>>({});
   const [hasLastExport, setHasLastExport] = useState(false);
   const [dragOver, setDragOver] = useState<{ boxId: string; slot?: number } | null>(null);
@@ -215,6 +217,16 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
 
   const cancelRenameBox = () => {
     setRenamingBox(false);
+  };
+
+  const commitTabRename = async (box: PcBoxSummary) => {
+    setRenamingTabId(null);
+    if (!bridge?.pcBoxRename) return;
+    const next = tabRenameDraft.trim();
+    if (!next || next === box.name) return;
+    await bridge.pcBoxRename(box.id, next);
+    await refreshBoxes();
+    setStatusMsg(`Renamed box to “${next}”.`);
   };
 
   const openEmptySlot = (slot: number) => {
@@ -439,10 +451,32 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
       <div className="pc-layout">
         <div className="panel pc-box-tabs">
           <div className="box-tabs" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-            {boxes.map((b) => (
+            {boxes.map((b) =>
+              renamingTabId === b.id ? (
+                <input
+                  key={b.id}
+                  autoFocus
+                  type="text"
+                  className="box-tab box-tab-active"
+                  value={tabRenameDraft}
+                  aria-label="Box name"
+                  onChange={(e) => setTabRenameDraft(e.target.value)}
+                  onBlur={() => void commitTabRename(b)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void commitTabRename(b);
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setRenamingTabId(null);
+                    }
+                  }}
+                />
+              ) : (
               <button
                 key={b.id}
                 type="button"
+                title="Double-click to rename"
                 className={[
                   'box-tab',
                   b.id === activeBoxId ? 'box-tab-active' : '',
@@ -454,6 +488,10 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
                   setActiveBoxId(b.id);
                   setEditorMode('closed');
                   setSelectedSlot(null);
+                }}
+                onDoubleClick={() => {
+                  setTabRenameDraft(b.name);
+                  setRenamingTabId(b.id);
                 }}
                 onDragOver={(e) => {
                   const payload = readDragPayload(e.dataTransfer);
@@ -491,7 +529,8 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
                   {boxCounts[b.id] ?? '-'}/{PC_SLOTS_PER_BOX}
                 </span>
               </button>
-            ))}
+              ),
+            )}
           </div>
           <div style={{ display: 'flex', gap: 6, minWidth: 0 }}>
             <input

@@ -2,16 +2,28 @@ import { useMemo, useState } from 'react';
 import type { Pokemon, SpawnEntry } from '../lib/types';
 import { SpeciesList } from '../components/SpeciesList';
 import {
+  biomeLabel,
   inferSpawnContext,
   inferTimeBucket,
   inferWeather,
+  listBiomes,
   matchesSpawnFilters,
+  speciesInBiome,
   type SpawnContext,
   type SpawnFilters,
   type SpawnTimeBucket,
   type SpawnWeather,
 } from '../lib/spawnQuery';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
+import { PokemonSprite } from '../components/PokemonSprite';
+
+/** Rarest first for the biome reverse-search results. */
+const BUCKET_RANK: Record<string, number> = {
+  'ultra-rare': 0,
+  rare: 1,
+  uncommon: 2,
+  common: 3,
+};
 
 /** Atlas card gradient base per rarity bucket (design SpawnModule palette). */
 const BUCKET_COLORS: Record<string, string> = {
@@ -78,7 +90,9 @@ export function SpawnPage({
   spawns,
 }: { pokemon: Pokemon[]; spawns: Record<string, SpawnEntry[]> }) {
   const [selected, setSelected] = useState<Pokemon | null>(pokemon[0] || null);
+  const [mode, setMode] = useState<'species' | 'biome'>('species');
   const [bucket, setBucket] = useState('');
+  const [biomeF, setBiomeF] = useState('');
   const [timeF, setTimeF] = useState<SpawnTimeBucket | 'any'>('any');
   const [weatherF, setWeatherF] = useState<SpawnWeather | 'any'>('any');
   const [contextF, setContextF] = useState<SpawnContext | 'any'>('any');
@@ -88,6 +102,14 @@ export function SpawnPage({
     () => Object.values(spawns).reduce((a, b) => a + b.length, 0),
     [spawns],
   );
+
+  const pokemonById = useMemo(() => {
+    const m: Record<string, Pokemon> = {};
+    for (const p of pokemon) m[p.id] = p;
+    return m;
+  }, [pokemon]);
+
+  const biomes = useMemo(() => listBiomes(spawns), [spawns]);
 
   const filters: SpawnFilters = useMemo(
     () => ({
@@ -104,19 +126,183 @@ export function SpawnPage({
     [entries, filters],
   );
 
+  const biomeHits = useMemo(() => {
+    if (mode !== 'biome' || !biomeF) return [];
+    return speciesInBiome(spawns, biomeF, filters)
+      .map((h) => ({ ...h, p: pokemonById[h.speciesId] }))
+      .filter((h): h is typeof h & { p: Pokemon } => !!h.p)
+      .sort((a, b) => {
+        const ra = Math.min(...a.entries.map((e) => BUCKET_RANK[e.bucket || ''] ?? 4));
+        const rb = Math.min(...b.entries.map((e) => BUCKET_RANK[e.bucket || ''] ?? 4));
+        return ra !== rb ? ra - rb : a.p.name.localeCompare(b.p.name);
+      });
+  }, [mode, biomeF, spawns, filters, pokemonById]);
+
+  const sharedFilters = (
+    <>
+      <HudSelect
+        label="Rarity"
+        value={bucket}
+        onChange={setBucket}
+        options={[
+          ['', 'Any'],
+          ['common', 'common'],
+          ['uncommon', 'uncommon'],
+          ['rare', 'rare'],
+          ['ultra-rare', 'ultra-rare'],
+        ]}
+      />
+      <HudSelect
+        label="Time"
+        value={timeF}
+        onChange={(v) => setTimeF(v as SpawnTimeBucket | 'any')}
+        options={[
+          ['any', 'Any'],
+          ['day', 'Day'],
+          ['night', 'Night'],
+          ['dawn', 'Dawn'],
+          ['dusk', 'Dusk'],
+        ]}
+      />
+      <HudSelect
+        label="Weather"
+        value={weatherF}
+        onChange={(v) => setWeatherF(v as SpawnWeather | 'any')}
+        options={[
+          ['any', 'Any'],
+          ['clear', 'Clear'],
+          ['rain', 'Rain'],
+          ['storm', 'Storm'],
+        ]}
+      />
+      <HudSelect
+        label="Context"
+        value={contextF}
+        onChange={(v) => setContextF(v as SpawnContext | 'any')}
+        options={[
+          ['any', 'Any'],
+          ['surface', 'Surface'],
+          ['water', 'Water / fishing'],
+          ['underground', 'Underground / cave'],
+          ['fishing', 'Fishing preset'],
+          ['unknown', 'Unknown'],
+        ]}
+      />
+    </>
+  );
+
+  const modeToggle = (
+    <div className="flex items-center gap-1 mono-panel rounded-full p-0.5">
+      {(['species', 'biome'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => setMode(m)}
+          className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+            mode === m
+              ? 'bg-[var(--hud-accent-2)] text-black'
+              : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+          }`}
+        >
+          By {m}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <ModuleFrame
       kicker="◢ SPAWN LOCATIONS"
       title="Biome Atlas"
       subtitle={`${totalRules} active spawn rules`}
       side={
-        selected && (
-          <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
-            {selected.name.toUpperCase()} · {filteredEntries.length}/{entries.length} RULES
-          </div>
+        mode === 'biome' ? (
+          biomeF && (
+            <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
+              {biomeLabel(biomeF).toUpperCase()} · {biomeHits.length} SPECIES
+            </div>
+          )
+        ) : (
+          selected && (
+            <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
+              {selected.name.toUpperCase()} · {filteredEntries.length}/{entries.length} RULES
+            </div>
+          )
         )
       }
     >
+      {mode === 'biome' ? (
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            {modeToggle}
+            <HudSelect
+              label="Biome"
+              value={biomeF}
+              onChange={setBiomeF}
+              options={[['', 'Choose…'], ...biomes.map((b): [string, string] => [b, biomeLabel(b)])]}
+            />
+            {sharedFilters}
+          </div>
+
+          {!biomeF ? (
+            <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-6 text-center">
+              Pick a biome to see everything that spawns there.
+            </div>
+          ) : biomeHits.length === 0 ? (
+            <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-6 text-center">
+              Nothing spawns here with these filters.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 max-h-[62vh] overflow-y-auto pr-1 no-scrollbar">
+              {biomeHits.map(({ p, entries: hitEntries }) => {
+                const best = hitEntries.reduce((a, b) =>
+                  (BUCKET_RANK[a.bucket || ''] ?? 4) <= (BUCKET_RANK[b.bucket || ''] ?? 4) ? a : b,
+                );
+                const color = BUCKET_COLORS[best.bucket || ''] || '#8a9aa6';
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelected(p);
+                      setMode('species');
+                    }}
+                    className="relative rounded-[14px] overflow-hidden border border-white/10 text-left group"
+                    title={`Open ${p.name} in species view`}
+                  >
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: `linear-gradient(160deg, ${color}, #08131c 80%)`,
+                        opacity: 0.7,
+                      }}
+                    />
+                    <div className="absolute inset-0 stripes opacity-[.4]" />
+                    <div className="relative p-3 flex items-center gap-3">
+                      <PokemonSprite dex={p.dex} name={p.name} size="sm" />
+                      <div className="min-w-0">
+                        <div className="font-display text-[15px] font-bold text-white truncate">
+                          {p.name}
+                        </div>
+                        <div className="font-mono-hud text-[12px] uppercase tracking-wider text-white/70">
+                          {hitEntries.length} rule{hitEntries.length > 1 ? 's' : ''} · lv{' '}
+                          {best.level || '?'}
+                        </div>
+                      </div>
+                      <span
+                        className="ml-auto font-mono-hud text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: 'rgba(0,0,0,.5)', color }}
+                      >
+                        {best.bucket || 'unknown'}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="grid grid-cols-[minmax(260px,340px),1fr] gap-5 items-start">
         <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={selected?.id} onSelect={setSelected} />
@@ -126,54 +312,8 @@ export function SpawnPage({
           {selected && (
             <>
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                <HudSelect
-                  label="Rarity"
-                  value={bucket}
-                  onChange={setBucket}
-                  options={[
-                    ['', 'Any'],
-                    ['common', 'common'],
-                    ['uncommon', 'uncommon'],
-                    ['rare', 'rare'],
-                    ['ultra-rare', 'ultra-rare'],
-                  ]}
-                />
-                <HudSelect
-                  label="Time"
-                  value={timeF}
-                  onChange={(v) => setTimeF(v as SpawnTimeBucket | 'any')}
-                  options={[
-                    ['any', 'Any'],
-                    ['day', 'Day'],
-                    ['night', 'Night'],
-                    ['dawn', 'Dawn'],
-                    ['dusk', 'Dusk'],
-                  ]}
-                />
-                <HudSelect
-                  label="Weather"
-                  value={weatherF}
-                  onChange={(v) => setWeatherF(v as SpawnWeather | 'any')}
-                  options={[
-                    ['any', 'Any'],
-                    ['clear', 'Clear'],
-                    ['rain', 'Rain'],
-                    ['storm', 'Storm'],
-                  ]}
-                />
-                <HudSelect
-                  label="Context"
-                  value={contextF}
-                  onChange={(v) => setContextF(v as SpawnContext | 'any')}
-                  options={[
-                    ['any', 'Any'],
-                    ['surface', 'Surface'],
-                    ['water', 'Water / fishing'],
-                    ['underground', 'Underground / cave'],
-                    ['fishing', 'Fishing preset'],
-                    ['unknown', 'Unknown'],
-                  ]}
-                />
+                {modeToggle}
+                {sharedFilters}
               </div>
 
               {entries.length === 0 ? (
@@ -245,6 +385,7 @@ export function SpawnPage({
           )}
         </div>
       </div>
+      )}
     </ModuleFrame>
   );
 }

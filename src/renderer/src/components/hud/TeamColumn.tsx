@@ -70,52 +70,64 @@ function TeamSlot({
         </div>
       </div>
 
-      <div
-        className="relative"
-        style={{
-          width: 68,
-          height: 78,
-          transition: 'filter .25s ease, transform .25s ease',
-          transform: expanded ? 'scale(1.05)' : 'scale(1)',
-          filter: expanded ? 'brightness(1.1)' : 'none',
-        }}
-      >
+      {/* Hex, HP bar, and (lead only) LEAD tag stack in normal flow - nothing
+          absolute below the hex, so slots can never collide. Badges stay
+          pinned inside the hex corners. */}
+      <div className="flex flex-col items-center" style={{ width: 64 }}>
         <div
-          className="absolute inset-0 hex"
+          className="relative"
           style={{
-            background: `linear-gradient(160deg, ${tColor}, ${tColor2})`,
-            opacity: mon.hp > 0 ? 1 : 0.3,
-            filter: isActive ? 'brightness(1.2) saturate(1.2)' : 'brightness(.9)',
-            boxShadow: isActive ? `0 0 22px ${tColor}` : '0 6px 14px rgba(0,0,0,.4)',
+            width: 60,
+            height: 68,
+            transition: 'filter .25s ease, transform .25s ease',
+            transform: expanded ? 'scale(1.05)' : 'scale(1)',
+            filter: expanded ? 'brightness(1.1)' : 'none',
           }}
-        />
-        <div className="absolute inset-[3px] hex" style={{ background: 'rgba(8,18,26,.9)' }} />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <img
-            src={CP_SPRITE(mon.sprite)}
-            alt={mon.name}
-            className="sprite-img"
-            style={{ width: 48, height: 48, marginTop: -4 }}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
+        >
+          <div
+            className="absolute inset-0 hex"
+            style={{
+              background: `linear-gradient(160deg, ${tColor}, ${tColor2})`,
+              opacity: mon.hp > 0 ? 1 : 0.3,
+              filter: isActive ? 'brightness(1.2) saturate(1.2)' : 'brightness(.9)',
+              boxShadow: isActive ? `0 0 22px ${tColor}` : '0 6px 14px rgba(0,0,0,.4)',
             }}
           />
-        </div>
-        <div className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full font-mono-hud text-[11px] font-bold bg-black/80 border border-white/20 pointer-events-none">
-          {mon.lv}
-        </div>
-        <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-[60%] h-1 rounded-full bg-black/60 overflow-hidden pointer-events-none">
-          <div className="h-full" style={{ width: `${mon.hp * 100}%`, background: hp }} />
-        </div>
-        {mon.status && (
-          <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-[#a866c8] border border-black/40 font-mono-hud text-[11px] flex items-center justify-center uppercase font-bold pointer-events-none">
-            {mon.status}
+          <div className="absolute inset-[3px] hex" style={{ background: 'rgba(8,18,26,.9)' }} />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img
+              src={CP_SPRITE(mon.sprite)}
+              alt={mon.name}
+              className="sprite-img"
+              style={{ width: 40, height: 40 }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
           </div>
-        )}
+          <div className="absolute top-0.5 right-0.5 px-1 py-0.5 rounded-full font-mono-hud text-[10px] leading-none font-bold bg-black/80 border border-white/20 pointer-events-none">
+            {mon.lv}
+          </div>
+          {mon.status && (
+            <div className="absolute top-0.5 left-0.5 px-1 py-0.5 rounded-full bg-[#a866c8] border border-black/40 font-mono-hud text-[9px] leading-none flex items-center justify-center uppercase font-bold pointer-events-none">
+              {mon.status}
+            </div>
+          )}
+        </div>
+        <div className="w-[44px] h-1 rounded-full bg-black/60 overflow-hidden mt-1 pointer-events-none">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${mon.hp * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
+          />
+        </div>
         {isActive && (
           <div
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full font-mono-hud text-[10px] uppercase tracking-widest pointer-events-none"
-            style={{ background: 'var(--hud-accent)', color: '#18120a', boxShadow: '0 0 10px var(--hud-accent)' }}
+            className="mt-1 px-2 py-0.5 rounded-full font-mono-hud text-[10px] leading-none uppercase tracking-widest pointer-events-none"
+            style={{
+              background: 'var(--hud-accent)',
+              color: '#18120a',
+              boxShadow: '0 0 10px var(--hud-accent)',
+            }}
           >
             LEAD
           </div>
@@ -130,22 +142,23 @@ export function TeamColumn({
   activeId,
   onPick,
   onHover,
+  synced = false,
 }: {
   team: HudTeamMon[];
   activeId: string;
   onPick: (id: string) => void;
   onHover?: (id: string | null) => void;
+  /** True when the mod bridge is connected and this party mirrors the game. */
+  synced?: boolean;
 }) {
   const [hover, setHover] = useState<string | null>(null);
   const handleHover = (id: string | null) => {
     setHover(id);
     onHover?.(id);
   };
+  // No header here - the "SQUAD · 6/6" pill in the top row labels this rail.
   return (
-    <div className="flex flex-col gap-3 items-end">
-      <div className="font-mono-hud text-[14px] uppercase tracking-[.25em] text-[var(--hud-accent-2)] mb-1">
-        ◣ ACTIVE TEAM
-      </div>
+    <div className="flex flex-col gap-1.5 items-end">
       {team.map((mon) => (
         <TeamSlot
           key={mon.id}
@@ -156,8 +169,15 @@ export function TeamColumn({
           onClick={() => onPick(mon.id)}
         />
       ))}
-      <div className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mt-2">
-        6/6 · synced
+      <div
+        className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mt-1"
+        title={
+          synced
+            ? 'Mirroring your in-game party via the mod link'
+            : 'Sample squad - connects to your real party once the mod link is live'
+        }
+      >
+        {synced ? `${team.length}/6 · synced` : 'demo squad'}
       </div>
     </div>
   );

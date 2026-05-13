@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
 import path from 'node:path';
 import {
   createPcBox,
@@ -19,6 +19,12 @@ import { createCobblemonBridge, registerBridgeIpc } from './cobblemonBridge';
 
 const isDev = !app.isPackaged;
 
+// Dev runs inside the stock Electron binary, which carries the default
+// Electron icon - set ours at runtime. Packaged builds get the icon baked
+// into the executable by electron-builder (build/icon.ico), so this path
+// won't exist there and the empty image is simply skipped.
+const appIcon = nativeImage.createFromPath(path.join(__dirname, '../../build/icon.png'));
+
 const cobblemonBridge = createCobblemonBridge();
 
 function createWindow() {
@@ -29,6 +35,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0f172a',
     title: 'Cobblemon Assistant',
+    ...(appIcon.isEmpty() ? {} : { icon: appIcon }),
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
@@ -86,7 +93,13 @@ async function bootstrap() {
   createWindow();
 }
 
-app.whenReady().then(bootstrap);
+app.whenReady().then(() => {
+  // BrowserWindow icons are ignored on macOS - the Dock icon is set here.
+  if (process.platform === 'darwin' && !appIcon.isEmpty()) {
+    app.dock.setIcon(appIcon);
+  }
+  return bootstrap();
+});
 
 app.on('window-all-closed', () => {
   void cobblemonBridge.stop();

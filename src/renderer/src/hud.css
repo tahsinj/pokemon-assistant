@@ -286,6 +286,17 @@
   background: var(--tc, var(--t-normal));
 }
 
+/* Equal-width chips for grid layouts (coverage rows): fill the cell,
+   shrink padding/tracking so long names (FIGHTING, ELECTRIC) still fit. */
+.tchip-fill {
+  width: 100%;
+  min-width: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  letter-spacing: .04em;
+  overflow: hidden;
+}
+
 /* ─── Stat bar (gamey segmented) ────────────────────────────── */
 .statbar {
   position: relative; height: 10px; border-radius: 3px;
@@ -1612,8 +1623,9 @@
   color: var(--hud-accent-2);
 }
 
-/* Inputs / selects / textareas */
-.dive-content input,
+/* Inputs / selects / textareas (range sliders style themselves - text-input
+   padding/border displaces the native thumb track) */
+.dive-content input:not([type='range']),
 .dive-content select,
 .dive-content textarea {
   background: rgba(0, 0, 0, 0.35);

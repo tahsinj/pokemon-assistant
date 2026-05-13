@@ -6,10 +6,9 @@ import {
   BIOMES,
   HUD_TEAM,
   HUD_TOOLS,
-  HUD_TRAINER,
   type BiomeName,
 } from './lib/hudFixtures';
-import { TrainerBeacon } from './components/hud/TrainerBeacon';
+import type { ModBridgeStatus } from './lib/bridgeTypes';
 import { SyncCore } from './components/hud/SyncCore';
 import { TeamColumn } from './components/hud/TeamColumn';
 import { FocusLens } from './components/hud/FocusLens';
@@ -67,15 +66,15 @@ const TOOL_TITLES: Record<ToolId, string> = {
 };
 
 /**
- * Vertical budget that the Sync Core (and the Focus Lens column) must
- * fit in. Reserved heights:
- *   - row 1 (Trainer beacon / Squad pill): 80
- *   - row 3 (Telemetry / key hint):        56
- *   - outer padding (24 * 2):              48
- *   - row gaps (16 * 2):                   32
- *   Total reserved:                        216
+ * Vertical budget that the Sync Core must fit in. Reserved heights:
+ *   - row 1 (Squad pill):           36
+ *   - row 3 (Telemetry / key hint): 56
+ *   - outer padding (24 * 2):       48
+ *   - row gaps (16 * 2):            32
+ *   Total reserved:                 172
+ * (The Focus Lens column spans rows 1–2, so it doesn't constrain row 1.)
  */
-const RESERVED_V = 216;
+const RESERVED_V = 172;
 const CORE_MIN = 300;
 const CORE_MAX = 440;
 
@@ -139,6 +138,24 @@ export function App() {
   const focusMon =
     HUD_TEAM.find((m) => m.id === (hoverMonId || activeMonId)) || HUD_TEAM[1];
 
+  // Real companion-mod link state (the WS server lives in the Electron main
+  // process). Passive: we only listen - the bridge is started from the Live
+  // Battle Tracker.
+  const [bridgeStatus, setBridgeStatus] = useState<ModBridgeStatus | null>(null);
+  useEffect(() => {
+    const bridge = window.cobblemon?.modBridge;
+    if (!bridge) return;
+    let cancelled = false;
+    bridge.getStatus().then((s) => {
+      if (!cancelled) setBridgeStatus(s);
+    });
+    const off = bridge.onStatus(setBridgeStatus);
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, []);
+
   useEffect(() => {
     loadDesignFonts();
   }, []);
@@ -191,7 +208,7 @@ export function App() {
 
       // Dive origin tracks the orb at the center of the middle column.
       const orbX = 24 + lens + 20 + center / 2;
-      const orbY = 24 + 80 + 16 + vBudget / 2;
+      const orbY = 24 + 36 + 16 + vBudget / 2;
       const stageW = Math.min(1280, window.innerWidth * 0.92);
       const stageH = Math.min(860, window.innerHeight * 0.86);
       const stageL = (window.innerWidth - stageW) / 2;
@@ -224,6 +241,17 @@ export function App() {
       if (e.key === 'Escape' && openTool) {
         e.preventDefault();
         setOpenTool(null);
+        return;
+      }
+      // 1–6 picks the lead on the home HUD (matches the key-hint).
+      if (!openTool && e.key >= '1' && e.key <= '6') {
+        const target = e.target as HTMLElement | null;
+        if (target && /^(input|textarea|select)$/i.test(target.tagName)) return;
+        const mon = HUD_TEAM[Number(e.key) - 1];
+        if (mon) {
+          setActiveMonId(mon.id);
+          setHoverMonId(null);
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -281,10 +309,7 @@ export function App() {
           rowGap: '16px',
         }}
       >
-        {/* ROW 1 - Trainer beacon · (spacer) · Squad pill */}
-        <div style={{ gridColumn: '1 / 2', gridRow: '1 / 2', minWidth: 0 }}>
-          <TrainerBeacon trainer={HUD_TRAINER} />
-        </div>
+        {/* ROW 1 - (Focus Lens spans up from row 2) · spacer · Squad pill */}
         <div style={{ gridColumn: '2 / 3', gridRow: '1 / 2' }} />
         <div
           style={{ gridColumn: '3 / 4', gridRow: '1 / 2' }}
@@ -302,9 +327,9 @@ export function App() {
           </div>
         </div>
 
-        {/* ROW 2 - FocusLens · SyncCore · TeamColumn */}
+        {/* ROW 1–2 - FocusLens · SyncCore · TeamColumn */}
         <div
-          style={{ gridColumn: '1 / 2', gridRow: '2 / 3', minHeight: 0, minWidth: 0 }}
+          style={{ gridColumn: '1 / 2', gridRow: '1 / 3', minHeight: 0, minWidth: 0 }}
         >
           <FocusLens mon={focusMon} />
         </div>
@@ -348,6 +373,7 @@ export function App() {
           <TeamColumn
             team={HUD_TEAM}
             activeId={activeMonId}
+            synced={bridgeStatus?.kind === 'connected'}
             onPick={(id) => {
               setActiveMonId(id);
               setHoverMonId(null);
@@ -361,7 +387,7 @@ export function App() {
           style={{ gridColumn: '1 / 4', gridRow: '3 / 4' }}
           className="flex items-end justify-between gap-4 flex-wrap"
         >
-          <TelemetryStrip biomeName={biome} />
+          <TelemetryStrip bridgeStatus={bridgeStatus} />
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -381,17 +407,17 @@ export function App() {
                 {perfLite ? 'lite' : 'full'}
               </span>
             </button>
-            <div className="key-hint">
+            <div className="key-hint" title="Shortcuts: click a hex around the orb to open that tool, Esc closes it, number keys 1–6 set your lead Pokémon">
               <span>
-                <span style={{ color: 'var(--hud-accent)' }}>HEX</span> dive
+                <span style={{ color: 'var(--hud-accent)' }}>CLICK HEX</span> open tool
               </span>
               <span className="sep">·</span>
               <span>
-                <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> back
+                <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> close
               </span>
               <span className="sep">·</span>
               <span>
-                <span style={{ color: '#fff' }}>1–6</span> lead
+                <span style={{ color: '#fff' }}>1–6</span> set lead
               </span>
             </div>
           </div>

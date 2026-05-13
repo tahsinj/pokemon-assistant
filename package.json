@@ -61,6 +61,7 @@
       "output": "release"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -70,6 +71,9 @@
         }
       ],
       "artifactName": "CobblemonAssistant-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.icns"
     },
     "nsis": {
       "oneClick": false,

@@ -46,10 +46,21 @@ interface RuntimeOverrideManifest {
 }
 
 async function loadRuntimeOverrides(): Promise<void> {
+  // The overrides file is optional, and "absent" looks different per
+  // environment: http 404, a thrown TypeError under file:// (packaged app),
+  // or Vite's SPA fallback serving index.html with a 200. All of those are
+  // silent no-ops - only a present-but-malformed file deserves a warning.
+  let text: string;
   try {
     const r = await fetch('./data/cobblemon-overrides.json');
-    if (!r.ok) return; // 404 = no overrides file, which is fine
-    const manifest = (await r.json()) as RuntimeOverrideManifest;
+    if (!r.ok) return;
+    text = await r.text();
+  } catch {
+    return;
+  }
+  if (!text.trim() || text.trimStart().startsWith('<')) return;
+  try {
+    const manifest = JSON.parse(text) as RuntimeOverrideManifest;
     const reg = getGlobalRegistry();
     for (const m of manifest.moves ?? []) registerMoveOverride(reg, { ...m, source: 'USER' });
     for (const a of manifest.abilities ?? []) registerAbilityOverride(reg, { ...a, source: 'USER' });

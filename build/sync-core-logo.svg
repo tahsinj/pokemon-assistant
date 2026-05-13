@@ -1,0 +1,60 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#0e2a3a"></stop>
+      <stop offset="60%" stop-color="#08131c"></stop>
+      <stop offset="100%" stop-color="#040a10"></stop>
+    </radialGradient>
+    <radialGradient id="orb" cx="38%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#fff7e0"></stop>
+      <stop offset="32%" stop-color="#ffc636"></stop>
+      <stop offset="78%" stop-color="#b97d14"></stop>
+      <stop offset="100%" stop-color="#6e4408"></stop>
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffc636" stop-opacity="0.55"></stop>
+      <stop offset="70%" stop-color="#ffc636" stop-opacity="0.10"></stop>
+      <stop offset="100%" stop-color="#ffc636" stop-opacity="0"></stop>
+    </radialGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e9fff8"></stop>
+      <stop offset="45%" stop-color="#56e6c2"></stop>
+      <stop offset="100%" stop-color="#0a6b55"></stop>
+    </linearGradient>
+    <radialGradient id="gemHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#56e6c2" stop-opacity="0.85"></stop>
+      <stop offset="100%" stop-color="#56e6c2" stop-opacity="0"></stop>
+    </radialGradient>
+    <clipPath id="orbClip">
+      <circle cx="256" cy="256" r="150"></circle>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"></rect>
+
+  <g fill="none" stroke="#56e6c2" stroke-opacity="0.22" stroke-width="3">
+    <polygon points="256,52 432,154 432,358 256,460 80,358 80,154"></polygon>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2" stroke-dasharray="3 9">
+    <circle cx="256" cy="256" r="196"></circle>
+  </g>
+  <g stroke="#56e6c2" stroke-opacity="0.5" stroke-width="4" stroke-linecap="round">
+    <path d="M256 30 v22"></path><path d="M256 460 v22"></path>
+    <path d="M30 256 h22"></path><path d="M460 256 h22"></path>
+  </g>
+
+  <circle cx="256" cy="256" r="190" fill="url(#orbGlow)"></circle>
+  <circle cx="256" cy="256" r="150" fill="url(#orb)"></circle>
+  <g clip-path="url(#orbClip)">
+    <ellipse cx="256" cy="392" rx="160" ry="90" fill="#000000" opacity="0.38"></ellipse>
+    <ellipse cx="206" cy="196" rx="70" ry="48" fill="#fffdf3" opacity="0.55"></ellipse>
+  </g>
+
+  <circle cx="256" cy="256" r="86" fill="url(#gemHalo)"></circle>
+  <polygon points="256,196 308,226 308,286 256,316 204,286 204,226" fill="#08131c" opacity="0.55"></polygon>
+  <polygon points="256,206 299,231 299,281 256,306 213,281 213,231" fill="url(#gem)" stroke="#e9fff8" stroke-opacity="0.6" stroke-width="2"></polygon>
+  <polygon points="256,206 299,231 256,256 213,231" fill="#ffffff" opacity="0.28"></polygon>
+  <polygon points="256,256 299,281 256,306" fill="#000000" opacity="0.18"></polygon>
+
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#ffe9a8" stroke-opacity="0.35" stroke-width="2"></circle>
+</svg>

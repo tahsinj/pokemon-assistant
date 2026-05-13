@@ -194,7 +194,14 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                       aria-label={`${STAT_LABELS[k]} EV`}
                       className="ev-slider w-full"
                       style={{
-                        background: `linear-gradient(90deg, var(--hud-accent) 0%, var(--hud-accent-2) ${(ev / 252) * 100}%, rgba(255,255,255,.08) ${(ev / 252) * 100}%)`,
+                        // The 16px thumb is contained in the track, so its
+                        // center travels 8px..(100%-8px). Shift the fill stop
+                        // by (0.5 - fraction) * 16px to meet the thumb center.
+                        background: (() => {
+                          const f = ev / 252;
+                          const stop = `calc(${f * 100}% + ${(0.5 - f) * 16}px)`;
+                          return `linear-gradient(90deg, var(--hud-accent) 0%, var(--hud-accent-2) ${stop}, rgba(255,255,255,.08) ${stop})`;
+                        })(),
                       }}
                     />
                     <div className="font-mono-hud text-[14px] text-[var(--hud-accent-2)] text-right">

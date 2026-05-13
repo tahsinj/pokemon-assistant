@@ -48,3 +48,36 @@ export function matchesSpawnFilters(s: SpawnEntry, f: SpawnFilters): boolean {
   if (f.context && f.context !== 'any' && inferSpawnContext(s) !== f.context) return false;
   return true;
 }
+
+/** Human label for a biome tag: '#cobblemon:is_ocean' -> 'ocean'. */
+export function biomeLabel(b: string): string {
+  return b.replace('#cobblemon:', '').replace(/^is_/, '');
+}
+
+/** Sorted unique biome tags across every spawn entry. */
+export function listBiomes(spawns: Record<string, SpawnEntry[]>): string[] {
+  const set = new Set<string>();
+  for (const entries of Object.values(spawns)) {
+    for (const e of entries) for (const b of e.biomes) set.add(b);
+  }
+  return [...set].sort();
+}
+
+export interface BiomeHit {
+  speciesId: string;
+  entries: SpawnEntry[];
+}
+
+/** Reverse search: every species with at least one entry in `biome` passing `filters`. */
+export function speciesInBiome(
+  spawns: Record<string, SpawnEntry[]>,
+  biome: string,
+  filters: SpawnFilters = {},
+): BiomeHit[] {
+  const hits: BiomeHit[] = [];
+  for (const [speciesId, entries] of Object.entries(spawns)) {
+    const matching = entries.filter((e) => e.biomes.includes(biome) && matchesSpawnFilters(e, filters));
+    if (matching.length > 0) hits.push({ speciesId, entries: matching });
+  }
+  return hits;
+}

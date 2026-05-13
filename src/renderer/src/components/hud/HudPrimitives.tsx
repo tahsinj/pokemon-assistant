@@ -1,10 +1,22 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { HudType } from '../../lib/hudFixtures';
 
-export function TypeChip({ t, size = 'sm' }: { t: HudType | string; size?: 'sm' | 'md' }) {
+export function TypeChip({
+  t,
+  size = 'sm',
+  fill = false,
+}: {
+  t: HudType | string;
+  size?: 'sm' | 'md';
+  /** Stretch to the parent's width (equal chips in grid layouts). */
+  fill?: boolean;
+}) {
   const px = size === 'md' ? 'px-2.5 py-0.5 text-[11px]' : 'px-2 py-0 text-[9px]';
   return (
-    <span className={`tchip ${px}`} style={{ '--tc': `var(--t-${t})` } as CSSProperties}>
+    <span
+      className={`tchip ${px}${fill ? ' tchip-fill' : ''}`}
+      style={{ '--tc': `var(--t-${t})` } as CSSProperties}
+    >
       {t}
     </span>
   );
