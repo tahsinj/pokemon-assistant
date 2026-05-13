@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { loadDesignFonts } from './lib/loadDesignFonts';
 import { loadData } from './lib/data';
+import type { SmogonBundle } from './lib/smogon';
 import type { Pokemon, Move, SpawnEntry, HeldItem } from './lib/types';
 import {
   BIOMES,
@@ -83,6 +84,7 @@ export function App() {
   const [moves, setMoves] = useState<Record<string, Move>>({});
   const [items, setItems] = useState<HeldItem[]>([]);
   const [spawns, setSpawns] = useState<Record<string, SpawnEntry[]>>({});
+  const [smogon, setSmogon] = useState<SmogonBundle | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
@@ -170,6 +172,7 @@ export function App() {
         setMoves(d.moves);
         setItems(d.items);
         setSpawns(d.spawns);
+        setSmogon(d.smogon);
       })
       .catch((e: unknown) => {
         if (cancelled) return;
@@ -264,13 +267,13 @@ export function App() {
     if (!openTool || !pokemon) return null;
     switch (openTool) {
       case 'pokedex':
-        return <PokedexPage pokemon={pokemon} moves={moves} />;
+        return <PokedexPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'team':
-        return <TeamBuilderPage pokemon={pokemon} />;
+        return <TeamBuilderPage pokemon={pokemon} smogon={smogon} />;
       case 'battle':
         return <BattlePage pokemon={pokemon} moves={moves} items={items} />;
       case 'session':
-        return <BattleSessionPage pokemon={pokemon} moves={moves} />;
+        return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'counter':
         return <CounterPage pokemon={pokemon} moves={moves} />;
       case 'planner':
@@ -284,7 +287,7 @@ export function App() {
       default:
         return null;
     }
-  }, [openTool, pokemon, moves, items, spawns]);
+  }, [openTool, pokemon, moves, items, spawns, smogon]);
 
   return (
     <div

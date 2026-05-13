@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Pokemon, Move } from '../lib/types';
+import type { SmogonBundle, SmogonSet, SmogonSpeciesIntel } from '../lib/smogon';
 import { SpeciesList } from '../components/SpeciesList';
 import { bst } from '../lib/stats';
 import { suggestMoveset } from '../lib/recommender';
@@ -12,8 +13,14 @@ import { StatBar, TypeChip } from '../components/hud/HudPrimitives';
 export function PokedexPage({
   pokemon,
   moves,
-}: { pokemon: Pokemon[]; moves: Record<string, Move> }) {
+  smogon,
+}: { pokemon: Pokemon[]; moves: Record<string, Move>; smogon: SmogonBundle | null }) {
   const [selected, setSelected] = useState<Pokemon | null>(pokemon[0] || null);
+  const pokemonById = useMemo(() => {
+    const m: Record<string, Pokemon> = {};
+    for (const p of pokemon) m[p.id] = p;
+    return m;
+  }, [pokemon]);
   return (
     <ModuleFrame
       kicker="◢ POKÉDEX"
@@ -33,13 +40,35 @@ export function PokedexPage({
         <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={selected?.id} onSelect={setSelected} />
         </div>
-        <div className="min-w-0">{selected && <PokemonDetail p={selected} moves={moves} />}</div>
+        <div className="min-w-0">
+          {selected && (
+            <PokemonDetail
+              p={selected}
+              moves={moves}
+              smogon={smogon}
+              onSelectSpecies={(id) => {
+                const next = pokemonById[id];
+                if (next) setSelected(next);
+              }}
+            />
+          )}
+        </div>
       </div>
     </ModuleFrame>
   );
 }
 
-function PokemonDetail({ p, moves }: { p: Pokemon; moves: Record<string, Move> }) {
+function PokemonDetail({
+  p,
+  moves,
+  smogon,
+  onSelectSpecies,
+}: {
+  p: Pokemon;
+  moves: Record<string, Move>;
+  smogon: SmogonBundle | null;
+  onSelectSpecies: (id: string) => void;
+}) {
   const suggested = suggestMoveset(p, moves);
   const prof = defensiveProfile(p.types);
   const weaks = Object.entries(prof).filter(([, m]) => m > 1).sort((a, b) => b[1] - a[1]);
@@ -179,6 +208,15 @@ function PokemonDetail({ p, moves }: { p: Pokemon; moves: Record<string, Move> }
         </div>
       </div>
 
+      {/* Smogon competitive intel */}
+      {smogon?.species[p.id] && (
+        <CompetitiveIntel
+          intel={smogon.species[p.id]}
+          meta={smogon.meta}
+          onSelectSpecies={onSelectSpecies}
+        />
+      )}
+
       {/* Full learnset */}
       <div>
         <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
@@ -208,6 +246,172 @@ function PokemonDetail({ p, moves }: { p: Pokemon; moves: Record<string, Move> }
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const STAT_LABELS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
+
+function evLine(evs: number[]): string {
+  return evs
+    .map((v, i) => (v > 0 ? `${v} ${STAT_LABELS[i]}` : null))
+    .filter(Boolean)
+    .join(' / ');
+}
+
+function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-1.5 min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-display text-[14px] font-bold text-[var(--ink-0)] truncate">{name}</div>
+        {set.description && (
+          <button
+            type="button"
+            className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--hud-accent-2)] flex-shrink-0"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? '− HIDE' : '+ WHY'}
+          </button>
+        )}
+      </div>
+      <div className="font-mono-hud text-[12px] text-[var(--ink-1)]">
+        {set.item.join(' / ') || 'No item'} · {set.ability ?? '-'} · {set.nature ?? '-'}
+      </div>
+      {evLine(set.evs) && (
+        <div className="font-mono-hud text-[12px] text-[var(--ink-2)]">EVs {evLine(set.evs)}</div>
+      )}
+      <div className="flex flex-col gap-0.5 mt-0.5">
+        {set.moves.map((slot, i) => (
+          <div key={i} className="font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+            <span className="font-mono-hud text-[11px] text-[var(--ink-2)] mr-1.5">{i + 1}</span>
+            {slot.join(' / ')}
+          </div>
+        ))}
+      </div>
+      {open && set.description && (
+        <div className="font-mono-hud text-[12px] leading-relaxed text-[var(--ink-1)] mt-1 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
+          {set.description}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PctRow({ name, pct }: { name: string; pct: number }) {
+  return (
+    <div className="flex items-center justify-between gap-2 font-mono-hud text-[13px]">
+      <span className="text-[var(--ink-0)] truncate">{name}</span>
+      <span className="text-[var(--ink-2)] flex-shrink-0">{pct.toFixed(1)}%</span>
+    </div>
+  );
+}
+
+function CompetitiveIntel({
+  intel,
+  meta,
+  onSelectSpecies,
+}: {
+  intel: SmogonSpeciesIntel;
+  meta: SmogonBundle['meta'];
+  onSelectSpecies: (id: string) => void;
+}) {
+  const sets = Object.entries(intel.sets ?? {});
+  return (
+    <div>
+      <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+        ◢ COMPETITIVE INTEL ·{' '}
+        <span className="text-[var(--ink-2)]">
+          {meta.label} {meta.month} · {(intel.usage * 100).toFixed(1)}% usage · #{intel.rank}
+        </span>
+      </div>
+
+      {sets.length > 0 && (
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
+          {sets.map(([name, set]) => (
+            <SmogonSetCard key={name} name={name} set={set} />
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-2.5 mb-3">
+        <div className="mono-panel p-3 rounded-[10px]">
+          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+            Top moves
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {intel.moves.slice(0, 6).map((m) => (
+              <PctRow key={m.name} name={m.name} pct={m.pct} />
+            ))}
+          </div>
+        </div>
+        <div className="mono-panel p-3 rounded-[10px]">
+          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+            Items
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {intel.items.slice(0, 6).map((m) => (
+              <PctRow key={m.name} name={m.name} pct={m.pct} />
+            ))}
+          </div>
+        </div>
+        <div className="mono-panel p-3 rounded-[10px]">
+          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+            Spreads
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {intel.spreads.slice(0, 4).map((s, i) => (
+              <PctRow key={i} name={`${s.nature} ${evLine(s.evs)}`} pct={s.pct} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        {intel.teammates.length > 0 && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+              Common teammates
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {intel.teammates.slice(0, 8).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onSelectSpecies(t.id)}
+                  title={`On ${t.pct.toFixed(1)}% of ${intel.name} teams - click to open`}
+                  className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)] hover:border-[var(--hud-accent-2)] transition"
+                >
+                  {t.name} <span className="font-mono-hud text-[11px] text-[var(--ink-2)]">{Math.round(t.pct)}%</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {intel.checks.length > 0 && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+              Checks &amp; counters
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {intel.checks.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onSelectSpecies(c.id)}
+                  className="flex items-center justify-between gap-2 font-mono-hud text-[13px] text-left hover:bg-white/[.05] rounded px-1 -mx-1 transition"
+                  title="Matchup rating - fraction of encounters this check KOs or forces out. Click to open."
+                >
+                  <span className="text-[var(--ink-0)] truncate">{c.name}</span>
+                  <span style={{ color: c.score >= 0.7 ? 'var(--hud-danger)' : 'var(--ink-2)' }}>
+                    {(c.score * 100).toFixed(0)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

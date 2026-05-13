@@ -1,5 +1,6 @@
 import type { Pokemon, Move, SpawnEntry, HeldItem } from './types';
 import type { SyncResult } from './battle/cobblemonSync';
+import { loadSmogon, type SmogonBundle } from './smogon';
 import {
   getGlobalRegistry,
   registerMoveOverride,
@@ -16,6 +17,8 @@ let cache: {
   moves: Record<string, Move>;
   items: HeldItem[];
   spawns: Record<string, SpawnEntry[]>;
+  /** NatDex OU competitive intel; null when smogon.json hasn't been generated. */
+  smogon: SmogonBundle | null;
   /** Result of the auto-sync against Showdown when species data was loaded. */
   syncResult: SyncResult;
 } | null = null;
@@ -73,11 +76,12 @@ async function loadRuntimeOverrides(): Promise<void> {
 
 export async function loadData() {
   if (cache) return cache;
-  const [pokemon, moves, items, spawns] = await Promise.all([
+  const [pokemon, moves, items, spawns, smogon] = await Promise.all([
     fetchJson<Pokemon[]>('./data/pokemon.json', 'Pokémon data'),
     fetchJson<Record<string, Move>>('./data/moves.json', 'Moves data'),
     fetchJson<HeldItem[]>('./data/items.json', 'Held items data'),
     fetchJson<Record<string, SpawnEntry[]>>('./data/spawns.json', 'Spawn data'),
+    loadSmogon(),
   ]);
   const pokemonById: Record<string, Pokemon> = {};
   for (const p of pokemon) pokemonById[p.id] = p;
@@ -91,6 +95,6 @@ export async function loadData() {
   const syncResult = syncCobblemonSpecies(pokemon);
   await loadRuntimeOverrides();
 
-  cache = { pokemon, pokemonById, moves, items, spawns, syncResult };
+  cache = { pokemon, pokemonById, moves, items, spawns, smogon, syncResult };
   return cache;
 }

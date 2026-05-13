@@ -69,17 +69,21 @@ export function simulateTurn(
   // Tied -> assume player wins the tie (deterministic; a fuller model would use
   // explicit 50/50 branching).
   const playerFirst = order !== 'opponent-first';
+  // A fainted Pokémon's queued action is lost - even if the reducer auto-
+  // promotes a replacement, the replacement must not inherit the move. So the
+  // second actor only moves if it is still the same Pokémon that chose it.
+  const playerId = getActive(next, 'player')?.id;
+  const opponentId = getActive(next, 'opponent')?.id;
   if (playerFirst) {
     next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>, ctx);
-    // If the opponent's active fainted, they cannot act this turn.
     const opp = getActive(next, 'opponent');
-    if (opp && opp.battle.currentHP > 0) {
+    if (opp && opp.id === opponentId && opp.battle.currentHP > 0) {
       next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>, ctx);
     }
   } else {
     next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>, ctx);
     const us = getActive(next, 'player');
-    if (us && us.battle.currentHP > 0) {
+    if (us && us.id === playerId && us.battle.currentHP > 0) {
       next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>, ctx);
     }
   }

@@ -17,6 +17,8 @@ import { teamDamageVsOpponent } from '../lib/battle/stateBridge';
 import type { DamageOutcome } from '../lib/battle/damage';
 import { applyEventAndPredict, topCandidates } from '../lib/battle/predictor/predictor';
 import type { PredictorContext } from '../lib/battle/predictor/types';
+import { buildSmogonSetPool } from '../lib/battle/predictor/smogonPriors';
+import type { SmogonBundle } from '../lib/smogon';
 import { recommend } from '../lib/battle/search/expectimax';
 import type { Recommendation, SearchOptions } from '../lib/battle/search/types';
 import { parseShowdownTeam } from '../lib/showdownTeam';
@@ -67,9 +69,11 @@ const STATUS_BADGE: Record<NonNullable<StatusCondition>, { label: string; color:
 export function BattleSessionPage({
   pokemon,
   moves,
+  smogon,
 }: {
   pokemon: Pokemon[];
   moves: Record<string, Move>;
+  smogon: SmogonBundle | null;
 }) {
   const [state, setState] = useState<BattleState>(() => emptyBattleState());
   const [paste, setPaste] = useState('');
@@ -82,9 +86,18 @@ export function BattleSessionPage({
     return m;
   }, [pokemon]);
 
+  // Usage-statistics-backed opponent set priors .
+  // Species not in the bundle fall back to the archetype generator.
+  const customSetPool = useMemo(() => {
+    if (!smogon) return undefined;
+    const byId: Record<string, Pokemon> = {};
+    for (const p of pokemon) byId[p.id] = p;
+    return buildSmogonSetPool(smogon, byId);
+  }, [smogon, pokemon]);
+
   const predictorCtx = useMemo<PredictorContext>(
-    () => ({ pokemonByName, moves }),
-    [pokemonByName, moves],
+    () => ({ pokemonByName, moves, customSetPool }),
+    [pokemonByName, moves, customSetPool],
   );
 
   const dispatch = useCallback(

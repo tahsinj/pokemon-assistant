@@ -11,6 +11,8 @@ import {
 } from '../lib/showdownTeam';
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { massiveSharedWeaknesses, weaknessCounts } from '../lib/teamWeaknessSummary';
+import { suggestTeammates } from '../lib/teamSynergy';
+import type { SmogonBundle } from '../lib/smogon';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { bst } from '../lib/stats';
@@ -22,7 +24,10 @@ const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'dungeon', label: 'Dungeon sweeper' },
 ];
 
-export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
+export function TeamBuilderPage({
+  pokemon,
+  smogon,
+}: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(Pokemon | null)[]>([null, null, null, null, null, null]);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [teamTag, setTeamTag] = useState<RivalsTeamTag>('general');
@@ -99,19 +104,10 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
   const coverageCount = offensive.filter((o) => o.bestMult >= 2).length;
   const weakTypes = defensive.filter((d) => d.weakCount >= 2).map((d) => d.type);
   const suggestions = useMemo(() => {
-    if (!weakTypes.length) return [];
-    return pokemon
-      .map((p) => {
-        const score = weakTypes.reduce((acc, wt) => {
-          const m = effectiveness(wt, p.types);
-          return acc + (m === 0 ? 3 : m < 1 ? 2 : 0);
-        }, 0);
-        return { p, score };
-      })
-      .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8);
-  }, [weakTypes.join(','), pokemon]);
+    if (teamMembers.length === 0 || teamMembers.length >= 6) return [];
+    return suggestTeammates(teamMembers, pokemon, smogon, 6);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamMembers.map((m) => m.id).join(','), pokemon, smogon]);
 
   const notableWeak = useMemo(() => weaknessCounts(teamMembers).filter((r) => r.weakCount >= 2), [teamMembers]);
   const massiveWeak = useMemo(() => massiveSharedWeaknesses(teamMembers, 3), [teamMembers]);
@@ -521,22 +517,37 @@ export function TeamBuilderPage({ pokemon }: { pokemon: Pokemon[] }) {
           </div>
         </div>
 
-        {/* Suggested additions */}
+        {/* Suggested teammates - Smogon co-usage + coverage analysis */}
         {suggestions.length > 0 && (
           <div className="mono-panel p-3 rounded-[10px]">
-            {sectionHead('SUGGESTED ADDITIONS', `covers ${weakTypes.join(', ')}`)}
-            <div className="grid grid-cols-4 gap-2">
-              {suggestions.map(({ p, score }) => (
-                <div
+            {sectionHead(
+              'SUGGESTED TEAMMATES',
+              smogon
+                ? `${smogon.meta.label} ${smogon.meta.month} co-usage + coverage${weakTypes.length ? ` · stacked weak: ${weakTypes.join(', ')}` : ''}`
+                : 'type-coverage analysis',
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              {suggestions.map(({ p, reasons }) => (
+                <button
                   key={p.id}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04]"
+                  type="button"
+                  onClick={() => {
+                    const empty = team.findIndex((s) => s === null);
+                    if (empty >= 0) setSlot(empty, p);
+                  }}
+                  title="Click to add to the first empty slot"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
                 >
                   <PokemonSprite dex={p.dex} name={p.name} size="xs" />
-                  <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
-                    {p.name}
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                      {p.name}
+                    </span>
+                    <span className="block font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                      {reasons[0] ?? ''}
+                    </span>
                   </span>
-                  <span className="font-mono-hud text-[14px] text-[var(--hud-accent-2)]">+{score}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
