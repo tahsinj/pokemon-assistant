@@ -13,6 +13,7 @@ import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { massiveSharedWeaknesses, weaknessCounts } from '../lib/teamWeaknessSummary';
 import { suggestTeammates } from '../lib/teamSynergy';
 import type { SmogonBundle } from '../lib/smogon';
+import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { bst } from '../lib/stats';
@@ -30,6 +31,8 @@ export function TeamBuilderPage({
 }: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(Pokemon | null)[]>([null, null, null, null, null, null]);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
+  const [pickSource, setPickSource] = useState<'species' | 'pc'>('species');
+  const pc = usePcCollection();
   const [teamTag, setTeamTag] = useState<RivalsTeamTag>('general');
   const [teamName, setTeamName] = useState('My team');
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(undefined);
@@ -452,15 +455,75 @@ export function TeamBuilderPage({
         {/* Slot picker */}
         {pickingSlot !== null && (
           <div className="mono-panel p-3 rounded-[10px]">
-            {sectionHead(`PICK SPECIES FOR SLOT ${pickingSlot + 1}`)}
+            <div className="flex items-center justify-between gap-3">
+              {sectionHead(`PICK SPECIES FOR SLOT ${pickingSlot + 1}`)}
+              {pc.available && (
+                <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 mb-2">
+                  {(['species', 'pc'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setPickSource(s)}
+                      className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                        pickSource === s
+                          ? 'bg-[var(--hud-accent-2)] text-black'
+                          : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                      }`}
+                    >
+                      {s === 'species' ? 'All species' : `PC box · ${pc.mons.length}`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="h-[320px]">
-              <SpeciesList
-                pokemon={pokemon}
-                onSelect={(p) => {
-                  setSlot(pickingSlot, p);
-                  setPickingSlot(null);
-                }}
-              />
+              {pickSource === 'pc' && pc.available ? (
+                pc.mons.length === 0 ? (
+                  <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-6 text-center">
+                    {pc.loading ? 'Loading PC…' : 'No Pokémon stored in the PC yet.'}
+                  </div>
+                ) : (
+                  <div className="h-full overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
+                    {pc.mons.map((rec) => {
+                      const sp = pokemonById[rec.speciesId];
+                      if (!sp) return null;
+                      return (
+                        <button
+                          key={rec.id}
+                          type="button"
+                          onClick={() => {
+                            setSlot(pickingSlot, sp);
+                            setPickingSlot(null);
+                          }}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                        >
+                          <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
+                          <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                            {rec.nickname || sp.name}
+                            {rec.nickname && (
+                              <span className="font-mono-hud text-[11px] text-[var(--ink-2)] ml-1.5">{sp.name}</span>
+                            )}
+                          </span>
+                          <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0">
+                            Lv {rec.level}
+                          </span>
+                          <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                            {pc.boxNameById[rec.boxId] ?? 'Box'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                <SpeciesList
+                  pokemon={pokemon}
+                  onSelect={(p) => {
+                    setSlot(pickingSlot, p);
+                    setPickingSlot(null);
+                  }}
+                />
+              )}
             </div>
           </div>
         )}
