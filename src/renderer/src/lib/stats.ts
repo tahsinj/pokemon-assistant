@@ -56,3 +56,25 @@ export const STAT_LABELS: Record<StatKey, string> = {
 export function bst(s: BaseStats) {
   return s.hp + s.atk + s.def + s.spa + s.spd + s.spe;
 }
+
+/** Cobblemon evYield keys are snake_case British ("special_attack", "defence"). */
+export const EV_YIELD_KEY_TO_STAT: Record<string, StatKey> = {
+  hp: 'hp',
+  attack: 'atk',
+  defence: 'def',
+  special_attack: 'spa',
+  special_defence: 'spd',
+  speed: 'spe',
+};
+
+/** Non-zero EV yields as display entries, e.g. [{ label: 'SpA', value: 1 }]. */
+export function formatEvYield(y: Record<string, number> | undefined): { label: string; value: number }[] {
+  if (!y) return [];
+  const out: { label: string; value: number }[] = [];
+  for (const [k, v] of Object.entries(y)) {
+    const stat = EV_YIELD_KEY_TO_STAT[k];
+    if (!stat || !v) continue;
+    out.push({ label: STAT_LABELS[stat], value: v });
+  }
+  return out;
+}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Pokemon, BaseStats, StatKey } from '../lib/types';
 import { SpeciesList } from '../components/SpeciesList';
-import { NATURES, calcAllStats, STAT_LABELS } from '../lib/stats';
+import { NATURES, calcAllStats, STAT_LABELS, formatEvYield } from '../lib/stats';
 import { ModuleFrame, SpriteFrame } from '../components/hud/ModuleFrame';
 
 const ZERO: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
@@ -125,14 +125,20 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   ))}
                 </select>
               </label>
-              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-[var(--ink-1)] leading-snug">
-                EV YIELD ·{' '}
-                <span className="text-white">
-                  {Object.entries(species.evYield || {})
-                    .filter(([, v]) => v)
-                    .map(([k, v]) => `+${v} ${k}`)
-                    .join(', ') || 'none'}
-                </span>
+              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-[var(--ink-1)] leading-snug flex items-center flex-wrap gap-1.5">
+                EV YIELD
+                {formatEvYield(species.evYield).length === 0 ? (
+                  <span className="text-white">· none</span>
+                ) : (
+                  formatEvYield(species.evYield).map(({ label, value }) => (
+                    <span
+                      key={label}
+                      className="font-mono-hud text-[12px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 text-[var(--hud-accent-2)]"
+                    >
+                      +{value} {label}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
 
