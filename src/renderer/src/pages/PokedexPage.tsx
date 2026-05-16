@@ -349,15 +349,15 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
           </button>
         )}
       </div>
-      <div className="font-mono-hud text-[12px] text-[var(--ink-1)]">
+      <div className="font-mono-hud text-[13px] text-[var(--ink-1)]">
         {set.item.join(' / ') || 'No item'} · {set.ability ?? '-'} · {set.nature ?? '-'}
       </div>
       {evLine(set.evs) && (
-        <div className="font-mono-hud text-[12px] text-[var(--ink-2)]">EVs {evLine(set.evs)}</div>
+        <div className="font-mono-hud text-[12px] tabular-nums text-[var(--ink-2)]">EVs {evLine(set.evs)}</div>
       )}
       <div className="flex flex-col gap-0.5 mt-0.5">
         {set.moves.map((slot, i) => (
-          <div key={i} className="font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+          <div key={i} className="font-display text-[14px] font-semibold text-[var(--ink-0)] truncate">
             <span className="font-mono-hud text-[11px] text-[var(--ink-2)] mr-1.5">{i + 1}</span>
             {slot.join(' / ')}
           </div>
@@ -374,12 +374,22 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
 
 function PctRow({ name, pct }: { name: string; pct: number }) {
   return (
-    <div className="flex items-center justify-between gap-2 font-mono-hud text-[13px]">
-      <span className="text-[var(--ink-0)] truncate">{name}</span>
-      <span className="text-[var(--ink-2)] flex-shrink-0">{pct.toFixed(1)}%</span>
+    <div className="relative flex items-center justify-between gap-2 px-1.5 -mx-1.5 py-0.5 rounded-[4px] overflow-hidden">
+      <div
+        className="absolute inset-y-0 left-0 rounded-[4px] bg-[var(--hud-accent-2)] opacity-[.08]"
+        style={{ width: `${Math.min(100, pct)}%` }}
+      />
+      <span className="relative font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+        {name}
+      </span>
+      <span className="relative font-mono-hud text-[12px] tabular-nums text-[var(--ink-1)] flex-shrink-0">
+        {pct.toFixed(1)}%
+      </span>
     </div>
   );
 }
+
+const INTEL_HEADER = 'font-mono-hud text-[11px] uppercase tracking-[0.16em] text-[var(--hud-accent-2)] opacity-70 mb-1.5';
 
 function CompetitiveIntel({
   intel,
@@ -410,7 +420,7 @@ function CompetitiveIntel({
 
       <div className="grid grid-cols-3 gap-2.5 mb-3">
         <div className="mono-panel p-3 rounded-[10px]">
-          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+          <div className={INTEL_HEADER}>
             Top moves
           </div>
           <div className="flex flex-col gap-0.5">
@@ -420,7 +430,7 @@ function CompetitiveIntel({
           </div>
         </div>
         <div className="mono-panel p-3 rounded-[10px]">
-          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+          <div className={INTEL_HEADER}>
             Items
           </div>
           <div className="flex flex-col gap-0.5">
@@ -430,7 +440,7 @@ function CompetitiveIntel({
           </div>
         </div>
         <div className="mono-panel p-3 rounded-[10px]">
-          <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+          <div className={INTEL_HEADER}>
             Spreads
           </div>
           <div className="flex flex-col gap-0.5">
@@ -444,7 +454,7 @@ function CompetitiveIntel({
       <div className="grid grid-cols-2 gap-2.5">
         {intel.teammates.length > 0 && (
           <div className="mono-panel p-3 rounded-[10px]">
-            <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+            <div className={INTEL_HEADER}>
               Common teammates
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -464,7 +474,7 @@ function CompetitiveIntel({
         )}
         {intel.checks.length > 0 && (
           <div className="mono-panel p-3 rounded-[10px]">
-            <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
+            <div className={INTEL_HEADER}>
               Checks &amp; counters
             </div>
             <div className="flex flex-col gap-0.5">
@@ -473,11 +483,20 @@ function CompetitiveIntel({
                   key={c.id}
                   type="button"
                   onClick={() => onSelectSpecies(c.id)}
-                  className="flex items-center justify-between gap-2 font-mono-hud text-[13px] text-left hover:bg-white/[.05] rounded px-1 -mx-1 transition"
+                  className="relative flex items-center justify-between gap-2 text-left hover:bg-white/[.05] rounded-[4px] px-1.5 -mx-1.5 py-0.5 overflow-hidden transition"
                   title="Matchup rating - fraction of encounters this check KOs or forces out. Click to open."
                 >
-                  <span className="text-[var(--ink-0)] truncate">{c.name}</span>
-                  <span style={{ color: c.score >= 0.7 ? 'var(--hud-danger)' : 'var(--ink-2)' }}>
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-[4px] bg-[var(--hud-danger)] opacity-[.08]"
+                    style={{ width: `${Math.min(100, c.score * 100)}%` }}
+                  />
+                  <span className="relative font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+                    {c.name}
+                  </span>
+                  <span
+                    className="relative font-mono-hud text-[12px] tabular-nums font-semibold flex-shrink-0"
+                    style={{ color: c.score >= 0.7 ? 'var(--hud-danger)' : 'var(--ink-1)' }}
+                  >
                     {(c.score * 100).toFixed(0)}
                   </span>
                 </button>
