@@ -3,7 +3,7 @@ import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle, SmogonSet, SmogonSpeciesIntel } from '../lib/smogon';
 import { SpeciesList } from '../components/SpeciesList';
 import { bst } from '../lib/stats';
-import { suggestMoveset } from '../lib/recommender';
+import { suggestMoveset, tmPriorities } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
 import { getMergedSpecies } from '../lib/battle/dex';
 import { summarizeSpeciesDivergence } from '../lib/battle/overrides';
@@ -69,7 +69,13 @@ function PokemonDetail({
   smogon: SmogonBundle | null;
   onSelectSpecies: (id: string) => void;
 }) {
-  const suggested = suggestMoveset(p, moves);
+  const intel = smogon?.species[p.id] ?? null;
+  const [moveTab, setMoveTab] = useState<'best' | 'levelup' | 'tm'>('best');
+  const suggested =
+    moveTab === 'tm'
+      ? []
+      : suggestMoveset(p, moves, { pool: moveTab === 'levelup' ? 'levelup' : 'all', smogon: intel });
+  const tms = moveTab === 'tm' ? tmPriorities(p, moves, intel, 8) : [];
   const prof = defensiveProfile(p.types);
   const weaks = Object.entries(prof).filter(([, m]) => m > 1).sort((a, b) => b[1] - a[1]);
   const resists = Object.entries(prof).filter(([, m]) => m < 1 && m > 0).sort((a, b) => a[1] - b[1]);
@@ -193,19 +199,86 @@ function PokemonDetail({
         </div>
       </div>
 
-      {/* Recommended moveset */}
+      {/* Recommended moveset - tabbed: Smogon-blended / level-up only / TM priorities */}
       <div>
-        <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-          ◢ RECOMMENDED MOVESET ·{' '}
-          <span className="text-[var(--ink-2)]">
-            STAB + coverage, {p.baseStats.atk >= p.baseStats.spa ? 'physical' : 'special'} bias
-          </span>
+        <div className="flex flex-wrap items-center gap-3 mb-2">
+          <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+            ◢ RECOMMENDED MOVESET ·{' '}
+            <span className="text-[var(--ink-2)]">
+              {moveTab === 'tm'
+                ? 'TMs / tutors worth teaching'
+                : moveTab === 'levelup'
+                  ? 'self-learnt only'
+                  : intel
+                    ? 'Smogon-blended'
+                    : `STAB + coverage, ${p.baseStats.atk >= p.baseStats.spa ? 'physical' : 'special'} bias`}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 ml-auto">
+            {(
+              [
+                ['best', 'Best set'],
+                ['levelup', 'Level-up only'],
+                ['tm', 'TM priorities'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setMoveTab(id)}
+                className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                  moveTab === id
+                    ? 'bg-[var(--hud-accent-2)] text-black'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-4 gap-2.5">
-          {suggested.map(({ move, reasons }) => (
-            <MoveCard key={move.id} m={move} hint={reasons.join(' · ')} />
-          ))}
-        </div>
+        {moveTab === 'tm' ? (
+          tms.length === 0 ? (
+            <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+              No TM or tutor moves beyond its level-up learnset.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {tms.map(({ move, reasons }, i) => (
+                <div
+                  key={move.id}
+                  title={reasons.join(' · ')}
+                  className="grid grid-cols-[28px,1fr,auto,52px,56px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
+                >
+                  <span className="font-display text-[14px] font-bold text-[var(--hud-accent)]">{i + 1}</span>
+                  <div className="min-w-0">
+                    <div className="font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                      {move.name}
+                    </div>
+                    <div className="font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                      {reasons.join(' · ')}
+                    </div>
+                  </div>
+                  <TypeChip t={move.type.toLowerCase()} />
+                  <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+                    PWR {move.power || '-'}
+                  </span>
+                  <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">{move.category}</span>
+                </div>
+              ))}
+            </div>
+          )
+        ) : suggested.length === 0 ? (
+          <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+            Nothing learnable in this pool.
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2.5">
+            {suggested.map(({ move, reasons }) => (
+              <MoveCard key={move.id} m={move} hint={reasons.join(' · ')} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Smogon competitive intel */}

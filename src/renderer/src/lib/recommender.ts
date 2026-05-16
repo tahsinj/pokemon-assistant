@@ -1,11 +1,31 @@
 import type { Move, Pokemon } from './types';
+import type { SmogonSpeciesIntel } from './smogon';
 import { effectiveness } from './typechart';
 
+/**
+ * Learnset pools: 'levelup' = self-learnt (numeric learn tags), 'tm' = moves
+ * that must be taught (tm + tutor tags), 'all' = everything incl. egg/legacy.
+ */
+export type MovePool = 'all' | 'levelup' | 'tm';
+
+export interface MovesetOptions {
+  pool?: MovePool;
+  /** When present, move scores are biased toward NatDex OU ladder usage. */
+  smogon?: SmogonSpeciesIntel | null;
+}
+
+function inPool(learn: string, pool: MovePool): boolean {
+  if (pool === 'all') return true;
+  if (pool === 'levelup') return /^\d+$/.test(learn);
+  return learn === 'tm' || learn === 'tutor';
+}
+
 // Return pokemon's learnable move objects (that exist in our moves dataset).
-export function learnableMoves(p: Pokemon, moves: Record<string, Move>): Move[] {
+export function learnableMoves(p: Pokemon, moves: Record<string, Move>, pool: MovePool = 'all'): Move[] {
   const out: Move[] = [];
   const seen = new Set<string>();
   for (const m of p.moves) {
+    if (!inPool(m.learn, pool)) continue;
     const mv = moves[m.move];
     if (mv && !seen.has(mv.id)) {
       seen.add(mv.id);
@@ -15,6 +35,15 @@ export function learnableMoves(p: Pokemon, moves: Record<string, Move>): Move[] 
   return out;
 }
 
+const toMoveKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** Ladder usage % for a move, 0 when unknown. */
+function smogonUsagePct(intel: SmogonSpeciesIntel | null | undefined, move: Move): number {
+  if (!intel) return 0;
+  const hit = intel.moves.find((m) => toMoveKey(m.name) === move.id);
+  return hit?.pct ?? 0;
+}
+
 // Score a move for a given species. Higher = better pick.
 // Weights:
 //   - STAB bonus (+50) if type matches species
@@ -22,10 +51,22 @@ export function learnableMoves(p: Pokemon, moves: Record<string, Move>): Move[] 
 //   - Effective power: power * accuracy% (status floors to 40 if it has useful flags)
 //   - Priority +10
 //   - Status utility: +25 for common setup/utility flags
-export function scoreMove(p: Pokemon, m: Move): { score: number; reasons: string[] } {
+export function scoreMove(
+  p: Pokemon,
+  m: Move,
+  smogon?: SmogonSpeciesIntel | null,
+): { score: number; reasons: string[] } {
   const reasons: string[] = [];
   let score = 0;
   const physAttacker = p.baseStats.atk >= p.baseStats.spa;
+
+  // Ladder reality check: what NatDex OU players actually click, capped so
+  // usage informs rather than dictates.
+  const usagePct = smogonUsagePct(smogon, m);
+  if (usagePct > 0) {
+    score += Math.min(60, usagePct);
+    reasons.push(`${Math.round(usagePct)}% ladder usage`);
+  }
 
   if (m.category === 'Status') {
     const util = ['heal','reflectable','mirror','snatch','protect'];
@@ -64,10 +105,11 @@ export function scoreMove(p: Pokemon, m: Move): { score: number; reasons: string
 export function suggestMoveset(
   p: Pokemon,
   moves: Record<string, Move>,
+  opts: MovesetOptions = {},
 ): { move: Move; reasons: string[] }[] {
-  const pool = learnableMoves(p, moves);
+  const pool = learnableMoves(p, moves, opts.pool ?? 'all');
   const scored = pool
-    .map((m) => ({ move: m, ...scoreMove(p, m) }))
+    .map((m) => ({ move: m, ...scoreMove(p, m, opts.smogon) }))
     .sort((a, b) => b.score - a.score);
 
   const picked: { move: Move; reasons: string[] }[] = [];
@@ -109,6 +151,25 @@ export function suggestMoveset(
     }
   }
   return picked.slice(0, 4);
+}
+
+/**
+ * TMs / tutor moves worth teaching, ranked. Excludes moves the species also
+ * learns by level-up (those come free) - note a move can appear in the
+ * learnset twice with different tags.
+ */
+export function tmPriorities(
+  p: Pokemon,
+  moves: Record<string, Move>,
+  smogon?: SmogonSpeciesIntel | null,
+  limit = 10,
+): { move: Move; score: number; reasons: string[] }[] {
+  const levelIds = new Set(learnableMoves(p, moves, 'levelup').map((m) => m.id));
+  return learnableMoves(p, moves, 'tm')
+    .filter((m) => !levelIds.has(m.id))
+    .map((m) => ({ move: m, ...scoreMove(p, m, smogon) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 // Score how well "candidate" counters "target". Higher = better counter.
