@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Pokemon } from '../lib/types';
-import type { LoadedTeamRecord, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
+import type { LoadedTeamRecord, MemberDetail, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
+import { setTeamDraft } from '../lib/teamDraft';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { TYPES, effectiveness } from '../lib/typechart';
@@ -25,11 +26,19 @@ const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'dungeon', label: 'Dungeon sweeper' },
 ];
 
+/** A filled squad slot: the species plus whatever set details we know. */
+export interface TeamSlot {
+  p: Pokemon;
+  detail: MemberDetail | null;
+}
+
+const EMPTY_TEAM: (TeamSlot | null)[] = [null, null, null, null, null, null];
+
 export function TeamBuilderPage({
   pokemon,
   smogon,
 }: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
-  const [team, setTeam] = useState<(Pokemon | null)[]>([null, null, null, null, null, null]);
+  const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<'species' | 'pc'>('species');
   const pc = usePcCollection();
@@ -66,13 +75,18 @@ export function TeamBuilderPage({
     void refreshSaved();
   }, [refreshSaved]);
 
-  const setSlot = (idx: number, p: Pokemon | null) => {
+  const setSlot = (idx: number, p: Pokemon | null, detail: MemberDetail | null = null) => {
     const next = [...team];
-    next[idx] = p;
+    next[idx] = p ? { p, detail } : null;
     setTeam(next);
   };
 
-  const teamMembers = team.filter((x): x is Pokemon => !!x);
+  const teamMembers = team.filter((x): x is TeamSlot => !!x).map((s) => s.p);
+
+  // Mirror the squad for other pages (damage calc / battle session imports).
+  useEffect(() => {
+    setTeamDraft(team.map((s) => (s ? { speciesId: s.p.id, detail: s.detail } : null)));
+  }, [team]);
 
   const defensive = useMemo(() => {
     const rows: { type: string; weakCount: number; resistCount: number }[] = [];
@@ -122,13 +136,23 @@ export function TeamBuilderPage({
       setImportMsg('No Pokémon blocks found. Paste a Showdown export (blank line between species).');
       return;
     }
-    const next: (Pokemon | null)[] = [null, null, null, null, null, null];
+    const next: (TeamSlot | null)[] = [null, null, null, null, null, null];
     const misses: string[] = [];
     parsed.forEach((block, i) => {
       if (i >= 6) return;
       const hit = resolveSpeciesName(fuse, block.species);
-      if (hit) next[i] = hit;
-      else misses.push(block.species);
+      if (hit) {
+        next[i] = {
+          p: hit,
+          detail: {
+            item: block.item ?? null,
+            ability: block.ability ?? null,
+            nature: block.nature ?? null,
+            evs: block.evs && Object.keys(block.evs).length ? block.evs : null,
+            moves: block.moves.length ? block.moves : null,
+          },
+        };
+      } else misses.push(block.species);
     });
     setTeam(next);
     setLastParsedExport(exportShowdownFromParsed(parsed));
@@ -143,7 +167,7 @@ export function TeamBuilderPage({
     const text =
       lastParsedExport && teamMembers.length
         ? lastParsedExport
-        : exportShowdownTeamSimple(team.map((p) => p?.name));
+        : exportShowdownTeamSimple(team.map((s) => s?.p.name));
     try {
       await navigator.clipboard.writeText(text);
       setImportMsg('Copied Showdown text to clipboard.');
@@ -153,16 +177,16 @@ export function TeamBuilderPage({
   };
 
   const buildSavePayload = (): SaveTeamPayload => {
-    const showdownExport = paste.trim() || exportShowdownTeamSimple(team.map((p) => p?.name)) || null;
-    const members = team.map((p, slot) => ({
+    const showdownExport = paste.trim() || exportShowdownTeamSimple(team.map((s) => s?.p.name)) || null;
+    const members = team.map((s, slot) => ({
       slot,
-      speciesId: p?.id ?? null,
-      speciesDisplay: p?.name ?? '',
-      item: null,
-      ability: null,
-      nature: null,
-      evs: null,
-      moves: null,
+      speciesId: s?.p.id ?? null,
+      speciesDisplay: s?.p.name ?? '',
+      item: s?.detail?.item ?? null,
+      ability: s?.detail?.ability ?? null,
+      nature: s?.detail?.nature ?? null,
+      evs: s?.detail?.evs ?? null,
+      moves: s?.detail?.moves ?? null,
     }));
     return {
       id: currentTeamId,
@@ -196,10 +220,19 @@ export function TeamBuilderPage({
     setTeamName(rec.name);
     setTeamTag((RIVALS_TAGS.some((t) => t.id === rec.rivenTag) ? rec.rivenTag : 'general') as RivalsTeamTag);
     setPaste(rec.showdownExport || '');
-    const next: (Pokemon | null)[] = [null, null, null, null, null, null];
+    const next: (TeamSlot | null)[] = [null, null, null, null, null, null];
     for (const m of rec.members) {
       if (m.slot < 0 || m.slot > 5) continue;
-      next[m.slot] = m.speciesId ? pokemonById[m.speciesId] ?? null : null;
+      const sp = m.speciesId ? pokemonById[m.speciesId] ?? null : null;
+      const hasDetail = m.item || m.ability || m.nature || m.evs || m.moves?.length;
+      next[m.slot] = sp
+        ? {
+            p: sp,
+            detail: hasDetail
+              ? { item: m.item, ability: m.ability, nature: m.nature, evs: m.evs, moves: m.moves }
+              : null,
+          }
+        : null;
     }
     setTeam(next);
     setImportMsg(`Loaded “${rec.name}”.`);
@@ -210,8 +243,53 @@ export function TeamBuilderPage({
     await bridge.teamsDelete(id);
     if (currentTeamId === id) {
       setCurrentTeamId(undefined);
-      setTeam([null, null, null, null, null, null]);
+      setTeam(EMPTY_TEAM);
     }
+    await refreshSaved();
+  };
+
+  const onNew = () => {
+    setTeam(EMPTY_TEAM);
+    setCurrentTeamId(undefined);
+    setTeamName('My team');
+    setPaste('');
+    setLastParsedExport(null);
+    setImportMsg('Started a new team.');
+  };
+
+  const onSaveAs = async () => {
+    if (!bridge?.teamsSave) {
+      setImportMsg('Saving requires the desktop app (Electron).');
+      return;
+    }
+    try {
+      // Force an insert regardless of the loaded team.
+      const { id } = await bridge.teamsSave({ ...buildSavePayload(), id: undefined });
+      setCurrentTeamId(id);
+      setImportMsg(`Saved a copy as “${teamName.trim() || 'Untitled'}”.`);
+      await refreshSaved();
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : 'Save failed.');
+    }
+  };
+
+  const [renamingTeamId, setRenamingTeamId] = useState<string | null>(null);
+  const [teamRenameDraft, setTeamRenameDraft] = useState('');
+
+  const commitTeamRename = async (id: string) => {
+    setRenamingTeamId(null);
+    const next = teamRenameDraft.trim();
+    if (!next || !bridge?.teamsLoad || !bridge.teamsSave) return;
+    const rec = (await bridge.teamsLoad(id)) as LoadedTeamRecord | null;
+    if (!rec || rec.name === next) return;
+    await bridge.teamsSave({
+      id: rec.id,
+      name: next,
+      rivenTag: rec.rivenTag,
+      showdownExport: rec.showdownExport,
+      members: rec.members,
+    });
+    if (currentTeamId === id) setTeamName(next);
     await refreshSaved();
   };
 
@@ -303,47 +381,6 @@ export function TeamBuilderPage({
                 COPY EXPORT
               </button>
             </div>
-            {savedTeams.length > 0 && (
-              <div className="mt-3">
-                <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">
-                  Saved locally
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {savedTeams.map((t) => (
-                    <div
-                      key={t.id}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03]"
-                    >
-                      <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
-                        {t.name}
-                      </span>
-                      <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]">
-                        {t.rivenTag}
-                      </span>
-                      <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">
-                        {new Date(t.updatedAt).toLocaleString()}
-                      </span>
-                      <button
-                        type="button"
-                        className="chunky ghost font-display text-[11px]"
-                        style={{ padding: '3px 8px' }}
-                        onClick={() => void onLoad(t.id)}
-                      >
-                        LOAD
-                      </button>
-                      <button
-                        type="button"
-                        className="chunky ghost font-display text-[11px]"
-                        style={{ '--c': 'var(--hud-danger)', padding: '3px 8px' } as React.CSSProperties}
-                        onClick={() => void onDelete(t.id)}
-                      >
-                        DEL
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -375,7 +412,8 @@ export function TeamBuilderPage({
 
         {/* Squad cards - design TeamModule grid */}
         <div className="grid grid-cols-3 gap-3">
-          {team.map((p, i) => {
+          {team.map((slot, i) => {
+            const p = slot?.p;
             if (!p) {
               return (
                 <button
@@ -492,7 +530,13 @@ export function TeamBuilderPage({
                           key={rec.id}
                           type="button"
                           onClick={() => {
-                            setSlot(pickingSlot, sp);
+                            setSlot(pickingSlot, sp, {
+                              item: rec.item,
+                              ability: rec.ability || null,
+                              nature: rec.nature || null,
+                              evs: { ...rec.evs },
+                              moves: rec.moves.length ? rec.moves : null,
+                            });
                             setPickingSlot(null);
                           }}
                           className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
@@ -615,6 +659,109 @@ export function TeamBuilderPage({
             </div>
           </div>
         )}
+
+        {/* Saved teams - always visible, multiple squads */}
+        <div className="mono-panel p-3 rounded-[10px]">
+          <div className="flex items-center justify-between gap-3">
+            {sectionHead('SAVED TEAMS', savedTeams.length ? `${savedTeams.length} stored locally` : 'none yet')}
+            <div className="flex items-center gap-1.5 mb-2">
+              <button
+                type="button"
+                className="chunky ghost font-display text-[11px]"
+                style={{ padding: '4px 10px' }}
+                onClick={onNew}
+              >
+                NEW
+              </button>
+              <button
+                type="button"
+                className="chunky ghost font-display text-[11px]"
+                style={{ padding: '4px 10px' }}
+                onClick={() => void onSaveAs()}
+                disabled={teamMembers.length === 0}
+              >
+                SAVE AS
+              </button>
+            </div>
+          </div>
+          {savedTeams.length === 0 ? (
+            <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+              Build a squad and hit SAVE TEAM - every save is its own named team.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {savedTeams.map((t) => (
+                <div
+                  key={t.id}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-[8px] border bg-white/[.03] ${
+                    t.id === currentTeamId ? 'border-[var(--hud-accent-2)]/60' : 'border-white/5'
+                  }`}
+                >
+                  {renamingTeamId === t.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={teamRenameDraft}
+                      aria-label="Team name"
+                      onChange={(e) => setTeamRenameDraft(e.target.value)}
+                      onBlur={() => void commitTeamRename(t.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void commitTeamRename(t.id);
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setRenamingTeamId(null);
+                        }
+                      }}
+                      className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-3 py-0.5 font-display text-[14px] font-semibold text-white outline-none focus:border-[var(--hud-accent-2)]"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      title="Double-click to rename"
+                      onDoubleClick={() => {
+                        setTeamRenameDraft(t.name);
+                        setRenamingTeamId(t.id);
+                      }}
+                      onClick={() => void onLoad(t.id)}
+                      className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-left text-[var(--ink-0)] hover:text-white transition"
+                    >
+                      {t.name}
+                      {t.id === currentTeamId && (
+                        <span className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--hud-accent-2)] ml-2">
+                          loaded
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]">
+                    {t.rivenTag}
+                  </span>
+                  <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">
+                    {new Date(t.updatedAt).toLocaleString()}
+                  </span>
+                  <button
+                    type="button"
+                    className="chunky ghost font-display text-[11px]"
+                    style={{ padding: '3px 8px' }}
+                    onClick={() => void onLoad(t.id)}
+                  >
+                    LOAD
+                  </button>
+                  <button
+                    type="button"
+                    className="chunky ghost font-display text-[11px]"
+                    style={{ '--c': 'var(--hud-danger)', padding: '3px 8px' } as React.CSSProperties}
+                    onClick={() => void onDelete(t.id)}
+                  >
+                    DEL
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </ModuleFrame>
   );
