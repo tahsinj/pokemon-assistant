@@ -1,0 +1,23 @@
+/**
+ * Cross-page snapshot of the Team Builder's current squad. Pages unmount on
+ * tab switch (App renders one page at a time), so BattlePage/BattleSessionPage
+ * can't read the builder's state directly - the builder mirrors it here on
+ * every change instead. Module singleton, renderer-session lifetime only.
+ */
+
+import type { MemberDetail } from './bridgeTypes';
+
+export interface TeamDraftMember {
+  speciesId: string;
+  detail: MemberDetail | null;
+}
+
+let draft: (TeamDraftMember | null)[] = [null, null, null, null, null, null];
+
+export function setTeamDraft(members: (TeamDraftMember | null)[]): void {
+  draft = members.slice(0, 6);
+}
+
+export function getTeamDraft(): (TeamDraftMember | null)[] {
+  return draft;
+}

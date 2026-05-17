@@ -55,6 +55,9 @@ export interface SavePcPokemonPayload {
   notes?: string | null;
 }
 
+/** The optional set details a team slot can carry beyond its species. */
+export type MemberDetail = Pick<TeamMemberPersist, 'item' | 'ability' | 'nature' | 'evs' | 'moves'>;
+
 export interface TeamMemberPersist {
   slot: number;
   speciesId: string | null;
