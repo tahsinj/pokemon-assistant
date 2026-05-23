@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { BaseStats, Move, Pokemon, StatKey } from '../lib/types';
 import {
   EMPTY_FIELD,
@@ -19,6 +19,9 @@ import type { HeldItem } from '../lib/types';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { suggestMoveset } from '../lib/recommender';
 import { dexForSpeciesName } from '../lib/pokemonSprite';
+import { usePcCollection } from '../lib/usePcCollection';
+import { fromPcRecord, fromTeamMember, toCombatFields, type CombatImportInput } from '../lib/toCombatSpec';
+import { getTeamDraft } from '../lib/teamDraft';
 import { ModuleFrame, SectionHead, SpriteFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 
@@ -163,10 +166,29 @@ export function BattlePage({
 
   const fuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
 
+  const pokemonById = useMemo(() => {
+    const m: Record<string, Pokemon> = {};
+    for (const p of pokemon) m[p.id] = p;
+    return m;
+  }, [pokemon]);
+
   const [paste, setPaste] = useState('');
   const [parseMsg, setParseMsg] = useState<string | null>(null);
   const [team, setTeam] = useState<(CombatSpec | null)[]>([null, null, null, null, null, null]);
   const [activeSlot, setActiveSlot] = useState(0);
+
+  // Import sources beyond the Showdown paste.
+  const pc = usePcCollection();
+  const [showPcPicker, setShowPcPicker] = useState(false);
+  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string }[]>([]);
+  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  useEffect(() => {
+    if (!bridge?.teamsList) return;
+    bridge
+      .teamsList()
+      .then((rows) => setSavedTeams(rows.map((r) => ({ id: r.id, name: r.name }))))
+      .catch(() => setSavedTeams([]));
+  }, [bridge]);
 
   const [opponent, setOpponent] = useState<CombatSpec>(emptySpec());
   const [field, setField] = useState<FieldSpec>(EMPTY_FIELD);
@@ -232,6 +254,72 @@ export function BattlePage({
     } else {
       setParseMsg(`Imported ${parsed.length} Pokémon.`);
     }
+  };
+
+  const specFromImport = (input: CombatImportInput): CombatSpec | null => {
+    const species =
+      (input.speciesId && pokemonById[input.speciesId]) ||
+      pokemonByName[input.speciesDisplay.toLowerCase()] ||
+      resolveSpeciesName(fuse, input.speciesDisplay);
+    if (!species) return null;
+    const fallback = suggestMoveset(species, moves).map((s) => s.move.name);
+    return { ...emptySpec(species.name), ...toCombatFields(input, species, fallback) };
+  };
+
+  const importOne = (input: CombatImportInput) => {
+    const spec = specFromImport(input);
+    if (!spec) return;
+    const empty = team.findIndex((s) => s === null);
+    const idx = empty >= 0 ? empty : activeSlot;
+    setSlot(idx, spec);
+    setParseMsg(`Loaded ${spec.speciesName} into slot ${idx + 1}.`);
+  };
+
+  const importMany = (inputs: CombatImportInput[], label: string) => {
+    const next: (CombatSpec | null)[] = [null, null, null, null, null, null];
+    let count = 0;
+    inputs.slice(0, 6).forEach((input, i) => {
+      const spec = specFromImport(input);
+      if (spec) {
+        next[i] = spec;
+        count++;
+      }
+    });
+    setTeam(next);
+    setParseMsg(`Loaded ${count} Pokémon from ${label}.`);
+  };
+
+  const onImportSavedTeam = async (id: string) => {
+    if (!bridge?.teamsLoad) return;
+    const rec = await bridge.teamsLoad(id);
+    if (!rec) return;
+    importMany(
+      rec.members.filter((m) => m.speciesId).map((m) => fromTeamMember(m)),
+      `“${rec.name}”`,
+    );
+  };
+
+  const onImportBuilderDraft = () => {
+    const draft = getTeamDraft().filter((d): d is NonNullable<typeof d> => !!d);
+    if (!draft.length) {
+      setParseMsg('Team Builder has no squad in progress.');
+      return;
+    }
+    importMany(
+      draft.map((d) =>
+        fromTeamMember({
+          slot: 0,
+          speciesId: d.speciesId,
+          speciesDisplay: pokemonById[d.speciesId]?.name ?? d.speciesId,
+          item: d.detail?.item ?? null,
+          ability: d.detail?.ability ?? null,
+          nature: d.detail?.nature ?? null,
+          evs: d.detail?.evs ?? null,
+          moves: d.detail?.moves ?? null,
+        }),
+      ),
+      'Team Builder',
+    );
   };
 
   const fillSlotFromSpecies = (idx: number, name: string) => {
@@ -313,10 +401,80 @@ export function BattlePage({
             >
               CLEAR TEAM
             </button>
+            {pc.available && (
+              <button
+                type="button"
+                className="chunky ghost font-display text-[12px]"
+                style={{ padding: '6px 12px' }}
+                onClick={() => setShowPcPicker((v) => !v)}
+                aria-expanded={showPcPicker}
+              >
+                FROM PC · {pc.mons.length}
+              </button>
+            )}
+            {savedTeams.length > 0 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) void onImportSavedTeam(e.target.value);
+                }}
+                className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+              >
+                <option value="">From saved team…</option>
+                {savedTeams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              className="chunky ghost font-display text-[12px]"
+              style={{ padding: '6px 12px' }}
+              onClick={onImportBuilderDraft}
+              disabled={getTeamDraft().every((d) => d === null)}
+            >
+              FROM BUILDER
+            </button>
             {parseMsg && (
               <span className="font-mono-hud text-[14px] text-[var(--ink-2)]">› {parseMsg}</span>
             )}
           </div>
+          {showPcPicker && pc.available && (
+            <div className="mt-2 max-h-[200px] overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
+              {pc.mons.length === 0 ? (
+                <div className="font-mono-hud text-[13px] text-[var(--ink-2)] py-3 text-center">
+                  {pc.loading ? 'Loading PC…' : 'No Pokémon stored in the PC yet.'}
+                </div>
+              ) : (
+                pc.mons.map((rec) => {
+                  const sp = pokemonById[rec.speciesId];
+                  if (!sp) return null;
+                  return (
+                    <button
+                      key={rec.id}
+                      type="button"
+                      onClick={() => importOne(fromPcRecord(rec))}
+                      title="Click to load into the next empty slot"
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                    >
+                      <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
+                      <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                        {rec.nickname || sp.name}
+                      </span>
+                      <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0">
+                        Lv {rec.level}
+                      </span>
+                      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                        {pc.boxNameById[rec.boxId] ?? 'Box'}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-6 gap-2 mt-3">
             {team.map((slot, i) => (
               <SlotChip

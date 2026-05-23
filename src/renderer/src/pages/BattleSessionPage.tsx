@@ -27,6 +27,9 @@ import { suggestMoveset } from '../lib/recommender';
 import { TYPES } from '../lib/typechart';
 import { useModBridge } from '../lib/battle/mod/useModBridge';
 import type { ModBridgeStatus } from '../lib/bridgeTypes';
+import { usePcCollection } from '../lib/usePcCollection';
+import { fromPcRecord, fromTeamMember, toSessionSpec, type CombatImportInput } from '../lib/toCombatSpec';
+import { getTeamDraft } from '../lib/teamDraft';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 
 type Terrain = '' | 'Electric' | 'Grassy' | 'Misty' | 'Psychic';
@@ -181,6 +184,103 @@ export function BattleSessionPage({
     );
   };
 
+  // Player-team import from stored sources (PC boxes / saved teams / builder draft).
+  const pokemonById = useMemo(() => {
+    const m: Record<string, Pokemon> = {};
+    for (const p of pokemon) m[p.id] = p;
+    return m;
+  }, [pokemon]);
+  const pc = usePcCollection();
+  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string }[]>([]);
+  const bridge2 = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  useEffect(() => {
+    if (!bridge2?.teamsList) return;
+    bridge2
+      .teamsList()
+      .then((rows) => setSavedTeams(rows.map((r) => ({ id: r.id, name: r.name }))))
+      .catch(() => setSavedTeams([]));
+  }, [bridge2]);
+
+  const loadPlayerFromInputs = (inputs: CombatImportInput[], label: string) => {
+    let next = emptyBattleState();
+    let count = 0;
+    inputs.slice(0, 6).forEach((input) => {
+      const species =
+        (input.speciesId && pokemonById[input.speciesId]) ||
+        pokemonByName[input.speciesDisplay.toLowerCase()] ||
+        resolveSpeciesName(fuse, input.speciesDisplay);
+      if (!species) return;
+      const fallback = suggestMoveset(species, moves).map((s) => s.move.name);
+      const spec = toSessionSpec(input, species, fallback);
+      const p = makePokemon(
+        species,
+        spec as never,
+        makeId('player', count),
+        { isOpponent: false, source: 'KNOWN' },
+      );
+      next = applyEvent(next, { type: 'PokemonRevealed', side: 'player', slot: count, pokemon: p });
+      count++;
+    });
+    setState(next);
+    setParseMsg(`Loaded ${count} Pokémon from ${label}.`);
+  };
+
+  const onImportSavedTeam = async (id: string) => {
+    if (!bridge2?.teamsLoad) return;
+    const rec = await bridge2.teamsLoad(id);
+    if (!rec) return;
+    loadPlayerFromInputs(
+      rec.members.filter((m) => m.speciesId).map((m) => fromTeamMember(m)),
+      `“${rec.name}”`,
+    );
+  };
+
+  /** Add one stored mon to the next empty player slot (pre-battle only). */
+  const appendPlayerFromInput = (input: CombatImportInput) => {
+    const slot = state.sides.player.team.findIndex((p) => !p);
+    if (slot < 0) {
+      setParseMsg('All six player slots are filled.');
+      return;
+    }
+    const species =
+      (input.speciesId && pokemonById[input.speciesId]) ||
+      pokemonByName[input.speciesDisplay.toLowerCase()] ||
+      resolveSpeciesName(fuse, input.speciesDisplay);
+    if (!species) return;
+    const fallback = suggestMoveset(species, moves).map((s) => s.move.name);
+    const p = makePokemon(
+      species,
+      toSessionSpec(input, species, fallback) as never,
+      makeId('player', slot),
+      { isOpponent: false, source: 'KNOWN' },
+    );
+    dispatch({ type: 'PokemonRevealed', side: 'player', slot, pokemon: p });
+    setParseMsg(`Added ${species.name} to slot ${slot + 1}.`);
+  };
+
+  const onImportBuilderDraft = () => {
+    const draft = getTeamDraft().filter((d): d is NonNullable<typeof d> => !!d);
+    if (!draft.length) {
+      setParseMsg('Team Builder has no squad in progress.');
+      return;
+    }
+    loadPlayerFromInputs(
+      draft.map((d) =>
+        fromTeamMember({
+          slot: 0,
+          speciesId: d.speciesId,
+          speciesDisplay: pokemonById[d.speciesId]?.name ?? d.speciesId,
+          item: d.detail?.item ?? null,
+          ability: d.detail?.ability ?? null,
+          nature: d.detail?.nature ?? null,
+          evs: d.detail?.evs ?? null,
+          moves: d.detail?.moves ?? null,
+        }),
+      ),
+      'Team Builder',
+    );
+  };
+
   const onRevealOpponent = (slot: number, speciesName: string, level: number) => {
     const species = pokemonByName[speciesName.toLowerCase()] ?? resolveSpeciesName(fuse, speciesName);
     if (!species) return;
@@ -286,6 +386,49 @@ export function BattleSessionPage({
           state={state}
           onRevealOpponent={onRevealOpponent}
           onStartBattle={onStartBattle}
+          importSources={
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {savedTeams.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) void onImportSavedTeam(e.target.value);
+                  }}
+                >
+                  <option value="">From saved team…</option>
+                  {savedTeams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {pc.available && pc.mons.length > 0 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const rec = pc.mons.find((r) => r.id === e.target.value);
+                    if (rec) appendPlayerFromInput(fromPcRecord(rec));
+                  }}
+                >
+                  <option value="">Add from PC…</option>
+                  {pc.mons.map((rec) => (
+                    <option key={rec.id} value={rec.id}>
+                      {(rec.nickname || rec.speciesDisplay) + ` · Lv ${rec.level}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={onImportBuilderDraft}
+                disabled={getTeamDraft().every((d) => d === null)}
+              >
+                From Team Builder
+              </button>
+            </div>
+          }
         />
       )}
 
@@ -393,10 +536,12 @@ function SetupPanel({
   state,
   onRevealOpponent,
   onStartBattle,
+  importSources,
 }: {
   paste: string;
   onPaste: (s: string) => void;
   onLoadPlayerTeam: () => void;
+  importSources?: React.ReactNode;
   parseMsg: string | null;
   pokemon: Pokemon[];
   state: BattleState;
@@ -425,6 +570,7 @@ function SetupPanel({
           <button type="button" className="btn btn-primary" onClick={onLoadPlayerTeam} style={{ marginTop: 6 }}>
             Load player team
           </button>
+          {importSources}
           {parseMsg && (
             <p style={{ marginTop: 6, fontSize: 12, color: 'var(--fg-dim)' }} role="status">
               {parseMsg}
