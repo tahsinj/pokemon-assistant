@@ -269,7 +269,7 @@ export function App() {
       case 'pokedex':
         return <PokedexPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'team':
-        return <TeamBuilderPage pokemon={pokemon} smogon={smogon} />;
+        return <TeamBuilderPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'battle':
         return <BattlePage pokemon={pokemon} moves={moves} items={items} />;
       case 'session':

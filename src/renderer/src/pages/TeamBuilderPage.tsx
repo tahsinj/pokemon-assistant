@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Pokemon } from '../lib/types';
+import type { Move, Pokemon } from '../lib/types';
+import { buildBestTeams, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
 import type { LoadedTeamRecord, MemberDetail, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
 import { setTeamDraft } from '../lib/teamDraft';
 import { SpeciesList } from '../components/SpeciesList';
@@ -26,6 +27,32 @@ const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'dungeon', label: 'Dungeon sweeper' },
 ];
 
+const STAT_SHORT = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'] as const;
+const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const;
+
+function evShort(evs: Partial<Record<(typeof STAT_KEYS)[number], number>>): string {
+  return STAT_KEYS.map((k, i) => (evs[k] ? `${evs[k]} ${STAT_SHORT[i]}` : null))
+    .filter(Boolean)
+    .join(' / ');
+}
+
+/** Flatten a member's optimization advice into display rows. */
+function adviceLines(a: MemberAdvice): { text: string; danger?: boolean }[] {
+  const out: { text: string; danger?: boolean }[] = [];
+  if (a.natureChange) out.push({ text: `NATURE ${a.natureChange.from} → ${a.natureChange.to}` });
+  if (a.evTarget) out.push({ text: `EVs → ${evShort(a.evTarget.target) || 'flat'}` });
+  if (a.itemSuggestion) {
+    out.push({ text: `ITEM ${a.itemSuggestion.current ?? 'none'} → ${a.itemSuggestion.suggested}` });
+  }
+  for (const ch of a.moveChanges) {
+    out.push({ text: `TEACH ${ch.teach}${ch.replace ? ` (replace ${ch.replace})` : ''}` });
+  }
+  if (a.needsLeveling) {
+    out.push({ text: `⚠ LV ${a.needsLeveling.current} → train toward ${a.needsLeveling.target}`, danger: true });
+  }
+  return out;
+}
+
 /** A filled squad slot: the species plus whatever set details we know. */
 export interface TeamSlot {
   p: Pokemon;
@@ -36,8 +63,9 @@ const EMPTY_TEAM: (TeamSlot | null)[] = [null, null, null, null, null, null];
 
 export function TeamBuilderPage({
   pokemon,
+  moves,
   smogon,
-}: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
+}: { pokemon: Pokemon[]; moves: Record<string, Move>; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<'species' | 'pc'>('species');
@@ -275,6 +303,33 @@ export function TeamBuilderPage({
 
   const [renamingTeamId, setRenamingTeamId] = useState<string | null>(null);
   const [teamRenameDraft, setTeamRenameDraft] = useState('');
+
+  // Best-6 builder over the PC collection.
+  const [bestSix, setBestSix] = useState<BestSixResult | null>(null);
+  const [expandedAdvice, setExpandedAdvice] = useState<string | null>(null);
+
+  const onAnalyzePc = () => {
+    setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon));
+    setExpandedAdvice(null);
+  };
+
+  const applyCandidate = (c: TeamCandidate) => {
+    const next: (TeamSlot | null)[] = [null, null, null, null, null, null];
+    c.members.slice(0, 6).forEach((a, i) => {
+      next[i] = {
+        p: a.p,
+        detail: {
+          item: a.itemSuggestion?.suggested ?? a.rec.item,
+          ability: a.rec.ability || null,
+          nature: a.rec.nature || null,
+          evs: { ...a.rec.evs },
+          moves: a.rec.moves.length ? a.rec.moves : null,
+        },
+      };
+    });
+    setTeam(next);
+    setImportMsg(`Applied "${c.label}" - ${c.members.length} Pokémon into slots.`);
+  };
 
   const commitTeamRename = async (id: string) => {
     setRenamingTeamId(null);
@@ -657,6 +712,132 @@ export function TeamBuilderPage({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Best-6 builder over the PC collection */}
+        {pc.available && (
+          <div className="mono-panel p-3 rounded-[10px]">
+            <div className="flex items-center justify-between gap-3">
+              {sectionHead(
+                'BUILD BEST 6 FROM PC',
+                bestSix
+                  ? `${bestSix.poolSize} candidates pooled · ref level ${bestSix.refLevel}${bestSix.excludedUnderleveled ? ` · ${bestSix.excludedUnderleveled} underleveled hidden` : ''}`
+                  : smogon
+                    ? 'Smogon chemistry + coverage + level/IV quality'
+                    : 'coverage + level/IV quality (no Smogon data)',
+              )}
+              <button
+                type="button"
+                className="chunky font-display text-[12px] mb-2"
+                style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
+                onClick={onAnalyzePc}
+                disabled={pc.mons.length < 3}
+              >
+                ANALYZE PC · {pc.mons.length}
+              </button>
+            </div>
+            {!bestSix ? (
+              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+                {pc.mons.length < 3
+                  ? 'Store at least 3 Pokémon in the PC to build teams.'
+                  : 'Analyze your PC to get ranked team candidates with per-mon optimization advice.'}
+              </div>
+            ) : bestSix.candidates.length === 0 ? (
+              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+                Not enough battle-ready Pokémon - level some up first.
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2.5 items-start">
+                {bestSix.candidates.map((c) => (
+                  <div key={c.preset} className="rounded-[10px] border border-white/10 bg-white/[.03] p-2.5 flex flex-col gap-1.5 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-display text-[14px] font-bold text-[var(--ink-0)]">{c.label}</span>
+                      <span className="font-mono-hud text-[13px] tabular-nums text-[var(--hud-accent-2)]">
+                        {c.score.toFixed(1)}
+                      </span>
+                    </div>
+                    <div
+                      className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)]"
+                      title="quality · chemistry · defense · offense · roles"
+                    >
+                      Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
+                      {c.breakdown.defense.toFixed(1)} · O {c.breakdown.offense.toFixed(1)} · R{' '}
+                      {c.breakdown.roles.toFixed(1)}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {c.members.map((a) => {
+                        const key = `${c.preset}:${a.rec.id}`;
+                        const lines = adviceLines(a);
+                        return (
+                          <div key={a.rec.id} className="rounded-[8px] border border-white/5 bg-black/20">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedAdvice(expandedAdvice === key ? null : key)}
+                              className="w-full flex items-center gap-2 px-2 py-1 text-left"
+                              title={lines.length ? 'Click for optimization advice' : 'Already optimal'}
+                            >
+                              <PokemonSprite dex={a.p.dex} name={a.p.name} size="xs" />
+                              <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                                {a.rec.nickname || a.p.name}
+                              </span>
+                              <span className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                                {a.role} · Lv {a.rec.level}
+                              </span>
+                              {lines.length > 0 && (
+                                <span
+                                  className="font-mono-hud text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                  style={{
+                                    color: lines.some((l) => l.danger) ? 'var(--hud-danger)' : 'var(--hud-accent-2)',
+                                    background: 'rgba(0,0,0,.45)',
+                                  }}
+                                >
+                                  {lines.length}
+                                </span>
+                              )}
+                            </button>
+                            {expandedAdvice === key && lines.length > 0 && (
+                              <div className="px-2 pb-1.5 flex flex-col gap-0.5">
+                                {a.matchedSetName && (
+                                  <div className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)]">
+                                    vs {a.matchedSetName}
+                                  </div>
+                                )}
+                                {lines.map((l, i) => (
+                                  <div
+                                    key={i}
+                                    className="font-mono-hud text-[12px]"
+                                    style={{ color: l.danger ? 'var(--hud-danger)' : 'var(--ink-1)' }}
+                                  >
+                                    {l.text}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {c.stackedWeaknesses.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)]">
+                        weak:
+                        {c.stackedWeaknesses.map((t) => (
+                          <TypeChip key={t} t={t.toLowerCase()} />
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="chunky font-display text-[11px] mt-auto"
+                      style={{ '--c': 'var(--hud-accent-2)', padding: '5px 10px' } as React.CSSProperties}
+                      onClick={() => applyCandidate(c)}
+                    >
+                      APPLY TO SLOTS
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
