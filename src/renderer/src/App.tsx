@@ -279,7 +279,7 @@ export function App() {
       case 'planner':
         return <PlannerPage pokemon={pokemon} />;
       case 'pc':
-        return <PcPage pokemon={pokemon} items={items} />;
+        return <PcPage pokemon={pokemon} items={items} moves={moves} smogon={smogon} />;
       case 'spawns':
         return <SpawnPage pokemon={pokemon} spawns={spawns} />;
       case 'breeding':

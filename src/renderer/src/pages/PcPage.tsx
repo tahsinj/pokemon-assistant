@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Pokemon } from '../lib/types';
+import type { Move, Pokemon } from '../lib/types';
+import type { SmogonBundle } from '../lib/smogon';
+import { DexDetailModal } from '../components/DexDetailModal';
 import type { PcBoxSummary, PcPokemonRecord, PcGender, SavePcPokemonPayload } from '../lib/bridgeTypes';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
@@ -107,9 +109,20 @@ function draftFromRecord(mon: PcPokemonRecord, species: Pokemon | null): EditorD
   };
 }
 
-export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem[] }) {
+export function PcPage({
+  pokemon,
+  items,
+  moves,
+  smogon,
+}: {
+  pokemon: Pokemon[];
+  items: HeldItem[];
+  moves: Record<string, Move>;
+  smogon: SmogonBundle | null;
+}) {
   const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
   const hasPc = !!bridge?.pcBoxesList;
+  const [dexSpecies, setDexSpecies] = useState<Pokemon | null>(null);
 
   const [boxes, setBoxes] = useState<PcBoxSummary[]>([]);
   const [activeBoxId, setActiveBoxId] = useState<string | null>(null);
@@ -792,6 +805,7 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
               draft={editor}
               species={editor.species}
               items={items}
+              onViewDex={() => editor.species && setDexSpecies(editor.species)}
               onCommit={setEditor}
               onSave={(committed) => void saveDraft(committed)}
               onCancel={() => setEditorMode('closed')}
@@ -808,6 +822,15 @@ export function PcPage({ pokemon, items }: { pokemon: Pokemon[]; items: HeldItem
         </div>
       </div>
       </div>
+      {dexSpecies && (
+        <DexDetailModal
+          species={dexSpecies}
+          pokemonById={pokemonById}
+          moves={moves}
+          smogon={smogon}
+          onClose={() => setDexSpecies(null)}
+        />
+      )}
     </ModuleFrame>
   );
 }
@@ -816,6 +839,7 @@ function PcEditor({
   draft,
   species,
   items,
+  onViewDex,
   onCommit,
   onSave,
   onCancel,
@@ -824,6 +848,7 @@ function PcEditor({
   draft: EditorDraft;
   species: Pokemon;
   items: HeldItem[];
+  onViewDex: () => void;
   onCommit: (d: EditorDraft) => void;
   onSave: (committed: EditorDraft) => void;
   onCancel: () => void;
@@ -876,6 +901,15 @@ function PcEditor({
         <span className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase tracking-wider">
           Slot {draft.slot + 1}
         </span>
+        <button
+          type="button"
+          className="chunky ghost font-display text-[11px]"
+          style={{ padding: '4px 10px', marginLeft: 'auto' }}
+          onClick={onViewDex}
+          title={`Open the Pokédex entry for ${species.name}`}
+        >
+          ◢ VIEW IN POKÉDEX
+        </button>
       </div>
 
       <label style={{ display: 'block', marginBottom: 8 }}>
