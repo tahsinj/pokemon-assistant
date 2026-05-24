@@ -3,7 +3,7 @@ import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle, SmogonSet, SmogonSpeciesIntel } from '../lib/smogon';
 import { SpeciesList } from '../components/SpeciesList';
 import { bst } from '../lib/stats';
-import { suggestMoveset, tmPriorities } from '../lib/recommender';
+import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
 import { getMergedSpecies } from '../lib/battle/dex';
 import { summarizeSpeciesDivergence } from '../lib/battle/overrides';
@@ -74,7 +74,9 @@ function PokemonDetail({
   const suggested =
     moveTab === 'tm'
       ? []
-      : suggestMoveset(p, moves, { pool: moveTab === 'levelup' ? 'levelup' : 'all', smogon: intel });
+      : moveTab === 'best'
+        ? competitiveMoveset(p, moves, intel) ?? suggestMoveset(p, moves, { smogon: intel })
+        : suggestMoveset(p, moves, { pool: 'levelup', smogon: intel });
   const tms = moveTab === 'tm' ? tmPriorities(p, moves, intel, 8) : [];
   const prof = defensiveProfile(p.types);
   const weaks = Object.entries(prof).filter(([, m]) => m > 1).sort((a, b) => b[1] - a[1]);

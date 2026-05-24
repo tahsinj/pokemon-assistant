@@ -1,6 +1,7 @@
 import type { Move, Pokemon } from './types';
 import type { SmogonSpeciesIntel } from './smogon';
 import { effectiveness } from './typechart';
+import { resolveSetMoves } from './smogonSets';
 
 /**
  * Learnset pools: 'levelup' = self-learnt (numeric learn tags), 'tm' = moves
@@ -79,9 +80,24 @@ export function scoreMove(
     }
   } else {
     const acc = m.accuracy === true ? 1 : (m.accuracy || 100) / 100;
-    const eff = (m.power || 0) * acc;
+    // Soft-cap effective power: most viable attacks sit at 80-120 BP, so a
+    // 150-BP move shouldn't dwarf STAB / usage / drawback signals.
+    const eff = Math.min(100, (m.power || 0) * acc);
     score += eff;
-    if (eff > 0) reasons.push(`${m.power} BP × ${Math.round(acc * 100)}% acc`);
+    if (m.power) reasons.push(`${m.power} BP × ${Math.round(acc * 100)}% acc`);
+
+    // Drawback penalties - high raw BP that's competitively dead weight.
+    if (m.flags.includes('recharge')) {
+      score -= 40;
+      reasons.push('recharge turn');
+    } else if (m.flags.includes('charge')) {
+      score -= 30;
+      reasons.push('charge turn');
+    }
+    if (/recoil/i.test(m.desc)) {
+      score -= 15;
+      reasons.push('recoil');
+    }
 
     if (p.types.includes(m.type)) {
       score += 50;
@@ -129,12 +145,16 @@ export function suggestMoveset(
     }
   }
 
-  // 2. Fill remaining with best-scoring moves of unused types for coverage
+  // 2. Fill remaining with best-scoring moves of unused types for coverage.
+  // At most one status slot - a set is 2 STAB + coverage + one utility move.
+  let statusPicked = 0;
   for (const s of scored) {
     if (picked.length >= 4) break;
     if (picked.find((pk) => pk.move.id === s.move.id)) continue;
     if (s.move.category === 'Status') {
+      if (statusPicked >= 1) continue;
       picked.push({ move: s.move, reasons: s.reasons });
+      statusPicked++;
       continue;
     }
     if (!usedTypes.has(s.move.type)) {
@@ -151,6 +171,66 @@ export function suggestMoveset(
     }
   }
   return picked.slice(0, 4);
+}
+
+/**
+ * The competitive "best set" when Smogon data exists. Prefers the species'
+ * most-used curated set (slash options resolved to what's learnable in
+ * Cobblemon), padded to four with the highest-usage learnable moves; falls
+ * back to the pure usage marginals when there are no curated sets. Returns
+ * null when there's no Smogon intel at all - callers then use the heuristic
+ * `suggestMoveset`. This avoids the heuristic burying a 91%-used move (e.g.
+ * Weather Ball on a sun sweeper) it can't recognize the value of.
+ */
+export function competitiveMoveset(
+  p: Pokemon,
+  moves: Record<string, Move>,
+  intel: SmogonSpeciesIntel | null,
+): { move: Move; reasons: string[] }[] | null {
+  if (!intel) return null;
+  const canLearn = new Set(p.moves.map((m) => m.move));
+  const usagePct = (name: string) =>
+    intel.moves.find((x) => toMoveKey(x.name) === toMoveKey(name))?.pct ?? 0;
+
+  // 1. Most-representative curated set = highest summed move usage.
+  const chosen: string[] = [];
+  let label: string | null = null;
+  let best: { name: string; moves: string[]; score: number } | null = null;
+  for (const [name, set] of Object.entries(intel.sets ?? {})) {
+    const resolved = resolveSetMoves(p, set);
+    if (!resolved.length) continue;
+    const score = resolved.reduce((a, m) => a + usagePct(m), 0);
+    if (!best || score > best.score) best = { name, moves: resolved, score };
+  }
+  if (best) {
+    chosen.push(...best.moves);
+    label = best.name;
+  }
+
+  // 2. Pad to four with the most-used learnable moves not already chosen.
+  const have = new Set(chosen.map(toMoveKey));
+  for (const m of intel.moves) {
+    if (chosen.length >= 4) break;
+    const mv = moves[toMoveKey(m.name)];
+    if (mv && canLearn.has(mv.id) && !have.has(toMoveKey(m.name))) {
+      chosen.push(mv.name);
+      have.add(toMoveKey(m.name));
+      if (!label) label = 'ladder usage';
+    }
+  }
+  if (!chosen.length) return null;
+
+  return chosen
+    .map((name) => {
+      const mv = moves[toMoveKey(name)];
+      if (!mv) return null;
+      const reasons: string[] = [];
+      const pct = usagePct(name);
+      if (pct > 0) reasons.push(`${Math.round(pct)}% ladder usage`);
+      if (label && label !== 'ladder usage') reasons.push(`Smogon ${label}`);
+      return { move: mv, reasons };
+    })
+    .filter((x): x is { move: Move; reasons: string[] } => !!x);
 }
 
 /**
