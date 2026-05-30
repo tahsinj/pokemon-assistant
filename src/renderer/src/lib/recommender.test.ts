@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { competitiveMoveset, learnableMoves, scoreMove, suggestMoveset, tmPriorities } from './recommender';
+import { competitiveMoveset, learnableMoves, offensiveBias, scoreMove, suggestMoveset, tmPriorities } from './recommender';
 import type { Move, Pokemon } from './types';
 import type { SmogonSet, SmogonSpeciesIntel } from './smogon';
 
@@ -161,6 +161,74 @@ describe('suggestMoveset status cap', () => {
     } as Pokemon;
     const status = suggestMoveset(mon, { ...MOVES }).filter((s) => s.move.category === 'Status');
     expect(status.length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('offensiveBias', () => {
+  // Lucario-shaped: SpA ≥ Atk by raw stats, but the ladder runs it physical.
+  const lucario = {
+    ...venusaur,
+    id: 'lucario',
+    baseStats: { hp: 70, atk: 110, def: 70, spa: 115, spd: 70, spe: 90 },
+  } as Pokemon;
+
+  it('falls back to base stats without smogon data', () => {
+    expect(offensiveBias(lucario, null)).toBe('special'); // spa 115 ≥ atk 110
+  });
+
+  it('prefers the ladder spreads over raw base stats', () => {
+    const physIntel = {
+      ...intel,
+      spreads: [
+        { nature: 'Adamant', evs: [4, 252, 0, 0, 0, 252], pct: 28 },
+        { nature: 'Jolly', evs: [0, 252, 0, 0, 4, 252], pct: 16 },
+        { nature: 'Timid', evs: [0, 0, 0, 252, 4, 252], pct: 11 },
+      ],
+    } as unknown as SmogonSpeciesIntel;
+    expect(offensiveBias(lucario, physIntel)).toBe('physical');
+  });
+});
+
+describe('setup-move prioritization', () => {
+  // Lucario-shaped: Fighting/Steel physical sweeper. Two STAB slots + a priority
+  // move fill three; Swords Dance (a used setup move) should claim the last slot
+  // over a mediocre off-category coverage move (the reported Dragon Pulse bug).
+  const sweeper: Pokemon = {
+    ...venusaur,
+    id: 'sweeper',
+    types: ['fighting', 'steel'],
+    baseStats: { hp: 70, atk: 120, def: 70, spa: 60, spd: 70, spe: 100 },
+    moves: [
+      { learn: '1', move: 'closecombat' },
+      { learn: '48', move: 'meteormash' },
+      { learn: '40', move: 'swordsdance' },
+      { learn: '52', move: 'dragonpulse' },
+      { learn: '56', move: 'extremespeed' },
+    ],
+  } as Pokemon;
+  const M2: Record<string, Move> = {
+    closecombat: { id: 'closecombat', name: 'Close Combat', type: 'fighting', category: 'Physical', power: 120, accuracy: 100, pp: 5, priority: 0, desc: '', target: 'normal', flags: ['contact'] },
+    meteormash: { id: 'meteormash', name: 'Meteor Mash', type: 'steel', category: 'Physical', power: 90, accuracy: 90, pp: 10, priority: 0, desc: '', target: 'normal', flags: ['contact'] },
+    swordsdance: { id: 'swordsdance', name: 'Swords Dance', type: 'normal', category: 'Status', power: 0, accuracy: true, pp: 20, priority: 0, desc: '', target: 'self', flags: ['snatch'] },
+    dragonpulse: { id: 'dragonpulse', name: 'Dragon Pulse', type: 'dragon', category: 'Special', power: 85, accuracy: 100, pp: 10, priority: 0, desc: '', target: 'normal', flags: [] },
+    extremespeed: { id: 'extremespeed', name: 'Extreme Speed', type: 'normal', category: 'Physical', power: 80, accuracy: 100, pp: 5, priority: 2, desc: '', target: 'normal', flags: ['contact'] },
+  };
+  const intel2 = {
+    ...intel,
+    moves: [{ name: 'Swords Dance', pct: 36.5 }],
+  } as unknown as SmogonSpeciesIntel;
+
+  it('keeps Swords Dance over an off-category coverage move', () => {
+    const names = suggestMoveset(sweeper, M2, { pool: 'levelup', smogon: intel2 }).map((s) => s.move.id);
+    expect(names).toContain('swordsdance');
+    expect(names).not.toContain('dragonpulse');
+  });
+
+  it('scores a setup move above a junk status move', () => {
+    const sd = scoreMove(sweeper, M2.swordsdance);
+    const junk = scoreMove(sweeper, { ...M2.swordsdance, id: 'splash', name: 'Splash', flags: [] });
+    expect(sd.score).toBeGreaterThan(junk.score);
+    expect(sd.reasons).toContain('setup move');
   });
 });
 

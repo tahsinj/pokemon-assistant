@@ -45,21 +45,65 @@ function smogonUsagePct(intel: SmogonSpeciesIntel | null | undefined, move: Move
   return hit?.pct ?? 0;
 }
 
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Setup moves boost the user's offensive stats -> they enable sweeps and are
+// slot-worthy on offensive mons, not generic "utility". Keyed by normalized name.
+const SETUP_MOVES = new Set(
+  [
+    'Swords Dance', 'Dragon Dance', 'Bulk Up', 'Coil', 'Howl', 'Sharpen', 'Work Up', 'Meditate',
+    'Nasty Plot', 'Calm Mind', 'Quiver Dance', 'Tail Glow', 'Growth', 'Geomancy', 'Charge Beam',
+    'Shell Smash', 'Shift Gear', 'Agility', 'Rock Polish', 'Autotomize', 'No Retreat',
+    'Victory Dance', 'Take Heart', 'Clangorous Soul', 'Belly Drum', 'Curse', 'Tidy Up',
+    'Iron Defense', 'Acid Armor', 'Cosmic Power', 'Hone Claws', 'Calm Mind',
+  ].map(norm),
+);
+const RECOVERY_MOVES = new Set(
+  ['Recover', 'Roost', 'Slack Off', 'Soft-Boiled', 'Synthesis', 'Moonlight', 'Morning Sun', 'Shore Up', 'Milk Drink', 'Strength Sap', 'Wish', 'Rest'].map(norm),
+);
+const UTILITY_MOVES = new Set(
+  [
+    'Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web', 'Defog', 'Rapid Spin', 'Thunder Wave',
+    'Will-O-Wisp', 'Toxic', 'Taunt', 'Encore', 'Trick', 'Switcheroo', 'Parting Shot', 'Heal Bell',
+    'Aromatherapy', 'Reflect', 'Light Screen', 'Aurora Veil', 'Yawn', 'Whirlwind', 'Roar',
+    'Dragon Tail', 'Sleep Powder', 'Spore', 'Leech Seed', 'Wish',
+  ].map(norm),
+);
+
+/**
+ * Physical vs special bias. Prefer what the ladder actually runs (top spreads'
+ * EV investment) over raw base stats - Lucario has SpA ≥ Atk but is a physical
+ * Swords Dance sweeper. Falls back to base stats without Smogon data.
+ */
+export function offensiveBias(p: Pokemon, smogon?: SmogonSpeciesIntel | null): 'physical' | 'special' {
+  const spreads = smogon?.spreads;
+  if (spreads && spreads.length) {
+    let atk = 0;
+    let spa = 0;
+    for (const s of spreads) {
+      atk += (s.evs[1] ?? 0) * s.pct;
+      spa += (s.evs[3] ?? 0) * s.pct;
+    }
+    if (atk !== spa) return atk > spa ? 'physical' : 'special';
+  }
+  return p.baseStats.atk >= p.baseStats.spa ? 'physical' : 'special';
+}
+
 // Score a move for a given species. Higher = better pick.
-// Weights:
-//   - STAB bonus (+50) if type matches species
-//   - Attacker alignment: if atk > spa, physical moves get +15; else special +15
-//   - Effective power: power * accuracy% (status floors to 40 if it has useful flags)
-//   - Priority +10
-//   - Status utility: +25 for common setup/utility flags
+//   - Effective power (soft-capped 100), STAB +50, attacker-category match ±,
+//     priority +10, drawback penalties.
+//   - Status moves are tiered: setup > recovery ≈ utility > junk.
+//   - Smogon usage adds up to +60 (capped) so the ladder informs ranking.
+// `physical` overrides the base-stat guess with the caller's inferred bias.
 export function scoreMove(
   p: Pokemon,
   m: Move,
   smogon?: SmogonSpeciesIntel | null,
+  physical?: boolean,
 ): { score: number; reasons: string[] } {
   const reasons: string[] = [];
   let score = 0;
-  const physAttacker = p.baseStats.atk >= p.baseStats.spa;
+  const physAttacker = physical ?? p.baseStats.atk >= p.baseStats.spa;
 
   // Ladder reality check: what NatDex OU players actually click, capped so
   // usage informs rather than dictates.
@@ -70,13 +114,18 @@ export function scoreMove(
   }
 
   if (m.category === 'Status') {
-    const util = ['heal','reflectable','mirror','snatch','protect'];
-    const useful = util.some((f) => m.flags.includes(f)) || /swords|nasty|calm|bulk|iron|coil|dragon dance|quiver/i.test(m.name);
-    if (useful) {
-      score += 40;
-      reasons.push('utility / setup move');
+    const key = norm(m.name);
+    if (SETUP_MOVES.has(key)) {
+      score += 55;
+      reasons.push('setup move');
+    } else if (RECOVERY_MOVES.has(key) || m.flags.includes('heal')) {
+      score += 42;
+      reasons.push('recovery');
+    } else if (UTILITY_MOVES.has(key)) {
+      score += 38;
+      reasons.push('utility move');
     } else {
-      score += 10;
+      score += 8;
     }
   } else {
     const acc = m.accuracy === true ? 1 : (m.accuracy || 100) / 100;
@@ -124,8 +173,9 @@ export function suggestMoveset(
   opts: MovesetOptions = {},
 ): { move: Move; reasons: string[] }[] {
   const pool = learnableMoves(p, moves, opts.pool ?? 'all');
+  const physical = offensiveBias(p, opts.smogon) === 'physical';
   const scored = pool
-    .map((m) => ({ move: m, ...scoreMove(p, m, opts.smogon) }))
+    .map((m) => ({ move: m, ...scoreMove(p, m, opts.smogon, physical) }))
     .sort((a, b) => b.score - a.score);
 
   const picked: { move: Move; reasons: string[] }[] = [];
@@ -245,9 +295,10 @@ export function tmPriorities(
   limit = 10,
 ): { move: Move; score: number; reasons: string[] }[] {
   const levelIds = new Set(learnableMoves(p, moves, 'levelup').map((m) => m.id));
+  const physical = offensiveBias(p, smogon) === 'physical';
   return learnableMoves(p, moves, 'tm')
     .filter((m) => !levelIds.has(m.id))
-    .map((m) => ({ move: m, ...scoreMove(p, m, smogon) }))
+    .map((m) => ({ move: m, ...scoreMove(p, m, smogon, physical) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
