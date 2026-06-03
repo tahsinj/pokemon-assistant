@@ -112,6 +112,26 @@ describe('buildBestTeams - pool construction', () => {
     }
   });
 
+  it('excludes banned (Uber/AG) species and counts them', () => {
+    const byId = { ...pokemonById, zacian: species('zacian', ['fairy']) };
+    byId.zacian.natDexTier = 'Uber';
+    const records = [...tenRecords, rec('uber', 'zacian', 100)];
+    const out = buildBestTeams(records, byId, MOVES, null);
+    expect(out.excludedBanned).toBe(1);
+    for (const c of out.candidates) {
+      expect(c.members.some((m) => m.rec.speciesId === 'zacian')).toBe(false);
+    }
+  });
+
+  it('includes banned species when legalOnly is off', () => {
+    const byId = { ...pokemonById, zacian: species('zacian', ['fairy']) };
+    byId.zacian.natDexTier = 'Uber';
+    const out = buildBestTeams([...tenRecords, rec('uber', 'zacian', 100)], byId, MOVES, null, {
+      legalOnly: false,
+    });
+    expect(out.excludedBanned).toBe(0);
+  });
+
   it('works without a smogon bundle at all', () => {
     const out = buildBestTeams(tenRecords, pokemonById, MOVES, null);
     expect(out.candidates.length).toBeGreaterThan(0);

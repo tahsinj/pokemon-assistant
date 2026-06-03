@@ -19,6 +19,7 @@ import { TYPES, effectiveness } from './typechart';
 import { bst, calcAllStats } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
+import { isNatDexOULegal } from './legality';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -35,6 +36,8 @@ export interface BestSixOptions {
   minLevelRatio?: number;
   /** Reference level; default = 90th-percentile level across the PC. */
   refLevel?: number;
+  /** Exclude Pokémon banned from NatDex OU (Uber/AG). Default true. */
+  legalOnly?: boolean;
 }
 
 export interface MemberAdvice {
@@ -66,6 +69,8 @@ export interface TeamCandidate {
 export interface BestSixResult {
   candidates: TeamCandidate[];
   excludedUnderleveled: number;
+  /** PC mons dropped for being banned from NatDex OU (when legalOnly). */
+  excludedBanned: number;
   dedupedSpecies: number;
   poolSize: number;
   refLevel: number;
@@ -366,8 +371,19 @@ export function buildBestTeams(
   const presets = opts.presets ?? (['balanced', 'offense', 'defense'] as TeamPresetId[]);
   const poolLimit = opts.poolSize ?? 24;
   const minLevelRatio = opts.minLevelRatio ?? 0.6;
+  const legalOnly = opts.legalOnly ?? true;
 
-  const known = records.filter((r) => pokemonById[r.speciesId]);
+  // Drop banned (Uber/AG) mons first so the team is NatDex OU-legal.
+  let excludedBanned = 0;
+  const known = records.filter((r) => {
+    const p = pokemonById[r.speciesId];
+    if (!p) return false;
+    if (legalOnly && !isNatDexOULegal(p)) {
+      excludedBanned++;
+      return false;
+    }
+    return true;
+  });
   const refLevel = opts.refLevel ?? percentile90(known.map((r) => r.level));
   const minLevel = refLevel * minLevelRatio;
 
@@ -478,7 +494,7 @@ export function buildBestTeams(
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  return { candidates, excludedUnderleveled, dedupedSpecies, poolSize: pool.length, refLevel };
+  return { candidates, excludedUnderleveled, excludedBanned, dedupedSpecies, poolSize: pool.length, refLevel };
 }
 
 // Keep learnableMoves referenced for advice extensions (and silence TS unused).

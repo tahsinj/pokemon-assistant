@@ -307,9 +307,10 @@ export function TeamBuilderPage({
   // Best-6 builder over the PC collection.
   const [bestSix, setBestSix] = useState<BestSixResult | null>(null);
   const [expandedAdvice, setExpandedAdvice] = useState<string | null>(null);
+  const [legalOnly, setLegalOnly] = useState(true);
 
   const onAnalyzePc = () => {
-    setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon));
+    setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon, { legalOnly }));
     setExpandedAdvice(null);
   };
 
@@ -722,20 +723,30 @@ export function TeamBuilderPage({
               {sectionHead(
                 'BUILD BEST 6 FROM PC',
                 bestSix
-                  ? `${bestSix.poolSize} candidates pooled · ref level ${bestSix.refLevel}${bestSix.excludedUnderleveled ? ` · ${bestSix.excludedUnderleveled} underleveled hidden` : ''}`
+                  ? `${bestSix.poolSize} pooled · ref lv ${bestSix.refLevel}${bestSix.excludedUnderleveled ? ` · ${bestSix.excludedUnderleveled} underleveled` : ''}${bestSix.excludedBanned ? ` · ${bestSix.excludedBanned} banned` : ''}`
                   : smogon
                     ? 'Smogon chemistry + coverage + level/IV quality'
                     : 'coverage + level/IV quality (no Smogon data)',
               )}
-              <button
-                type="button"
-                className="chunky font-display text-[12px] mb-2"
-                style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
-                onClick={onAnalyzePc}
-                disabled={pc.mons.length < 3}
-              >
-                ANALYZE PC · {pc.mons.length}
-              </button>
+              <div className="flex items-center gap-3 mb-2">
+                <label className="flex items-center gap-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={legalOnly}
+                    onChange={(e) => setLegalOnly(e.target.checked)}
+                  />
+                  NatDex OU legal
+                </label>
+                <button
+                  type="button"
+                  className="chunky font-display text-[12px]"
+                  style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
+                  onClick={onAnalyzePc}
+                  disabled={pc.mons.length < 3}
+                >
+                  ANALYZE PC · {pc.mons.length}
+                </button>
+              </div>
             </div>
             {!bestSix ? (
               <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">

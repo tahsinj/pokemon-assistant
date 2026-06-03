@@ -16,6 +16,8 @@ export interface Pokemon {
   catchRate?: number;
   /** Fraction of males 0..1; -1 = genderless. Absent when source data lacked it. */
   maleRatio?: number;
+  /** Smogon NatDex tier ("OU" | "UU" | … | "Uber" | "AG"); from fetch-tiers. */
+  natDexTier?: string;
   eggGroups: string[];
   height: number;
   weight: number;

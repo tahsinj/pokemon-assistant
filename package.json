@@ -16,6 +16,7 @@
     "fetch-items": "node scripts/fetch-items.mjs",
     "fetch-gender": "node scripts/fetch-gender.mjs",
     "fetch-missing-species": "node scripts/fetch-missing-species.mjs",
+    "fetch-tiers": "node scripts/fetch-tiers.mjs",
     "fetch-smogon": "node scripts/fetch-smogon.mjs",
     "parse-spawns": "node scripts/spawn-parser.mjs",
     "diff-cobblemon": "node scripts/diff-cobblemon.mjs",
