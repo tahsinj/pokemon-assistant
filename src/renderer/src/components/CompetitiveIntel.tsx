@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { SmogonBundle, SmogonSet, SmogonSpeciesIntel } from '../lib/smogon';
 
 const STAT_LABELS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
@@ -11,21 +10,9 @@ function evLine(evs: number[]): string {
 }
 
 function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
-  const [open, setOpen] = useState(false);
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-1.5 min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <div className="font-display text-[14px] font-bold text-[var(--ink-0)] truncate">{name}</div>
-        {set.description && (
-          <button
-            type="button"
-            className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--hud-accent-2)] flex-shrink-0"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? '− HIDE' : '+ WHY'}
-          </button>
-        )}
-      </div>
+      <div className="font-display text-[14px] font-bold text-[var(--ink-0)] truncate">{name}</div>
       <div className="font-mono-hud text-[13px] text-[var(--ink-1)]">
         {set.item.join(' / ') || 'No item'} · {set.ability ?? '-'} · {set.nature ?? '-'}
       </div>
@@ -40,11 +27,6 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
           </div>
         ))}
       </div>
-      {open && set.description && (
-        <div className="font-mono-hud text-[12px] leading-relaxed text-[var(--ink-1)] mt-1 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
-          {set.description}
-        </div>
-      )}
     </div>
   );
 }
