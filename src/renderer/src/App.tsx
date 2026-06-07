@@ -42,6 +42,9 @@ const SpawnPage = lazy(() =>
 const BreedingPage = lazy(() =>
   import('./pages/BreedingPage').then((m) => ({ default: m.BreedingPage })),
 );
+const SmogonPage = lazy(() =>
+  import('./pages/SmogonPage').then((m) => ({ default: m.SmogonPage })),
+);
 
 type ToolId =
   | 'pokedex'
@@ -52,7 +55,8 @@ type ToolId =
   | 'planner'
   | 'pc'
   | 'spawns'
-  | 'breeding';
+  | 'breeding'
+  | 'smogon';
 
 const TOOL_TITLES: Record<ToolId, string> = {
   pokedex: 'Pokédex',
@@ -64,6 +68,7 @@ const TOOL_TITLES: Record<ToolId, string> = {
   pc: 'PC Storage',
   spawns: 'Spawn Atlas',
   breeding: 'Breeding',
+  smogon: 'Smogon Intel',
 };
 
 /**
@@ -284,6 +289,8 @@ export function App() {
         return <SpawnPage pokemon={pokemon} spawns={spawns} />;
       case 'breeding':
         return <BreedingPage pokemon={pokemon} />;
+      case 'smogon':
+        return <SmogonPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:
         return null;
     }

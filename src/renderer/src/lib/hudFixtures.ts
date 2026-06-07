@@ -204,19 +204,20 @@ export const HUD_ALERTS: HudAlert[] = [
 ];
 
 /**
- * Radial nav tools. Angles redistributed for 9 hexes (one per existing page)
- * at 40° intervals starting at -90° (top).
+ * Radial nav tools. Angles redistributed for 10 hexes (one per page)
+ * at 36° intervals starting at -90° (top).
  */
 export const HUD_TOOLS: HudTool[] = [
   { id: 'pokedex',  label: 'Pokédex', glyph: 'P', angle: -90 },
-  { id: 'team',     label: 'Team',    glyph: 'T', angle: -50 },
-  { id: 'battle',   label: 'Battle',  glyph: 'X', angle: -10 },
-  { id: 'session',  label: 'Live',    glyph: 'L', angle:  30 },
-  { id: 'counter',  label: 'Counter', glyph: 'C', angle:  70 },
-  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle: 110 },
-  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle: 150 },
-  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle: 190 },
-  { id: 'breeding', label: 'Breed',   glyph: 'O', angle: 230 },
+  { id: 'team',     label: 'Team',    glyph: 'T', angle: -54 },
+  { id: 'battle',   label: 'Battle',  glyph: 'X', angle: -18 },
+  { id: 'session',  label: 'Live',    glyph: 'L', angle:  18 },
+  { id: 'counter',  label: 'Counter', glyph: 'C', angle:  54 },
+  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle:  90 },
+  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle: 126 },
+  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle: 162 },
+  { id: 'breeding', label: 'Breed',   glyph: 'O', angle: 198 },
+  { id: 'smogon',   label: 'Meta',    glyph: 'M', angle: 234 },
 ];
 
 export const CP_SPRITE = (n: number): string =>
