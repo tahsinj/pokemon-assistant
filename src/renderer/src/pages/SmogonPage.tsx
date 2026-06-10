@@ -193,6 +193,7 @@ export function SmogonPage({
               <CompetitiveIntel
                 intel={active}
                 meta={smogon.meta}
+                isSelectable={(id) => !!(pokemonById[id] && smogon.species[id])}
                 onSelectSpecies={(id) => {
                   if (pokemonById[id] && smogon.species[id]) setSelectedId(id);
                 }}

@@ -54,11 +54,20 @@ export function CompetitiveIntel({
   intel,
   meta,
   onSelectSpecies,
+  isSelectable,
 }: {
   intel: SmogonSpeciesIntel;
   meta: SmogonBundle['meta'];
   onSelectSpecies: (id: string) => void;
+  /**
+   * Optional gate for teammate/check navigation. When omitted, every chip is
+   * clickable (the Pokédex can open any species). The Smogon viewer passes a
+   * predicate so chips pointing at species absent from the usage bundle render
+   * disabled instead of silently no-opping.
+   */
+  isSelectable?: (id: string) => boolean;
 }) {
+  const canSelect = (id: string) => (isSelectable ? isSelectable(id) : true);
   const sets = Object.entries(intel.sets ?? {});
   return (
     <div>
@@ -117,17 +126,27 @@ export function CompetitiveIntel({
               Common teammates
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {intel.teammates.slice(0, 8).map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => onSelectSpecies(t.id)}
-                  title={`On ${t.pct.toFixed(1)}% of ${intel.name} teams - click to open`}
-                  className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)] hover:border-[var(--hud-accent-2)] transition"
-                >
-                  {t.name} <span className="font-mono-hud text-[11px] text-[var(--ink-2)]">{Math.round(t.pct)}%</span>
-                </button>
-              ))}
+              {intel.teammates.slice(0, 8).map((t) => {
+                const selectable = canSelect(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    disabled={!selectable}
+                    onClick={() => selectable && onSelectSpecies(t.id)}
+                    title={
+                      selectable
+                        ? `On ${t.pct.toFixed(1)}% of ${intel.name} teams - click to open`
+                        : `On ${t.pct.toFixed(1)}% of ${intel.name} teams - no usage data`
+                    }
+                    className={`font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)] transition ${
+                      selectable ? 'hover:border-[var(--hud-accent-2)]' : 'opacity-50 cursor-default'
+                    }`}
+                  >
+                    {t.name} <span className="font-mono-hud text-[11px] text-[var(--ink-2)]">{Math.round(t.pct)}%</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -137,12 +156,17 @@ export function CompetitiveIntel({
               Checks &amp; counters
             </div>
             <div className="flex flex-col gap-0.5">
-              {intel.checks.map((c) => (
+              {intel.checks.map((c) => {
+                const selectable = canSelect(c.id);
+                return (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => onSelectSpecies(c.id)}
-                  className="relative flex items-center justify-between gap-2 text-left hover:bg-white/[.05] rounded-[4px] px-1.5 -mx-1.5 py-0.5 overflow-hidden transition"
+                  disabled={!selectable}
+                  onClick={() => selectable && onSelectSpecies(c.id)}
+                  className={`relative flex items-center justify-between gap-2 text-left rounded-[4px] px-1.5 -mx-1.5 py-0.5 overflow-hidden transition ${
+                    selectable ? 'hover:bg-white/[.05]' : 'opacity-50 cursor-default'
+                  }`}
                   title="Matchup rating - fraction of encounters this check KOs or forces out. Click to open."
                 >
                   <div
@@ -159,7 +183,8 @@ export function CompetitiveIntel({
                     {(c.score * 100).toFixed(0)}
                   </span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
