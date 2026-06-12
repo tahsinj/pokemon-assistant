@@ -29,9 +29,6 @@ const BattlePage = lazy(() =>
 const BattleSessionPage = lazy(() =>
   import('./pages/BattleSessionPage').then((m) => ({ default: m.BattleSessionPage })),
 );
-const CounterPage = lazy(() =>
-  import('./pages/CounterPage').then((m) => ({ default: m.CounterPage })),
-);
 const PlannerPage = lazy(() =>
   import('./pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
@@ -51,7 +48,6 @@ type ToolId =
   | 'team'
   | 'battle'
   | 'session'
-  | 'counter'
   | 'planner'
   | 'pc'
   | 'spawns'
@@ -63,7 +59,6 @@ const TOOL_TITLES: Record<ToolId, string> = {
   team: 'Team Builder',
   battle: 'Battle Calculator',
   session: 'Live Battle Tracker',
-  counter: 'Counter Picker',
   planner: 'EV / IV Planner',
   pc: 'PC Storage',
   spawns: 'Spawn Atlas',
@@ -279,8 +274,6 @@ export function App() {
         return <BattlePage pokemon={pokemon} moves={moves} items={items} />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
-      case 'counter':
-        return <CounterPage pokemon={pokemon} moves={moves} />;
       case 'planner':
         return <PlannerPage pokemon={pokemon} />;
       case 'pc':

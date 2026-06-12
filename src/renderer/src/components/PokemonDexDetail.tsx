@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { CompetitiveIntel } from './CompetitiveIntel';
+import { SpeciesCounters } from './SpeciesCounters';
 import { bst } from '../lib/stats';
 import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
@@ -14,14 +15,18 @@ export function PokemonDexDetail({
   p,
   moves,
   smogon,
+  allPokemon,
   onSelectSpecies,
 }: {
   p: Pokemon;
   moves: Record<string, Move>;
   smogon: SmogonBundle | null;
+  /** Full dex list - needed to rank counters in the Counters tab. */
+  allPokemon: Pokemon[];
   onSelectSpecies: (id: string) => void;
 }) {
   const intel = smogon?.species[p.id] ?? null;
+  const [view, setView] = useState<'overview' | 'counters'>('overview');
   const [moveTab, setMoveTab] = useState<'best' | 'levelup' | 'tm'>('best');
   const suggested =
     moveTab === 'tm'
@@ -37,8 +42,42 @@ export function PokemonDexDetail({
   const learnable = p.moves
     .map((lm) => ({ learn: lm.learn, mv: moves[lm.move] }))
     .filter((x) => x.mv);
+
+  const tabBar = (
+    <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 self-start">
+      {(
+        [
+          ['overview', 'Overview'],
+          ['counters', 'Counters'],
+        ] as const
+      ).map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => setView(id)}
+          aria-pressed={view === id}
+          className={`font-mono-hud text-[13px] uppercase tracking-wider px-4 py-1 rounded-full transition-colors ${
+            view === id ? 'bg-[var(--hud-accent-2)] text-black' : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (view === 'counters') {
+    return (
+      <div className="flex flex-col gap-4">
+        {tabBar}
+        <SpeciesCounters target={p} allPokemon={allPokemon} moves={moves} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
+      {tabBar}
       <div className="grid grid-cols-[200px,1fr] gap-5">
         {/* Holo sprite + identity */}
         <div className="flex flex-col gap-2">

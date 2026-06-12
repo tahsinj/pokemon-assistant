@@ -43,6 +43,7 @@ export function DexDetailModal({
   }, [onClose]);
 
   const title = useMemo(() => current.name.toUpperCase(), [current]);
+  const allPokemon = useMemo(() => Object.values(pokemonById), [pokemonById]);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -86,6 +87,7 @@ export function DexDetailModal({
             p={current}
             moves={moves}
             smogon={smogon}
+            allPokemon={allPokemon}
             onSelectSpecies={(id) => {
               const next = pokemonById[id];
               if (next) setCurrent(next);

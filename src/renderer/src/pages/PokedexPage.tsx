@@ -42,6 +42,7 @@ export function PokedexPage({
               p={selected}
               moves={moves}
               smogon={smogon}
+              allPokemon={pokemon}
               onSelectSpecies={(id) => {
                 const next = pokemonById[id];
                 if (next) setSelected(next);
