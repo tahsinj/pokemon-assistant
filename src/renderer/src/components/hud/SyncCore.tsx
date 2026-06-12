@@ -16,6 +16,10 @@ export function SyncCore({
   const hexW = Math.round(size * 0.1625);
   const hexH = Math.round(size * 0.1875);
   const orbSize = Math.round(size * 0.32);
+  // Dashed guide ring tracks the hex geometry (the old fixed inset floated it
+  // outside the hexes as `size` scaled). Sit it just inside the hex outer edge
+  // so the hexes read as resting on the ring.
+  const ringInset = Math.round(size / 2 - radius - hexH * 0.34);
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -23,7 +27,7 @@ export function SyncCore({
 
       <div
         className="core-ring spin-slower"
-        style={{ inset: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,.10)' }}
+        style={{ inset: ringInset, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,.10)' }}
       />
       <div className="core-ring solid spin-slow" style={{ inset: 78 }} />
       <div
