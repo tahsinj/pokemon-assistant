@@ -143,8 +143,8 @@ export function CounterDraftPage({
             <div className="flex flex-col gap-1.5">
               <div className="grid gap-1.5" style={{ gridTemplateColumns: `120px repeat(${result.oppOrder.length}, minmax(0,1fr))` }}>
                 <div />
-                {result.oppOrder.map((o) => (
-                  <div key={o.p.id} className="flex flex-col items-center gap-0.5">
+                {result.oppOrder.map((o, oi) => (
+                  <div key={`${o.p.id}-${oi}`} className="flex flex-col items-center gap-0.5">
                     <PokemonSprite dex={o.p.dex} name={o.p.name} size="xs" />
                     <div className="font-mono-hud text-[11px] text-[var(--ink-1)] truncate max-w-full">{o.p.name}</div>
                   </div>
@@ -185,8 +185,8 @@ export function CounterDraftPage({
             )}
             <div className="border-t border-dashed border-white/10 pt-2.5">
               <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1.5">Per-threat answers</div>
-              {result.tips.perThreat.map((t) => (
-                <div key={t.oppId} className="flex gap-2 items-baseline text-[13px] mb-1">
+              {result.tips.perThreat.map((t, ti) => (
+                <div key={`${t.oppId}-${ti}`} className="flex gap-2 items-baseline text-[13px] mb-1">
                   <span className="font-mono-hud text-[var(--ink-2)]">{t.oppName} →</span>
                   <b className="font-display font-semibold">{t.pcName ?? '-'}</b>
                   {t.cell && (

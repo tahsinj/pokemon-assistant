@@ -9,7 +9,7 @@
 import type { Pokemon, Move, BaseStats } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
 import type { AssumedSet } from './opponentSet';
-import { fromPcRecord, toCombatFields } from './toCombatSpec';
+import { fromPcRecord, toCombatFields, type CombatImportInput } from './toCombatSpec';
 import { calcAllMoves, type DamageOutcome } from './battle/damage';
 import { EMPTY_FIELD, type BattlePokemonSpec } from './battle/types';
 import { calcAllStats } from './stats';
@@ -35,7 +35,7 @@ function kosWithin(o: DamageOutcome | null, n: number): boolean {
 }
 
 function toBattleSpec(
-  input: ReturnType<typeof fromPcRecord>,
+  input: CombatImportInput,
   species: Pokemon,
   fallbackMoves: string[],
 ): { spec: BattlePokemonSpec; fields: ReturnType<typeof toCombatFields> } {
