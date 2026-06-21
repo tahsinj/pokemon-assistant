@@ -42,6 +42,9 @@ const BreedingPage = lazy(() =>
 const SmogonPage = lazy(() =>
   import('./pages/SmogonPage').then((m) => ({ default: m.SmogonPage })),
 );
+const CounterDraftPage = lazy(() =>
+  import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
+);
 
 type ToolId =
   | 'pokedex'
@@ -52,7 +55,8 @@ type ToolId =
   | 'pc'
   | 'spawns'
   | 'breeding'
-  | 'smogon';
+  | 'smogon'
+  | 'draft';
 
 const TOOL_TITLES: Record<ToolId, string> = {
   pokedex: 'Pokédex',
@@ -64,6 +68,7 @@ const TOOL_TITLES: Record<ToolId, string> = {
   spawns: 'Spawn Atlas',
   breeding: 'Breeding',
   smogon: 'Smogon Intel',
+  draft: 'Counter Draft',
 };
 
 /**
@@ -284,6 +289,8 @@ export function App() {
         return <BreedingPage pokemon={pokemon} />;
       case 'smogon':
         return <SmogonPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'draft':
+        return <CounterDraftPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:
         return null;
     }

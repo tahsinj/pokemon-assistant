@@ -69,7 +69,7 @@ export function SyncCore({
               }}
             />
           </div>
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--ink-1)] whitespace-nowrap">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--ink-1)] whitespace-nowrap">
             SYNC CORE
           </div>
         </div>
