@@ -1,13 +1,16 @@
 /**
- * Build the *assumed* set for an opponent species at a given level, for the
- * Counter Draft planner. Prefers the Smogon usage-modal set (top ability /
- * item / spread, and the curated/most-used moves); falls back to the species'
- * best damaging learnset moves with a neutral nature when no Smogon intel
- * exists. Pure - unit tested in opponentSet.test.ts.
+ * Build the *assumed* set for an opponent species at a given level + bulk tier,
+ * for the Counter Draft planner. Moves / ability / item come from the Smogon
+ * usage-modal set (else the species' best damaging learnset moves). The bulk
+ * tier drives IV / EV / nature so the matrix can be re-computed under
+ * Min / Max IV / Competitive assumptions. Pure - tested in opponentSet.test.ts.
  */
 import type { Pokemon, Move, BaseStats } from './types';
 import type { SmogonSpeciesIntel } from './smogon';
 import type { CombatImportInput } from './toCombatSpec';
+
+/** Opponent investment assumption. See the 2026-06-14 design spec. */
+export type OpponentBulk = 'min' | 'maxIv' | 'competitive';
 
 export interface AssumedSet {
   moves: string[];
@@ -20,6 +23,9 @@ export interface AssumedSet {
 }
 
 const ZERO_EVS: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+const ZERO_IVS: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+/** Generic invested bulk for off-meta species under the Competitive tier. */
+const STANDARD_BULK_EVS: BaseStats = { hp: 252, atk: 0, def: 128, spa: 0, spd: 128, spe: 0 };
 const STAT_ORDER: (keyof BaseStats)[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
 function spreadToEvs(evs: number[]): BaseStats {
@@ -43,28 +49,47 @@ export function assumedOpponentSpec(
   level: number,
   intel: SmogonSpeciesIntel | null,
   moves: Record<string, Move>,
+  bulk: OpponentBulk = 'maxIv',
 ): AssumedSet {
+  // moves / ability / item - best guess, independent of bulk tier.
   let setMoves: string[];
   let ability: string | null;
   let item: string | null;
-  let nature: string;
-  let evs: BaseStats;
-
   if (intel) {
     setMoves = intel.moves.slice(0, 4).map((m) => m.name);
     if (setMoves.length === 0) setMoves = bestDamagingMoves(species, moves);
     ability = intel.abilities[0]?.name ?? species.abilities[0] ?? null;
     const topItem = intel.items.find((i) => i.name && i.name !== 'No item');
     item = topItem?.name ?? null;
-    const spread = intel.spreads[0];
-    nature = spread?.nature ?? 'Hardy';
-    evs = spread ? spreadToEvs(spread.evs) : { ...ZERO_EVS };
   } else {
     setMoves = bestDamagingMoves(species, moves);
     ability = species.abilities[0] ?? null;
     item = null;
-    nature = 'Hardy';
+  }
+
+  // IV / EV / nature - driven by the bulk tier.
+  let ivs: CombatImportInput['ivs'];
+  let evs: BaseStats;
+  let nature: string;
+  if (bulk === 'min') {
+    ivs = { ...ZERO_IVS };
     evs = { ...ZERO_EVS };
+    nature = 'Hardy';
+  } else if (bulk === 'competitive') {
+    ivs = null; // 31s downstream
+    const spread = intel?.spreads?.[0];
+    if (spread) {
+      evs = spreadToEvs(spread.evs);
+      nature = spread.nature ?? 'Hardy';
+    } else {
+      evs = { ...STANDARD_BULK_EVS };
+      nature = 'Hardy';
+    }
+  } else {
+    // maxIv (default)
+    ivs = null; // 31s downstream
+    evs = { ...ZERO_EVS };
+    nature = 'Hardy';
   }
 
   const input: CombatImportInput = {
@@ -74,7 +99,7 @@ export function assumedOpponentSpec(
     nature,
     ability,
     item,
-    ivs: null,
+    ivs,
     evs,
     moves: setMoves.length ? setMoves : null,
   };

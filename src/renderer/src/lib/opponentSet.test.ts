@@ -30,23 +30,55 @@ const intel = {
   spreads: [{ nature: 'Jolly', evs: [0, 252, 0, 0, 4, 252], pct: 50 }],
 } as unknown as SmogonSpeciesIntel;
 
-describe('assumedOpponentSpec', () => {
-  it('builds the modal set from Smogon intel at the requested level', () => {
-    const set = assumedOpponentSpec(garchomp, 100, intel, moves);
-    expect(set.input.level).toBe(100);
+describe('assumedOpponentSpec - moves/ability/item (tier-independent)', () => {
+  it('builds the modal moves/ability/item from intel regardless of tier', () => {
+    const set = assumedOpponentSpec(garchomp, 100, intel, moves, 'min');
     expect(set.ability).toBe('Rough Skin');
     expect(set.item).toBe('Loaded Dice');
-    expect(set.nature).toBe('Jolly');
-    expect(set.input.evs).toEqual({ hp: 0, atk: 252, def: 0, spa: 0, spd: 4, spe: 252 });
     expect(set.moves).toEqual(['Earthquake', 'Dragon Claw', 'Stealth Rock', 'Fire Fang']);
     expect(set.input.moves).toEqual(set.moves);
+    expect(set.input.level).toBe(100);
   });
 
-  it('falls back to damaging learnset moves and a neutral set when intel is absent', () => {
-    const set = assumedOpponentSpec(garchomp, 75, null, moves);
-    expect(set.input.level).toBe(75);
-    expect(set.nature).toBe('Hardy');
+  it('falls back to damaging learnset moves when intel is absent', () => {
+    const set = assumedOpponentSpec(garchomp, 75, null, moves, 'maxIv');
     expect(set.moves).toEqual(['Earthquake', 'Dragon Claw', 'Fire Fang']);
     expect(set.item).toBeNull();
+  });
+});
+
+describe('assumedOpponentSpec - bulk tiers', () => {
+  it('min: 0 IVs, 0 EVs, neutral nature', () => {
+    const set = assumedOpponentSpec(garchomp, 100, intel, moves, 'min');
+    expect(set.input.ivs).toEqual({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 });
+    expect(set.input.evs).toEqual({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 });
+    expect(set.nature).toBe('Hardy');
+  });
+
+  it('maxIv: null IVs (=31 downstream), 0 EVs, neutral nature', () => {
+    const set = assumedOpponentSpec(garchomp, 100, intel, moves, 'maxIv');
+    expect(set.input.ivs).toBeNull();
+    expect(set.input.evs).toEqual({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 });
+    expect(set.nature).toBe('Hardy');
+  });
+
+  it('competitive: uses the intel modal spread when present', () => {
+    const set = assumedOpponentSpec(garchomp, 100, intel, moves, 'competitive');
+    expect(set.input.ivs).toBeNull();
+    expect(set.input.evs).toEqual({ hp: 0, atk: 252, def: 0, spa: 0, spd: 4, spe: 252 });
+    expect(set.nature).toBe('Jolly');
+  });
+
+  it('competitive: standard bulk fallback when intel is absent', () => {
+    const set = assumedOpponentSpec(garchomp, 100, null, moves, 'competitive');
+    expect(set.input.ivs).toBeNull();
+    expect(set.input.evs).toEqual({ hp: 252, atk: 0, def: 128, spa: 0, spd: 128, spe: 0 });
+    expect(set.nature).toBe('Hardy');
+  });
+
+  it('defaults to maxIv when bulk is omitted', () => {
+    const set = assumedOpponentSpec(garchomp, 100, intel, moves);
+    expect(set.input.ivs).toBeNull();
+    expect(set.input.evs).toEqual({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 });
   });
 });
