@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
-import { draftCounterTeam, type DraftResult, type Candidate, type OpponentEntry } from '../lib/counterDraft';
+import { draftCounterTeam, evaluateTeam, type DraftResult, type Candidate, type OpponentEntry } from '../lib/counterDraft';
+import type { OpponentBulk } from '../lib/opponentSet';
 import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { SpeciesList } from '../components/SpeciesList';
@@ -12,6 +13,12 @@ const VERDICT_CLASS: Record<string, string> = {
   trade: 'bg-[#e9a425]/20 border-[#e9a425]/40 text-[#ffe6b0]',
   lose: 'bg-[var(--hud-danger)]/15 border-[var(--hud-danger)]/40 text-[#ffc9cf]',
 };
+
+const BULK_TABS: { id: OpponentBulk; label: string }[] = [
+  { id: 'min', label: 'Min' },
+  { id: 'maxIv', label: 'Max IV' },
+  { id: 'competitive', label: 'Competitive' },
+];
 
 interface OppSlot { p: Pokemon; level: number; }
 
@@ -30,6 +37,7 @@ export function CounterDraftPage({
   const [opponents, setOpponents] = useState<OppSlot[]>([]);
   const [picking, setPicking] = useState(false);
   const [result, setResult] = useState<DraftResult | null>(null);
+  const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
 
   const candidates = useMemo<Candidate[]>(() => {
     const maxLevel = opponents.reduce((m, o) => Math.max(m, o.level), 1);
@@ -60,7 +68,18 @@ export function CounterDraftPage({
 
   const runDraft = () => {
     const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: o.level }));
-    setResult(draftCounterTeam(opps, candidates, moves, smogon));
+    setResult(draftCounterTeam(opps, candidates, moves, smogon, bulk));
+  };
+
+  // Switching tabs re-scores the SAME drafted team under the new assumption.
+  const changeBulk = (next: OpponentBulk) => {
+    setBulk(next);
+    setResult((prev) => {
+      if (!prev) return prev;
+      const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: o.level }));
+      const { matrix, oppOrder, tips } = evaluateTeam(prev.team, opps, moves, smogon, next);
+      return { ...prev, matrix, oppOrder, tips };
+    });
   };
 
   return (
@@ -137,8 +156,25 @@ export function CounterDraftPage({
       {result && result.team.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-[1.55fr,1fr] gap-4 items-start">
           <div className="glass rounded-[14px] p-3.5">
-            <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)] mb-3">
-              Coverage - your draft vs their team
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)]">
+                Coverage - your draft vs their team
+              </div>
+              <div className="flex items-center gap-1 mono-panel rounded-full p-0.5" title="Assumed opponent investment">
+                {BULK_TABS.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => changeBulk(b.id)}
+                    aria-pressed={bulk === b.id}
+                    className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                      bulk === b.id ? 'bg-[var(--hud-accent-2)] text-black' : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <div className="grid gap-1.5" style={{ gridTemplateColumns: `120px repeat(${result.oppOrder.length}, minmax(0,1fr))` }}>
@@ -157,9 +193,13 @@ export function CounterDraftPage({
                     <span className="font-display text-[13px] font-semibold truncate">{t.rec.nickname || t.p.name}</span>
                   </div>
                   {result.matrix[ri].map((cell, oi) => (
-                    <div key={oi} className={`h-[38px] rounded-[7px] border flex flex-col items-center justify-center font-mono-hud leading-none ${VERDICT_CLASS[cell.verdict]}`}>
-                      <span className="text-[14px]">{cell.label}</span>
-                      <span className="text-[11px] opacity-85">{cell.sub}</span>
+                    <div
+                      key={oi}
+                      title={cell.moveName ? `${cell.moveName} · ${cell.label} ${cell.sub}` : cell.label}
+                      className={`h-[46px] rounded-[7px] border flex flex-col items-center justify-center font-mono-hud leading-none gap-0.5 px-1 ${VERDICT_CLASS[cell.verdict]}`}
+                    >
+                      <span className="text-[14px]">{cell.label} <span className="opacity-85 text-[11px]">{cell.sub}</span></span>
+                      <span className="text-[10px] opacity-70 truncate max-w-full">{cell.moveName ?? '-'}</span>
                     </div>
                   ))}
                 </div>
@@ -189,6 +229,7 @@ export function CounterDraftPage({
                 <div key={`${t.oppId}-${ti}`} className="flex gap-2 items-baseline text-[13px] mb-1">
                   <span className="font-mono-hud text-[var(--ink-2)]">{t.oppName} →</span>
                   <b className="font-display font-semibold">{t.pcName ?? '-'}</b>
+                  {t.cell?.moveName && <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">· {t.cell.moveName}</span>}
                   {t.cell && (
                     <span className={`font-mono-hud text-[12px] px-1.5 rounded-full ${VERDICT_CLASS[t.cell.verdict]}`}>{t.cell.label} {t.cell.sub}</span>
                   )}
