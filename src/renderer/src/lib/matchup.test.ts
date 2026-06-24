@@ -51,6 +51,8 @@ describe('evaluateMatchup', () => {
     expect(cell.iAmFaster).toBe(true);
     expect(cell.verdict).toBe('win');
     expect(['OHKO', '2HKO']).toContain(cell.label);
+    expect(cell.moveName).toBeTruthy();
+    expect(['Icicle Crash', 'Ice Shard', 'Knock Off']).toContain(cell.moveName);
   });
 
   it('rates a frail mon with no super-effective answer as not a win', () => {
@@ -62,5 +64,14 @@ describe('evaluateMatchup', () => {
       opp, moves,
     );
     expect(cell.verdict === 'lose' || cell.verdict === 'trade').toBe(true);
+  });
+
+  it('a bulkier (Competitive) opponent never has a higher KO chance than Max IV', () => {
+    const oppMax = { p: garchomp, level: 100, set: assumedOpponentSpec(garchomp, 100, null, moves, 'maxIv') };
+    const oppComp = { p: garchomp, level: 100, set: assumedOpponentSpec(garchomp, 100, null, moves, 'competitive') };
+    const pc = { rec: rec('weavile', 'Weavile', 100, ['Icicle Crash', 'Ice Shard', 'Knock Off']), p: weavile };
+    const a = evaluateMatchup(pc, oppMax, moves);
+    const b = evaluateMatchup(pc, oppComp, moves);
+    expect(a.myKoChance).toBeGreaterThanOrEqual(b.myKoChance);
   });
 });

@@ -21,6 +21,7 @@ export interface MatchupCell {
   iAmFaster: boolean;
   myKoChance: number;       // 0..1, best move
   theirPctMax: number;      // % of my HP their best move deals
+  moveName: string | null;  // the PC mon's best damaging move (null = no damage)
   score: number;            // signed; higher favors the PC mon
 }
 
@@ -108,5 +109,5 @@ export function evaluateMatchup(
     (iAmFaster ? 20 : 0) + (100 - theirPctMax) * 0.4 -
     (verdict === 'lose' ? 50 : 0);
 
-  return { verdict, label, sub, iAmFaster, myKoChance, theirPctMax, score };
+  return { verdict, label, sub, iAmFaster, myKoChance, theirPctMax, moveName: myBest?.moveName ?? null, score };
 }
