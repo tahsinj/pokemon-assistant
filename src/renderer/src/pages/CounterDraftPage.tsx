@@ -3,6 +3,13 @@ import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { draftCounterTeam, evaluateTeam, type DraftResult, type Candidate, type OpponentEntry } from '../lib/counterDraft';
 import type { OpponentBulk } from '../lib/opponentSet';
+import {
+  loadSavedDrafts,
+  persistSavedDrafts,
+  addDraft,
+  removeDraft,
+  type SavedDraft,
+} from '../lib/savedDrafts';
 import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { SpeciesList } from '../components/SpeciesList';
@@ -38,9 +45,12 @@ export function CounterDraftPage({
   const [picking, setPicking] = useState(false);
   const [result, setResult] = useState<DraftResult | null>(null);
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
+  const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
+  const [label, setLabel] = useState('');
 
-  const candidates = useMemo<Candidate[]>(() => {
-    const maxLevel = opponents.reduce((m, o) => Math.max(m, o.level), 1);
+  // PC mons usable against a given opponent team (drop the badly underleveled).
+  const candidatesFor = (opps: OppSlot[]): Candidate[] => {
+    const maxLevel = opps.reduce((m, o) => Math.max(m, o.level), 1);
     const minLevel = maxLevel * 0.6;
     const out: Candidate[] = [];
     for (const rec of pc.mons) {
@@ -49,7 +59,8 @@ export function CounterDraftPage({
       if (p) out.push({ rec, p });
     }
     return out;
-  }, [pc.mons, pokemonById, opponents]);
+  };
+  const candidates = useMemo<Candidate[]>(() => candidatesFor(opponents), [pc.mons, pokemonById, opponents]);
 
   const addOpponent = (p: Pokemon) => {
     if (opponents.length >= 6) return;
@@ -66,9 +77,37 @@ export function CounterDraftPage({
     setResult(null);
   };
 
-  const runDraft = () => {
-    const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: o.level }));
-    setResult(draftCounterTeam(opps, candidates, moves, smogon, bulk));
+  const runDraftFor = (opps: OppSlot[], b: OpponentBulk) => {
+    const opp: OpponentEntry[] = opps.map((o) => ({ p: o.p, level: o.level }));
+    setResult(draftCounterTeam(opp, candidatesFor(opps), moves, smogon, b));
+  };
+  const runDraft = () => runDraftFor(opponents, bulk);
+
+  // Save the current opponent team (label optional) for later re-analysis.
+  const saveCurrent = () => {
+    if (opponents.length === 0) return;
+    const auto = `${opponents[0].p.name}${opponents.length > 1 ? ` +${opponents.length - 1}` : ''}`;
+    const next = addDraft(
+      savedDrafts,
+      label.trim() || auto,
+      opponents.map((o) => ({ speciesId: o.p.id, level: o.level })),
+    );
+    setSavedDrafts(next);
+    persistSavedDrafts(next);
+    setLabel('');
+  };
+  const deleteSaved = (id: string) => {
+    const next = removeDraft(savedDrafts, id);
+    setSavedDrafts(next);
+    persistSavedDrafts(next);
+  };
+  // Load a saved opponent team and immediately re-draft against the CURRENT PC.
+  const reanalyze = (saved: SavedDraft) => {
+    const opps: OppSlot[] = saved.opponents
+      .map((s) => ({ p: pokemonById[s.speciesId], level: s.level }))
+      .filter((o): o is OppSlot => !!o.p);
+    setOpponents(opps);
+    runDraftFor(opps, bulk);
   };
 
   // Switching tabs re-scores the SAME drafted team under the new assumption.
@@ -151,7 +190,62 @@ export function CounterDraftPage({
             <SpeciesList pokemon={pokemon} onSelect={addOpponent} />
           </div>
         )}
+
+        {opponents.length > 0 && (
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Label this matchup…"
+              aria-label="Matchup label"
+              className="flex-1 bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[13px] text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)]"
+            />
+            <button
+              type="button"
+              onClick={saveCurrent}
+              className="font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)] flex-shrink-0"
+            >
+              ⭳ Save matchup
+            </button>
+          </div>
+        )}
       </div>
+
+      {savedDrafts.length > 0 && (
+        <div className="glass rounded-[14px] p-3.5 mb-4">
+          <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)] mb-2">
+            Saved matchups
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {savedDrafts.map((d) => (
+              <div key={d.id} className="flex items-center gap-3 bg-white/[.03] border border-white/10 rounded-[10px] px-3 py-2">
+                <span className="font-display text-[14px] font-semibold truncate min-w-0 flex-1">{d.label}</span>
+                <span className="flex gap-1 flex-shrink-0">
+                  {d.opponents.slice(0, 6).map((s, i) => {
+                    const p = pokemonById[s.speciesId];
+                    return p ? <PokemonSprite key={i} dex={p.dex} name={p.name} size="xs" /> : null;
+                  })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => reanalyze(d)}
+                  className="font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)] flex-shrink-0"
+                >
+                  ↻ Re-analyze
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSaved(d.id)}
+                  aria-label={`Delete ${d.label}`}
+                  className="font-mono-hud text-[15px] text-[var(--ink-2)] hover:text-[var(--hud-danger)] flex-shrink-0"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {result && result.team.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-[1.55fr,1fr] gap-4 items-start">
