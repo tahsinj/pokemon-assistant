@@ -40,7 +40,6 @@ export interface SmogonSet {
   evs: number[];
   ivs?: number[];
   teraType?: string;
-  description?: string;
 }
 
 export interface SmogonSpeciesIntel {

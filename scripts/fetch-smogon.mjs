@@ -4,7 +4,6 @@
 // Sources:
 //   1. Usage chaos stats  https://www.smogon.com/stats/<YYYY-MM>/chaos/gen9nationaldex-1630.json
 //   2. Curated dex sets   https://data.pkmn.cc/sets/gen9nationaldex.json
-//   3. Set analyses text  https://data.pkmn.cc/analyses/gen9nationaldex.json
 //
 // The bundle is filtered to species present in pokemon.json (Cobblemon has no
 // Megas / paradox mons / etc.), and teammate / check lists are filtered the
@@ -85,11 +84,8 @@ async function findChaos() {
 const { month, url: chaosUrl } = await findChaos();
 console.log(`Fetching ${chaosUrl} ...`);
 const chaos = await fetchJson(chaosUrl);
-console.log(`Fetching curated sets + analyses for ${FORMAT} ...`);
-const [setsData, analyses] = await Promise.all([
-  fetchJson(`https://data.pkmn.cc/sets/${FORMAT}.json`),
-  fetchJson(`https://data.pkmn.cc/analyses/${FORMAT}.json`).catch(() => ({})),
-]);
+console.log(`Fetching curated sets for ${FORMAT} ...`);
+const setsData = await fetchJson(`https://data.pkmn.cc/sets/${FORMAT}.json`);
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const STAT_ORDER = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -116,25 +112,14 @@ function evsToArray(evObj) {
 }
 
 const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
-const stripHtml = (s) =>
-  String(s)
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
 
 // ── Build bundle ────────────────────────────────────────────────────────────
 const chaosEntries = Object.entries(chaos.data);
 const ranked = [...chaosEntries].sort((a, b) => b[1].usage - a[1].usage);
 const rankByName = new Map(ranked.map(([name], i) => [name, i + 1]));
 
-// Curated sets / analyses indexed by normalized species name.
+// Curated sets indexed by normalized species name.
 const setsByNorm = new Map(Object.entries(setsData).map(([n, v]) => [norm(n), v]));
-const analysesByNorm = new Map(Object.entries(analyses).map(([n, v]) => [norm(n), v]));
 
 const species = {};
 let matched = 0;
@@ -169,7 +154,6 @@ for (const [name, d] of chaosEntries) {
     .slice(0, 6);
 
   const curated = setsByNorm.get(norm(name)) ?? {};
-  const analysis = analysesByNorm.get(norm(name))?.sets ?? {};
   const sets = {};
   for (const [setName, s] of Object.entries(curated)) {
     sets[setName] = {
@@ -180,9 +164,6 @@ for (const [name, d] of chaosEntries) {
       evs: evsToArray(s.evs),
       ...(s.ivs ? { ivs: evsToArray(s.ivs) } : {}),
       ...(s.teratypes ?? s.teraType ? { teraType: asArray(s.teratypes ?? s.teraType)[0] } : {}),
-      ...(analysis[setName]?.description
-        ? { description: stripHtml(analysis[setName].description) }
-        : {}),
     };
   }
   if (Object.keys(sets).length > 0) withSets++;

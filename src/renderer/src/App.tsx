@@ -29,9 +29,6 @@ const BattlePage = lazy(() =>
 const BattleSessionPage = lazy(() =>
   import('./pages/BattleSessionPage').then((m) => ({ default: m.BattleSessionPage })),
 );
-const CounterPage = lazy(() =>
-  import('./pages/CounterPage').then((m) => ({ default: m.CounterPage })),
-);
 const PlannerPage = lazy(() =>
   import('./pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
@@ -42,28 +39,36 @@ const SpawnPage = lazy(() =>
 const BreedingPage = lazy(() =>
   import('./pages/BreedingPage').then((m) => ({ default: m.BreedingPage })),
 );
+const SmogonPage = lazy(() =>
+  import('./pages/SmogonPage').then((m) => ({ default: m.SmogonPage })),
+);
+const CounterDraftPage = lazy(() =>
+  import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
+);
 
 type ToolId =
   | 'pokedex'
   | 'team'
   | 'battle'
   | 'session'
-  | 'counter'
   | 'planner'
   | 'pc'
   | 'spawns'
-  | 'breeding';
+  | 'breeding'
+  | 'smogon'
+  | 'draft';
 
 const TOOL_TITLES: Record<ToolId, string> = {
   pokedex: 'Pokédex',
   team: 'Team Builder',
   battle: 'Battle Calculator',
   session: 'Live Battle Tracker',
-  counter: 'Counter Picker',
   planner: 'EV / IV Planner',
   pc: 'PC Storage',
   spawns: 'Spawn Atlas',
   breeding: 'Breeding',
+  smogon: 'Smogon Intel',
+  draft: 'Counter Draft',
 };
 
 /**
@@ -274,8 +279,6 @@ export function App() {
         return <BattlePage pokemon={pokemon} moves={moves} items={items} />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
-      case 'counter':
-        return <CounterPage pokemon={pokemon} moves={moves} />;
       case 'planner':
         return <PlannerPage pokemon={pokemon} />;
       case 'pc':
@@ -284,6 +287,10 @@ export function App() {
         return <SpawnPage pokemon={pokemon} spawns={spawns} />;
       case 'breeding':
         return <BreedingPage pokemon={pokemon} />;
+      case 'smogon':
+        return <SmogonPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'draft':
+        return <CounterDraftPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:
         return null;
     }

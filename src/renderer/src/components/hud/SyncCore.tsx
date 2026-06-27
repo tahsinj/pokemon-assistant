@@ -22,11 +22,6 @@ export function SyncCore({
       <div className="core-glow" />
 
       <div
-        className="core-ring spin-slower"
-        style={{ inset: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,.10)' }}
-      />
-      <div className="core-ring solid spin-slow" style={{ inset: 78 }} />
-      <div
         className="absolute"
         style={{
           inset: 50,
@@ -74,7 +69,7 @@ export function SyncCore({
               }}
             />
           </div>
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--ink-1)] whitespace-nowrap">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--ink-1)] whitespace-nowrap">
             SYNC CORE
           </div>
         </div>

@@ -204,19 +204,21 @@ export const HUD_ALERTS: HudAlert[] = [
 ];
 
 /**
- * Radial nav tools. Angles redistributed for 9 hexes (one per existing page)
- * at 40° intervals starting at -90° (top).
+ * Radial nav tools. 10 hexes at 36° intervals starting at -90° (Pokédex
+ * dead-center top). The 6-o'clock hex sits where the SYNC CORE label used to
+ * breathe, so SyncCore lifts that label up under the orb.
  */
 export const HUD_TOOLS: HudTool[] = [
   { id: 'pokedex',  label: 'Pokédex', glyph: 'P', angle: -90 },
-  { id: 'team',     label: 'Team',    glyph: 'T', angle: -50 },
-  { id: 'battle',   label: 'Battle',  glyph: 'X', angle: -10 },
-  { id: 'session',  label: 'Live',    glyph: 'L', angle:  30 },
-  { id: 'counter',  label: 'Counter', glyph: 'C', angle:  70 },
-  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle: 110 },
-  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle: 150 },
-  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle: 190 },
-  { id: 'breeding', label: 'Breed',   glyph: 'O', angle: 230 },
+  { id: 'team',     label: 'Team',    glyph: 'T', angle: -54 },
+  { id: 'battle',   label: 'Battle',  glyph: 'X', angle: -18 },
+  { id: 'session',  label: 'Live',    glyph: 'L', angle:  18 },
+  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle:  54 },
+  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle:  90 },
+  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle: 126 },
+  { id: 'breeding', label: 'Breed',   glyph: 'O', angle: 162 },
+  { id: 'smogon',   label: 'Meta',    glyph: 'M', angle: 198 },
+  { id: 'draft',    label: 'Draft',   glyph: 'D', angle: 234 },
 ];
 
 export const CP_SPRITE = (n: number): string =>
