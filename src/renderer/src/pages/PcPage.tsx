@@ -54,6 +54,7 @@ interface EditorDraft {
   evs: typeof ZERO_EVS;
   moves: string[];
   notes: string;
+  shiny: boolean;
 }
 
 function emptyDraft(slot: number): EditorDraft {
@@ -70,6 +71,7 @@ function emptyDraft(slot: number): EditorDraft {
     evs: { ...ZERO_EVS },
     moves: emptyMoves(),
     notes: '',
+    shiny: false,
   };
 }
 
@@ -106,6 +108,7 @@ function draftFromRecord(mon: PcPokemonRecord, species: Pokemon | null): EditorD
     evs: { ...mon.evs },
     moves: normalizeMoves(mon.moves),
     notes: mon.notes ?? '',
+    shiny: mon.shiny,
   };
 }
 
@@ -305,6 +308,7 @@ export function PcPage({
       evs: draft.evs,
       moves: normalizeMoves(draft.moves),
       notes: draft.notes.trim() || null,
+      shiny: draft.shiny,
     };
     await bridge.pcPokemonSave(payload);
     setEditor(draft);
@@ -704,11 +708,17 @@ export function PcPage({
                   {mon ? (
                     <>
                       <GenderIcon gender={mon.gender} className="cell-gender" />
+                      {mon.shiny && (
+                        <span className="cell-shiny" title="Shiny" aria-label="Shiny">
+                          ✦
+                        </span>
+                      )}
                       <div className="cell-portrait">
                         <PokemonSprite
                           dex={pokemonById[mon.speciesId]?.dex ?? 0}
                           name={mon.nickname || mon.speciesDisplay}
                           size="xs"
+                          variant={mon.shiny ? 'shiny' : 'default'}
                         />
                       </div>
                       <div className="cell-name">{mon.nickname || mon.speciesDisplay}</div>
@@ -903,8 +913,23 @@ function PcEditor({
         </span>
         <button
           type="button"
+          className="chunky font-display text-[11px]"
+          aria-pressed={local.shiny}
+          style={{
+            padding: '4px 10px',
+            marginLeft: 'auto',
+            background: local.shiny ? 'var(--hud-accent)' : undefined,
+            color: local.shiny ? '#100b06' : undefined,
+          }}
+          onClick={() => set('shiny', !local.shiny)}
+          title="Toggle shiny - uses the shiny sprite (falls back to normal if missing)"
+        >
+          ✦ SHINY {local.shiny ? 'ON' : 'OFF'}
+        </button>
+        <button
+          type="button"
           className="chunky ghost font-display text-[11px]"
-          style={{ padding: '4px 10px', marginLeft: 'auto' }}
+          style={{ padding: '4px 10px' }}
           onClick={onViewDex}
           title={`Open the Pokédex entry for ${species.name}`}
         >

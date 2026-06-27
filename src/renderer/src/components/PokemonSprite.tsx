@@ -28,10 +28,15 @@ export function PokemonSprite({
   title?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const url = useMemo(() => pokemonSpriteUrl(dex, variant), [dex, variant]);
+  // When a shiny asset is missing, drop back to the normal sprite before the
+  // glyph fallback so a missing shiny still shows the species.
+  const [shinyMissing, setShinyMissing] = useState(false);
+  const effectiveVariant = variant === 'shiny' && shinyMissing ? 'default' : variant;
+  const url = useMemo(() => pokemonSpriteUrl(dex, effectiveVariant), [dex, effectiveVariant]);
 
   useEffect(() => {
     setFailed(false);
+    setShinyMissing(false);
   }, [dex, variant]);
   const glyph = (name.trim()[0] ?? '?').toUpperCase();
   const sizeClass = SIZE_CLASS[size];
@@ -58,7 +63,10 @@ export function PokemonSprite({
         loading="lazy"
         decoding="async"
         draggable={false}
-        onError={() => setFailed(true)}
+        onError={() => {
+          if (variant === 'shiny' && !shinyMissing) setShinyMissing(true);
+          else setFailed(true);
+        }}
       />
     </span>
   );

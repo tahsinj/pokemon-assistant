@@ -34,6 +34,7 @@ const rec: PcPokemonRecord = {
   evs: { hp: 0, atk: 252, def: 0, spa: 0, spd: 4, spe: 252 },
   moves: ['Earthquake', 'Scale Shot', 'Swords Dance'],
   notes: null,
+  shiny: false,
   updatedAt: 0,
 };
 

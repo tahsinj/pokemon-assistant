@@ -56,6 +56,7 @@ const rec = (id: string, speciesId: string, level: number, over: Partial<PcPokem
   evs: { ...FLAT },
   moves: ['Tackle'],
   notes: null,
+  shiny: false,
   updatedAt: 0,
   ...over,
 });

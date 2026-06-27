@@ -66,6 +66,7 @@ describe('importPcFromShowdown', () => {
           evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
           moves: ['Tackle', '', '', ''],
           notes: null,
+          shiny: false,
           updatedAt: 0,
         },
       ],

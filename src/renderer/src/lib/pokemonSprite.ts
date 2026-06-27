@@ -2,13 +2,16 @@
 
 const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
 
-export type PokemonSpriteVariant = 'default' | 'artwork';
+export type PokemonSpriteVariant = 'default' | 'artwork' | 'shiny';
 
 export function pokemonSpriteUrl(dex: number, variant: PokemonSpriteVariant = 'default'): string | null {
   if (!Number.isFinite(dex) || dex < 1) return null;
   const id = Math.floor(dex);
   if (variant === 'artwork') {
     return `${SPRITE_BASE}/other/official-artwork/${id}.png`;
+  }
+  if (variant === 'shiny') {
+    return `${SPRITE_BASE}/shiny/${id}.png`;
   }
   return `${SPRITE_BASE}/${id}.png`;
 }

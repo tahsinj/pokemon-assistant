@@ -54,6 +54,7 @@ const rec = (id: string, speciesId: string, level: number, moves: string[] = [])
   evs: { ...FLAT },
   moves,
   notes: null,
+  shiny: false,
   updatedAt: 0,
 });
 

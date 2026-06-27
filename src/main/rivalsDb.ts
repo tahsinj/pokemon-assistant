@@ -87,6 +87,7 @@ export async function initRivalsDb(): Promise<void> {
       evs_json TEXT NOT NULL,
       moves_json TEXT NOT NULL,
       notes TEXT,
+      shiny INTEGER NOT NULL DEFAULT 0,
       updated_at INTEGER NOT NULL,
       UNIQUE (box_id, slot),
       FOREIGN KEY (box_id) REFERENCES pc_boxes(id) ON DELETE CASCADE
@@ -94,6 +95,13 @@ export async function initRivalsDb(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_pc_boxes_sort ON pc_boxes(sort_order);
     CREATE INDEX IF NOT EXISTS idx_pc_pokemon_box ON pc_pokemon(box_id);
   `);
+  // Migrations for DBs created before a column existed. ALTER TABLE ADD COLUMN
+  // throws if the column already exists, so each is isolated in try/catch.
+  try {
+    db.run('ALTER TABLE pc_pokemon ADD COLUMN shiny INTEGER NOT NULL DEFAULT 0');
+  } catch {
+    /* column already present */
+  }
   ensureDefaultPcBox();
   persist();
 }
@@ -290,6 +298,7 @@ export interface PcPokemonRow {
   evs: PcStatSpread;
   moves: string[];
   notes: string | null;
+  shiny: boolean;
   updatedAt: number;
 }
 
@@ -316,6 +325,7 @@ export interface SavePcPokemonPayload {
   evs: PcStatSpread;
   moves: string[];
   notes?: string | null;
+  shiny?: boolean;
 }
 
 function parseStatJson(raw: unknown, fallback: PcStatSpread): PcStatSpread {
@@ -361,6 +371,7 @@ function rowToPcPokemon(r: Record<string, unknown>): PcPokemonRow {
     evs: parseStatJson(r.evs_json, ZERO_STATS),
     moves,
     notes: r.notes != null ? String(r.notes) : null,
+    shiny: Number(r.shiny) === 1,
     updatedAt: Number(r.updated_at),
   };
 }
@@ -416,7 +427,7 @@ export function listPcPokemon(boxId: string): PcPokemonRow[] {
   if (!db) return [];
   const stmt = db.prepare(
     `SELECT id, box_id, slot, species_id, species_display, nickname, level, gender, nature, ability, item,
-            ivs_json, evs_json, moves_json, notes, updated_at
+            ivs_json, evs_json, moves_json, notes, shiny, updated_at
      FROM pc_pokemon WHERE box_id = ? ORDER BY slot`,
   );
   stmt.bind([boxId]);
@@ -445,8 +456,8 @@ export function savePcPokemon(payload: SavePcPokemonPayload): { id: string } {
     db.run(
       `INSERT OR REPLACE INTO pc_pokemon (
         id, box_id, slot, species_id, species_display, nickname, level, gender, nature, ability, item,
-        ivs_json, evs_json, moves_json, notes, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ivs_json, evs_json, moves_json, notes, shiny, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         payload.boxId,
@@ -463,6 +474,7 @@ export function savePcPokemon(payload: SavePcPokemonPayload): { id: string } {
         JSON.stringify(payload.evs),
         JSON.stringify(moves),
         payload.notes ?? null,
+        payload.shiny ? 1 : 0,
         now,
       ],
     );

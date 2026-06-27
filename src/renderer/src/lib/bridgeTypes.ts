@@ -34,6 +34,7 @@ export interface PcPokemonRecord {
   evs: PcStatSpread;
   moves: string[];
   notes: string | null;
+  shiny: boolean;
   updatedAt: number;
 }
 
@@ -53,6 +54,7 @@ export interface SavePcPokemonPayload {
   evs: PcStatSpread;
   moves: string[];
   notes?: string | null;
+  shiny?: boolean;
 }
 
 /** The optional set details a team slot can carry beyond its species. */
