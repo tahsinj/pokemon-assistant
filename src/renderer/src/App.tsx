@@ -5,10 +5,11 @@ import type { SmogonBundle } from './lib/smogon';
 import type { Pokemon, Move, SpawnEntry, HeldItem } from './lib/types';
 import {
   BIOMES,
-  HUD_TEAM,
   HUD_TOOLS,
   type BiomeName,
+  type HudTeamMon,
 } from './lib/hudFixtures';
+import { toHudTeam } from './lib/hudTeam';
 import type { ModBridgeStatus } from './lib/bridgeTypes';
 import { SyncCore } from './components/hud/SyncCore';
 import { TeamColumn } from './components/hud/TeamColumn';
@@ -95,7 +96,8 @@ export function App() {
 
   const [openTool, setOpenTool] = useState<ToolId | null>(null);
   const [staggerIn, setStaggerIn] = useState(false);
-  const [activeMonId, setActiveMonId] = useState<string>(HUD_TEAM[1].id);
+  const [hudTeam, setHudTeam] = useState<HudTeamMon[]>([]);
+  const [activeMonId, setActiveMonId] = useState<string>('');
   const [hoverMonId, setHoverMonId] = useState<string | null>(null);
   const [biome] = useState<BiomeName>('Verdant Dusk');
   const [coreSize, setCoreSize] = useState(360);
@@ -142,8 +144,41 @@ export function App() {
     });
   };
 
+  const pokemonById = useMemo(() => {
+    const m: Record<string, Pokemon> = {};
+    for (const p of pokemon ?? []) m[p.id] = p;
+    return m;
+  }, [pokemon]);
+
   const focusMon =
-    HUD_TEAM.find((m) => m.id === (hoverMonId || activeMonId)) || HUD_TEAM[1];
+    hudTeam.find((m) => m.id === (hoverMonId || activeMonId)) || hudTeam[0] || null;
+
+  // Load the player's real squad (most recently updated saved team) for the
+  // home HUD. Re-runs when returning from a tool dive so a freshly saved team
+  // shows immediately. There is no demo team - an empty squad prompts a build.
+  const loadHudTeam = useMemo(
+    () => async () => {
+      const api = window.cobblemon;
+      if (!api?.teamsList || !pokemon) return;
+      try {
+        const list = await api.teamsList();
+        if (!list.length) {
+          setHudTeam([]);
+          return;
+        }
+        const newest = list.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a));
+        const rec = await api.teamsLoad(newest.id);
+        setHudTeam(rec ? toHudTeam(rec.members, pokemonById, moves) : []);
+      } catch {
+        setHudTeam([]);
+      }
+    },
+    [pokemon, pokemonById, moves],
+  );
+
+  useEffect(() => {
+    if (!openTool) void loadHudTeam();
+  }, [openTool, loadHudTeam]);
 
   // Real companion-mod link state (the WS server lives in the Electron main
   // process). Passive: we only listen - the bridge is started from the Live
@@ -255,7 +290,7 @@ export function App() {
       if (!openTool && e.key >= '1' && e.key <= '6') {
         const target = e.target as HTMLElement | null;
         if (target && /^(input|textarea|select)$/i.test(target.tagName)) return;
-        const mon = HUD_TEAM[Number(e.key) - 1];
+        const mon = hudTeam[Number(e.key) - 1];
         if (mon) {
           setActiveMonId(mon.id);
           setHoverMonId(null);
@@ -264,7 +299,14 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [openTool]);
+  }, [openTool, hudTeam]);
+
+  // Keep a valid lead selected as the team loads or changes.
+  useEffect(() => {
+    if (hudTeam.length && !hudTeam.some((m) => m.id === activeMonId)) {
+      setActiveMonId(hudTeam[0].id);
+    }
+  }, [hudTeam, activeMonId]);
 
   const dataReady = !!pokemon;
 
@@ -325,23 +367,46 @@ export function App() {
           style={{ gridColumn: '3 / 4', gridRow: '1 / 2' }}
           className="flex justify-end items-start"
         >
-          <div className="font-mono-hud text-[13px] uppercase tracking-[.28em] text-[var(--hud-accent-2)] flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{
-                background: 'var(--hud-accent-2)',
-                boxShadow: '0 0 8px var(--hud-accent-2)',
-              }}
-            />
-            Squad · 6/6
-          </div>
+          {hudTeam.length > 0 && (
+            <div className="font-mono-hud text-[13px] uppercase tracking-[.28em] text-[var(--hud-accent-2)] flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: 'var(--hud-accent-2)',
+                  boxShadow: '0 0 8px var(--hud-accent-2)',
+                }}
+              />
+              Squad · {hudTeam.length}/6
+            </div>
+          )}
         </div>
 
         {/* ROW 1–2 - FocusLens · SyncCore · TeamColumn */}
         <div
           style={{ gridColumn: '1 / 2', gridRow: '1 / 3', minHeight: 0, minWidth: 0 }}
         >
-          <FocusLens mon={focusMon} />
+          {focusMon ? (
+            <FocusLens mon={focusMon} />
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="glass rounded-[16px] px-5 py-6 text-center max-w-[260px]">
+                <div className="font-display text-[16px] font-bold text-[var(--ink-0)] mb-1.5">
+                  No squad yet
+                </div>
+                <div className="font-mono-hud text-[13px] text-[var(--ink-2)] leading-relaxed mb-3">
+                  Build a team to see it on your dashboard.
+                </div>
+                <button
+                  type="button"
+                  className="chunky font-display text-[12px]"
+                  style={{ padding: '6px 14px' }}
+                  onClick={() => setOpenTool('team')}
+                >
+                  ◢ OPEN TEAM BUILDER
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         <div
           style={{ gridColumn: '2 / 3', gridRow: '2 / 3', minWidth: 0, minHeight: 0 }}
@@ -380,16 +445,30 @@ export function App() {
           style={{ gridColumn: '3 / 4', gridRow: '2 / 3', minHeight: 0 }}
           className="flex justify-end items-center overflow-visible"
         >
-          <TeamColumn
-            team={HUD_TEAM}
-            activeId={activeMonId}
-            synced={bridgeStatus?.kind === 'connected'}
-            onPick={(id) => {
-              setActiveMonId(id);
-              setHoverMonId(null);
-            }}
-            onHover={setHoverMonId}
-          />
+          {hudTeam.length > 0 ? (
+            <TeamColumn
+              team={hudTeam}
+              activeId={activeMonId}
+              synced={bridgeStatus?.kind === 'connected'}
+              onPick={(id) => {
+                setActiveMonId(id);
+                setHoverMonId(null);
+              }}
+              onHover={setHoverMonId}
+            />
+          ) : (
+            <button
+              type="button"
+              className="glass rounded-[14px] px-4 py-5 text-center w-[170px] cursor-pointer hover:brightness-110 transition"
+              onClick={() => setOpenTool('team')}
+              title="Build a team in the Team Builder"
+            >
+              <div className="text-[26px] leading-none mb-2 text-[var(--hud-accent)]">＋</div>
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-1)]">
+                Add a team
+              </div>
+            </button>
+          )}
         </div>
 
         {/* ROW 3 - Telemetry strip + key hint */}

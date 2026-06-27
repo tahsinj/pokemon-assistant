@@ -174,10 +174,10 @@ export function TeamColumn({
         title={
           synced
             ? 'Mirroring your in-game party via the mod link'
-            : 'Sample squad - connects to your real party once the mod link is live'
+            : 'Your saved squad from the Team Builder'
         }
       >
-        {synced ? `${team.length}/6 · synced` : 'demo squad'}
+        {synced ? `${team.length}/6 · synced` : `${team.length}/6 · squad`}
       </div>
     </div>
   );
