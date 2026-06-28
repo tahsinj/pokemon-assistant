@@ -315,6 +315,7 @@ export function BattlePage({
           ability: d.detail?.ability ?? null,
           nature: d.detail?.nature ?? null,
           level: d.detail?.level ?? null,
+          ivs: d.detail?.ivs ?? null,
           evs: d.detail?.evs ?? null,
           moves: d.detail?.moves ?? null,
         }),

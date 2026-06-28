@@ -44,7 +44,12 @@ export interface HudTeamMon {
   ability: string;
   item: string;
   nature: string;
+  /** Displayed stat numbers: real computed stats when known, else species base. */
   stats: { hp: number; atk: number; def: number; spa: number; spd: number; spe: number };
+  /** Species base-stat total (always base, independent of `stats`). */
+  bst?: number;
+  /** True when `stats` are real computed stats (level + IVs/EVs/nature known). */
+  statsAreActual?: boolean;
   moves: HudMove[];
 }
 

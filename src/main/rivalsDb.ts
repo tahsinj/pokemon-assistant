@@ -48,6 +48,7 @@ export async function initRivalsDb(): Promise<void> {
       ability TEXT,
       nature TEXT,
       level INTEGER,
+      ivs_json TEXT,
       evs_json TEXT,
       moves_json TEXT,
       PRIMARY KEY (team_id, slot),
@@ -108,6 +109,11 @@ export async function initRivalsDb(): Promise<void> {
   } catch {
     /* column already present */
   }
+  try {
+    db.run('ALTER TABLE team_members ADD COLUMN ivs_json TEXT');
+  } catch {
+    /* column already present */
+  }
   ensureDefaultPcBox();
   persist();
 }
@@ -137,6 +143,7 @@ export interface TeamMemberRow {
   nature: string | null;
   /** Real level when the slot was filled from a PC mon; null for a Showdown build. */
   level: number | null;
+  ivs: Record<string, number> | null;
   evs: Record<string, number> | null;
   moves: string[] | null;
 }
@@ -187,14 +194,20 @@ export function loadTeam(id: string): TeamRecord | null {
   t.free();
 
   const m = db.prepare(
-    'SELECT slot, species_id, species_display, item, ability, nature, level, evs_json, moves_json FROM team_members WHERE team_id = ? ORDER BY slot',
+    'SELECT slot, species_id, species_display, item, ability, nature, level, ivs_json, evs_json, moves_json FROM team_members WHERE team_id = ? ORDER BY slot',
   );
   m.bind([id]);
   const members: TeamMemberRow[] = [];
   while (m.step()) {
     const r = m.getAsObject();
+    let ivs: Record<string, number> | null = null;
     let evs: Record<string, number> | null = null;
     let moves: string[] | null = null;
+    try {
+      if (r.ivs_json) ivs = JSON.parse(String(r.ivs_json)) as Record<string, number>;
+    } catch {
+      /* ignore */
+    }
     try {
       if (r.evs_json) evs = JSON.parse(String(r.evs_json)) as Record<string, number>;
     } catch {
@@ -213,6 +226,7 @@ export function loadTeam(id: string): TeamRecord | null {
       ability: r.ability ? String(r.ability) : null,
       nature: r.nature ? String(r.nature) : null,
       level: r.level != null ? Number(r.level) : null,
+      ivs,
       evs,
       moves,
     });
@@ -244,8 +258,8 @@ export function saveTeam(payload: SaveTeamPayload): { id: string } {
       [id, payload.name, payload.rivenTag, exportText, now],
     );
     const ins = db.prepare(
-      `INSERT INTO team_members (team_id, slot, species_id, species_display, item, ability, nature, level, evs_json, moves_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO team_members (team_id, slot, species_id, species_display, item, ability, nature, level, ivs_json, evs_json, moves_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     for (const mem of payload.members) {
       ins.run([
@@ -257,6 +271,7 @@ export function saveTeam(payload: SaveTeamPayload): { id: string } {
         mem.ability,
         mem.nature,
         mem.level ?? null,
+        mem.ivs ? JSON.stringify(mem.ivs) : null,
         mem.evs ? JSON.stringify(mem.evs) : null,
         mem.moves ? JSON.stringify(mem.moves) : null,
       ]);

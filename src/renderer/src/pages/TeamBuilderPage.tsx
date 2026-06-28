@@ -177,6 +177,7 @@ export function TeamBuilderPage({
             ability: block.ability ?? null,
             nature: block.nature ?? null,
             level: block.level ?? null,
+            ivs: block.ivs && Object.keys(block.ivs).length ? block.ivs : null,
             evs: block.evs && Object.keys(block.evs).length ? block.evs : null,
             moves: block.moves.length ? block.moves : null,
           },
@@ -215,6 +216,7 @@ export function TeamBuilderPage({
       ability: s?.detail?.ability ?? null,
       nature: s?.detail?.nature ?? null,
       level: s?.detail?.level ?? null,
+      ivs: s?.detail?.ivs ?? null,
       evs: s?.detail?.evs ?? null,
       moves: s?.detail?.moves ?? null,
     }));
@@ -254,12 +256,12 @@ export function TeamBuilderPage({
     for (const m of rec.members) {
       if (m.slot < 0 || m.slot > 5) continue;
       const sp = m.speciesId ? pokemonById[m.speciesId] ?? null : null;
-      const hasDetail = m.item || m.ability || m.nature || m.level != null || m.evs || m.moves?.length;
+      const hasDetail = m.item || m.ability || m.nature || m.level != null || m.ivs || m.evs || m.moves?.length;
       next[m.slot] = sp
         ? {
             p: sp,
             detail: hasDetail
-              ? { item: m.item, ability: m.ability, nature: m.nature, level: m.level, evs: m.evs, moves: m.moves }
+              ? { item: m.item, ability: m.ability, nature: m.nature, level: m.level, ivs: m.ivs, evs: m.evs, moves: m.moves }
               : null,
           }
         : null;
@@ -326,6 +328,7 @@ export function TeamBuilderPage({
           ability: a.rec.ability || null,
           nature: a.rec.nature || null,
           level: a.rec.level,
+          ivs: { ...a.rec.ivs },
           evs: { ...a.rec.evs },
           moves: a.rec.moves.length ? a.rec.moves : null,
         },
@@ -594,6 +597,7 @@ export function TeamBuilderPage({
                               ability: rec.ability || null,
                               nature: rec.nature || null,
                               level: rec.level,
+                              ivs: { ...rec.ivs },
                               evs: { ...rec.evs },
                               moves: rec.moves.length ? rec.moves : null,
                             });

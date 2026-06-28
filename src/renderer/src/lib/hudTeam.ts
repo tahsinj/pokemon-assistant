@@ -7,7 +7,14 @@
  */
 import type { HudTeamMon, HudType, HudMove } from './hudFixtures';
 import type { TeamMemberPersist } from './bridgeTypes';
-import type { Pokemon, Move } from './types';
+import type { Pokemon, Move, BaseStats } from './types';
+import { calcAllStats, bst } from './stats';
+
+/** Coerce a (possibly partial / missing) stat record into a full spread. */
+function toSpread(src: Record<string, number> | null | undefined, fallback: number): BaseStats {
+  const f = (k: string) => (src && typeof src[k] === 'number' ? src[k] : fallback);
+  return { hp: f('hp'), atk: f('atk'), def: f('def'), spa: f('spa'), spd: f('spd'), spe: f('spe') };
+}
 
 function catLetter(category: Move['category']): string {
   if (category === 'Physical') return 'P';
@@ -56,19 +63,30 @@ export function toHudTeam(
       .map((mv) => resolveMove(mv, moves))
       .filter((mv): mv is HudMove => !!mv)
       .slice(0, 4);
+
+    // Real computed stats need a level; without one (a bare Showdown build)
+    // we can only honestly show species base stats. IVs default to 31, EVs to 0.
+    const nature = m.nature || 'Hardy';
+    const hasLevel = typeof m.level === 'number';
+    const stats = hasLevel
+      ? calcAllStats(p.baseStats, toSpread(m.ivs, 31), toSpread(m.evs, 0), m.level as number, nature)
+      : { ...p.baseStats };
+
     out.push({
       id: `T${m.slot + 1}`,
       name: p.name,
       dex: `#${String(p.dex).padStart(4, '0')}`,
-      ...(typeof m.level === 'number' ? { lv: m.level } : {}),
+      ...(hasLevel ? { lv: m.level as number } : {}),
       types: p.types.map((t) => t.toLowerCase() as HudType),
       role: deriveRole(p),
       sprite: p.dex,
       status: null,
       ability: m.ability || p.abilities[0] || '',
       item: m.item || '',
-      nature: m.nature || 'Hardy',
-      stats: { ...p.baseStats },
+      nature,
+      stats,
+      bst: bst(p.baseStats),
+      statsAreActual: hasLevel,
       moves: hudMoves,
     });
   }

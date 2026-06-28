@@ -48,7 +48,7 @@ export function fromTeamMember(m: TeamMemberPersist, level = 50): CombatImportIn
     nature: m.nature,
     ability: m.ability,
     item: m.item,
-    ivs: null,
+    ivs: (m.ivs as Partial<BaseStats> | null) ?? null,
     evs: (m.evs as Partial<BaseStats> | null) ?? null,
     moves: m.moves && m.moves.length ? m.moves : null,
   };

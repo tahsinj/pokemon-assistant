@@ -69,6 +69,7 @@ describe('fromTeamMember', () => {
     ability: null,
     nature: null,
     level: null,
+    ivs: null,
     evs: null,
     moves: null,
   };

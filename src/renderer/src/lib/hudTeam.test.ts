@@ -17,7 +17,7 @@ const moves: Record<string, Move> = {
 };
 
 function member(over: Partial<TeamMemberPersist> = {}): TeamMemberPersist {
-  return { slot: 0, speciesId: 'garchomp', speciesDisplay: 'Garchomp', item: null, ability: null, nature: null, level: null, evs: null, moves: null, ...over };
+  return { slot: 0, speciesId: 'garchomp', speciesDisplay: 'Garchomp', item: null, ability: null, nature: null, level: null, ivs: null, evs: null, moves: null, ...over };
 }
 
 describe('toHudTeam', () => {
@@ -41,6 +41,27 @@ describe('toHudTeam', () => {
 
   it('leaves level undefined for a level-less build so the HUD hides it', () => {
     expect(toHudTeam([member({ level: null })], pokemonById, moves)[0].lv).toBeUndefined();
+  });
+
+  it('computes real stats from level/IVs/EVs/nature when level is known', () => {
+    const m = toHudTeam([member({ level: 50 })], pokemonById, moves)[0];
+    expect(m.statsAreActual).toBe(true);
+    expect(m.stats.hp).toBe(183); // Garchomp base 108 @ L50, 31 IV, 0 EV
+    expect(m.stats.atk).toBe(150); // base 130, Hardy (neutral)
+    expect(m.bst).toBe(600); // base-stat total stays the species value
+  });
+
+  it('shows species base stats for a level-less build', () => {
+    const m = toHudTeam([member()], pokemonById, moves)[0];
+    expect(m.statsAreActual).toBe(false);
+    expect(m.stats).toEqual(garchomp.baseStats);
+  });
+
+  it('applies a boosting nature to the right stat', () => {
+    const neutral = toHudTeam([member({ level: 50, nature: 'Hardy' })], pokemonById, moves)[0];
+    const adamant = toHudTeam([member({ level: 50, nature: 'Adamant' })], pokemonById, moves)[0];
+    expect(adamant.stats.atk).toBeGreaterThan(neutral.stats.atk);
+    expect(adamant.stats.spa).toBeLessThan(neutral.stats.spa);
   });
 
   it('falls back to the first ability when the member has none', () => {

@@ -5,7 +5,11 @@ import { TypeChip } from './HudPrimitives';
 export function FocusLens({ mon }: { mon: HudTeamMon }) {
   const tint = `var(--t-${mon.types[0]})`;
   const tint2 = `var(--t-${mon.types[1] || mon.types[0]})`;
-  const bstTotal = Object.values(mon.stats).reduce((a, b) => a + b, 0);
+  const bstTotal = mon.bst ?? Object.values(mon.stats).reduce((a, b) => a + b, 0);
+  const maxStat = Math.max(1, ...Object.values(mon.stats));
+  const statBasis = mon.statsAreActual
+    ? `Lv ${mon.lv ?? '?'} stats`
+    : 'base stats';
   const hasHp = typeof mon.hp === 'number';
 
   return (
@@ -46,7 +50,9 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
           {mon.name}
           <span className="lens-v-bst">BST {bstTotal}</span>
         </div>
-        <div className="lens-v-sub">{mon.nature}</div>
+        <div className="lens-v-sub">
+          {mon.nature} · {statBasis}
+        </div>
         <div className="lens-v-chips">
           {mon.types.map((t) => (
             <TypeChip key={t} t={t} size="md" />
@@ -69,7 +75,7 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
             <div key={k} className="row">
               <span className="sk">{k}</span>
               <div className="sbar">
-                <i style={{ width: `${Math.min(100, (v / 180) * 100)}%` }} />
+                <i style={{ width: `${Math.min(100, (v / maxStat) * 100)}%` }} />
               </div>
               <span className="sv">{v}</span>
             </div>
