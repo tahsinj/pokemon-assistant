@@ -36,12 +36,15 @@ export function fromPcRecord(rec: PcPokemonRecord): CombatImportInput {
   };
 }
 
-/** Saved-team members carry no level - callers pick the assumption. */
+/**
+ * A team member's level is known only when the slot came from a PC mon;
+ * otherwise the caller's assumption (`level`) is used.
+ */
 export function fromTeamMember(m: TeamMemberPersist, level = 50): CombatImportInput {
   return {
     speciesId: m.speciesId,
     speciesDisplay: m.speciesDisplay,
-    level,
+    level: m.level ?? level,
     nature: m.nature,
     ability: m.ability,
     item: m.item,

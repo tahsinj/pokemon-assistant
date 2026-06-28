@@ -176,6 +176,7 @@ export function TeamBuilderPage({
             item: block.item ?? null,
             ability: block.ability ?? null,
             nature: block.nature ?? null,
+            level: block.level ?? null,
             evs: block.evs && Object.keys(block.evs).length ? block.evs : null,
             moves: block.moves.length ? block.moves : null,
           },
@@ -213,6 +214,7 @@ export function TeamBuilderPage({
       item: s?.detail?.item ?? null,
       ability: s?.detail?.ability ?? null,
       nature: s?.detail?.nature ?? null,
+      level: s?.detail?.level ?? null,
       evs: s?.detail?.evs ?? null,
       moves: s?.detail?.moves ?? null,
     }));
@@ -252,12 +254,12 @@ export function TeamBuilderPage({
     for (const m of rec.members) {
       if (m.slot < 0 || m.slot > 5) continue;
       const sp = m.speciesId ? pokemonById[m.speciesId] ?? null : null;
-      const hasDetail = m.item || m.ability || m.nature || m.evs || m.moves?.length;
+      const hasDetail = m.item || m.ability || m.nature || m.level != null || m.evs || m.moves?.length;
       next[m.slot] = sp
         ? {
             p: sp,
             detail: hasDetail
-              ? { item: m.item, ability: m.ability, nature: m.nature, evs: m.evs, moves: m.moves }
+              ? { item: m.item, ability: m.ability, nature: m.nature, level: m.level, evs: m.evs, moves: m.moves }
               : null,
           }
         : null;
@@ -323,6 +325,7 @@ export function TeamBuilderPage({
           item: a.itemSuggestion?.suggested ?? a.rec.item,
           ability: a.rec.ability || null,
           nature: a.rec.nature || null,
+          level: a.rec.level,
           evs: { ...a.rec.evs },
           moves: a.rec.moves.length ? a.rec.moves : null,
         },
@@ -590,6 +593,7 @@ export function TeamBuilderPage({
                               item: rec.item,
                               ability: rec.ability || null,
                               nature: rec.nature || null,
+                              level: rec.level,
                               evs: { ...rec.evs },
                               moves: rec.moves.length ? rec.moves : null,
                             });

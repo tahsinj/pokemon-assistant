@@ -1,7 +1,8 @@
 /**
  * Convert a persisted team (Team Builder squad) into the HUD's display shape so
  * the home dashboard renders the player's real team instead of demo fixtures.
- * Pure - no IPC, no DOM. A saved build stores no level or live HP, so those
+ * Pure - no IPC, no DOM. A slot's level is only known when it came from a PC
+ * mon (a Showdown-style build carries none); live HP is never stored. Unknown
  * fields are left undefined and the HUD hides them.
  */
 import type { HudTeamMon, HudType, HudMove } from './hudFixtures';
@@ -59,6 +60,7 @@ export function toHudTeam(
       id: `T${m.slot + 1}`,
       name: p.name,
       dex: `#${String(p.dex).padStart(4, '0')}`,
+      ...(typeof m.level === 'number' ? { lv: m.level } : {}),
       types: p.types.map((t) => t.toLowerCase() as HudType),
       role: deriveRole(p),
       sprite: p.dex,

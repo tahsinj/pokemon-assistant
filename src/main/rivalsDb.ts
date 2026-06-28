@@ -47,6 +47,7 @@ export async function initRivalsDb(): Promise<void> {
       item TEXT,
       ability TEXT,
       nature TEXT,
+      level INTEGER,
       evs_json TEXT,
       moves_json TEXT,
       PRIMARY KEY (team_id, slot),
@@ -102,6 +103,11 @@ export async function initRivalsDb(): Promise<void> {
   } catch {
     /* column already present */
   }
+  try {
+    db.run('ALTER TABLE team_members ADD COLUMN level INTEGER');
+  } catch {
+    /* column already present */
+  }
   ensureDefaultPcBox();
   persist();
 }
@@ -129,6 +135,8 @@ export interface TeamMemberRow {
   item: string | null;
   ability: string | null;
   nature: string | null;
+  /** Real level when the slot was filled from a PC mon; null for a Showdown build. */
+  level: number | null;
   evs: Record<string, number> | null;
   moves: string[] | null;
 }
@@ -179,7 +187,7 @@ export function loadTeam(id: string): TeamRecord | null {
   t.free();
 
   const m = db.prepare(
-    'SELECT slot, species_id, species_display, item, ability, nature, evs_json, moves_json FROM team_members WHERE team_id = ? ORDER BY slot',
+    'SELECT slot, species_id, species_display, item, ability, nature, level, evs_json, moves_json FROM team_members WHERE team_id = ? ORDER BY slot',
   );
   m.bind([id]);
   const members: TeamMemberRow[] = [];
@@ -204,6 +212,7 @@ export function loadTeam(id: string): TeamRecord | null {
       item: r.item ? String(r.item) : null,
       ability: r.ability ? String(r.ability) : null,
       nature: r.nature ? String(r.nature) : null,
+      level: r.level != null ? Number(r.level) : null,
       evs,
       moves,
     });
@@ -235,8 +244,8 @@ export function saveTeam(payload: SaveTeamPayload): { id: string } {
       [id, payload.name, payload.rivenTag, exportText, now],
     );
     const ins = db.prepare(
-      `INSERT INTO team_members (team_id, slot, species_id, species_display, item, ability, nature, evs_json, moves_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO team_members (team_id, slot, species_id, species_display, item, ability, nature, level, evs_json, moves_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     for (const mem of payload.members) {
       ins.run([
@@ -247,6 +256,7 @@ export function saveTeam(payload: SaveTeamPayload): { id: string } {
         mem.item,
         mem.ability,
         mem.nature,
+        mem.level ?? null,
         mem.evs ? JSON.stringify(mem.evs) : null,
         mem.moves ? JSON.stringify(mem.moves) : null,
       ]);

@@ -17,7 +17,7 @@ const moves: Record<string, Move> = {
 };
 
 function member(over: Partial<TeamMemberPersist> = {}): TeamMemberPersist {
-  return { slot: 0, speciesId: 'garchomp', speciesDisplay: 'Garchomp', item: null, ability: null, nature: null, evs: null, moves: null, ...over };
+  return { slot: 0, speciesId: 'garchomp', speciesDisplay: 'Garchomp', item: null, ability: null, nature: null, level: null, evs: null, moves: null, ...over };
 }
 
 describe('toHudTeam', () => {
@@ -33,6 +33,14 @@ describe('toHudTeam', () => {
     expect(m.moves.map((mv) => mv.name)).toEqual(['Earthquake', 'Swords Dance']);
     expect(m.moves[1].cat).toBe('-'); // status
     expect(m.moves[1].acc).toBe(100); // accuracy:true normalized
+  });
+
+  it('shows the level when the slot carries one (from a PC mon)', () => {
+    expect(toHudTeam([member({ level: 73 })], pokemonById, moves)[0].lv).toBe(73);
+  });
+
+  it('leaves level undefined for a level-less build so the HUD hides it', () => {
+    expect(toHudTeam([member({ level: null })], pokemonById, moves)[0].lv).toBeUndefined();
   });
 
   it('falls back to the first ability when the member has none', () => {

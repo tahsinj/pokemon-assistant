@@ -58,7 +58,10 @@ export interface SavePcPokemonPayload {
 }
 
 /** The optional set details a team slot can carry beyond its species. */
-export type MemberDetail = Pick<TeamMemberPersist, 'item' | 'ability' | 'nature' | 'evs' | 'moves'>;
+export type MemberDetail = Pick<
+  TeamMemberPersist,
+  'item' | 'ability' | 'nature' | 'level' | 'evs' | 'moves'
+>;
 
 export interface TeamMemberPersist {
   slot: number;
@@ -67,6 +70,8 @@ export interface TeamMemberPersist {
   item: string | null;
   ability: string | null;
   nature: string | null;
+  /** Real level when the slot came from a PC mon; null for a Showdown-style build. */
+  level: number | null;
   evs: Record<string, number> | null;
   moves: string[] | null;
 }

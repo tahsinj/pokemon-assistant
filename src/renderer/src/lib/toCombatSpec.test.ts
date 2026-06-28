@@ -68,6 +68,7 @@ describe('fromTeamMember', () => {
     item: null,
     ability: null,
     nature: null,
+    level: null,
     evs: null,
     moves: null,
   };
@@ -81,6 +82,11 @@ describe('fromTeamMember', () => {
     expect(f.ivs).toEqual({ hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 });
     expect(f.evs).toEqual({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 });
     expect(f.moves).toEqual(FALLBACK);
+  });
+
+  it("prefers the member's own level over the caller default", () => {
+    const f = toCombatFields(fromTeamMember({ ...member, level: 88 }), garchomp, FALLBACK);
+    expect(f.level).toBe(88);
   });
 
   it('partial EVs merge over the zero fill', () => {
