@@ -6,16 +6,18 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
   const tint = `var(--t-${mon.types[0]})`;
   const tint2 = `var(--t-${mon.types[1] || mon.types[0]})`;
   const bstTotal = Object.values(mon.stats).reduce((a, b) => a + b, 0);
-  const hpPct = Math.round(mon.hp * 100);
+  const hasHp = typeof mon.hp === 'number';
 
   return (
     <div className="focus-lens-v" style={{ ['--lens-tint' as string]: tint } as CSSProperties}>
       <div className="lens-v-head">
         <span className="kicker">◢ Focus · {mon.role}</span>
-        <span className="mode">
-          <span className="mode-dot" />
-          Live · {hpPct}%
-        </span>
+        {hasHp && (
+          <span className="mode">
+            <span className="mode-dot" />
+            Live · {Math.round((mon.hp ?? 1) * 100)}%
+          </span>
+        )}
       </div>
 
       <div className="lens-v-sprite">
@@ -25,9 +27,11 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
         />
         <div className="scan" aria-hidden="true" />
         <span className="corner-tag">{mon.dex}</span>
-        <span className="corner-tag r" style={{ color: tint2 }}>
-          LV {mon.lv}
-        </span>
+        {typeof mon.lv === 'number' && (
+          <span className="corner-tag r" style={{ color: tint2 }}>
+            LV {mon.lv}
+          </span>
+        )}
         <img
           src={CP_SPRITE_HD(mon.sprite)}
           alt={mon.name}

@@ -33,8 +33,10 @@ export interface HudTeamMon {
   id: string;
   name: string;
   dex: string;
-  lv: number;
-  hp: number;
+  /** Live level - only known when fed by the mod bridge; absent for saved builds. */
+  lv?: number;
+  /** Live HP fraction 0..1 - only known in a live battle; absent for saved builds. */
+  hp?: number;
   types: HudType[];
   role: string;
   sprite: number;

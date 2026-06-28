@@ -23,7 +23,9 @@ function TeamSlot({
 }) {
   const tColor = `var(--t-${mon.types[0]})`;
   const tColor2 = `var(--t-${mon.types[1] || mon.types[0]})`;
-  const hp = hpColor(mon.hp);
+  const hasHp = typeof mon.hp === 'number';
+  const hpFrac = mon.hp ?? 1;
+  const hp = hpColor(hpFrac);
 
   // Note: hex stays put; only the info card moves. Sliding the hex caused
   // the cursor to leave the hover region, looping hover state and jittering.
@@ -49,25 +51,27 @@ function TeamSlot({
           <span className="font-mono-hud text-[13px] text-[var(--ink-2)]">{mon.dex}</span>
         </div>
         <div className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mb-1.5">
-          LV {mon.lv} · {mon.role}
+          {typeof mon.lv === 'number' ? `LV ${mon.lv} · ${mon.role}` : mon.role}
         </div>
         <div className="flex gap-1 mb-2">
           {mon.types.map((t) => (
             <TypeChip key={t} t={t} />
           ))}
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">HP</span>
-          <div className="relative h-1.5 flex-1 rounded-full bg-black/40 overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full"
-              style={{ width: `${mon.hp * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
-            />
+        {hasHp && (
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">HP</span>
+            <div className="relative h-1.5 flex-1 rounded-full bg-black/40 overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{ width: `${hpFrac * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
+              />
+            </div>
+            <span className="font-mono-hud text-[12px]" style={{ color: hp }}>
+              {Math.round(hpFrac * 100)}
+            </span>
           </div>
-          <span className="font-mono-hud text-[12px]" style={{ color: hp }}>
-            {Math.round(mon.hp * 100)}
-          </span>
-        </div>
+        )}
       </div>
 
       {/* Hex, HP bar, and (lead only) LEAD tag stack in normal flow - nothing
@@ -88,7 +92,7 @@ function TeamSlot({
             className="absolute inset-0 hex"
             style={{
               background: `linear-gradient(160deg, ${tColor}, ${tColor2})`,
-              opacity: mon.hp > 0 ? 1 : 0.3,
+              opacity: hpFrac > 0 ? 1 : 0.3,
               filter: isActive ? 'brightness(1.2) saturate(1.2)' : 'brightness(.9)',
               boxShadow: isActive ? `0 0 22px ${tColor}` : '0 6px 14px rgba(0,0,0,.4)',
             }}
@@ -105,21 +109,25 @@ function TeamSlot({
               }}
             />
           </div>
-          <div className="absolute top-0.5 right-0.5 px-1 py-0.5 rounded-full font-mono-hud text-[10px] leading-none font-bold bg-black/80 border border-white/20 pointer-events-none">
-            {mon.lv}
-          </div>
+          {typeof mon.lv === 'number' && (
+            <div className="absolute top-0.5 right-0.5 px-1 py-0.5 rounded-full font-mono-hud text-[10px] leading-none font-bold bg-black/80 border border-white/20 pointer-events-none">
+              {mon.lv}
+            </div>
+          )}
           {mon.status && (
             <div className="absolute top-0.5 left-0.5 px-1 py-0.5 rounded-full bg-[#a866c8] border border-black/40 font-mono-hud text-[9px] leading-none flex items-center justify-center uppercase font-bold pointer-events-none">
               {mon.status}
             </div>
           )}
         </div>
-        <div className="w-[44px] h-1 rounded-full bg-black/60 overflow-hidden mt-1 pointer-events-none">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${mon.hp * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
-          />
-        </div>
+        {hasHp && (
+          <div className="w-[44px] h-1 rounded-full bg-black/60 overflow-hidden mt-1 pointer-events-none">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${hpFrac * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
+            />
+          </div>
+        )}
         {isActive && (
           <div
             className="mt-1 px-2 py-0.5 rounded-full font-mono-hud text-[10px] leading-none uppercase tracking-widest pointer-events-none"
