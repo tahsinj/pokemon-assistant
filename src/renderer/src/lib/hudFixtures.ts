@@ -44,12 +44,14 @@ export interface HudTeamMon {
   ability: string;
   item: string;
   nature: string;
-  /** Displayed stat numbers: real computed stats when known, else species base. */
+  /** Displayed stat numbers: real computed stats (base + IVs/EVs/nature at `statLevel`). */
   stats: { hp: number; atk: number; def: number; spa: number; spd: number; spe: number };
   /** Species base-stat total (always base, independent of `stats`). */
   bst?: number;
-  /** True when `stats` are real computed stats (level + IVs/EVs/nature known). */
-  statsAreActual?: boolean;
+  /** Level the displayed `stats` were computed at. */
+  statLevel?: number;
+  /** True when `statLevel` is the assumed competitive default (100), not a stored level. */
+  levelAssumed?: boolean;
   moves: HudMove[];
 }
 

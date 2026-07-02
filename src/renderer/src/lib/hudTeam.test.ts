@@ -45,16 +45,20 @@ describe('toHudTeam', () => {
 
   it('computes real stats from level/IVs/EVs/nature when level is known', () => {
     const m = toHudTeam([member({ level: 50 })], pokemonById, moves)[0];
-    expect(m.statsAreActual).toBe(true);
+    expect(m.statLevel).toBe(50);
+    expect(m.levelAssumed).toBe(false);
     expect(m.stats.hp).toBe(183); // Garchomp base 108 @ L50, 31 IV, 0 EV
     expect(m.stats.atk).toBe(150); // base 130, Hardy (neutral)
     expect(m.bst).toBe(600); // base-stat total stays the species value
   });
 
-  it('shows species base stats for a level-less build', () => {
+  it('assumes Lv 100 (competitive default) for a level-less build', () => {
     const m = toHudTeam([member()], pokemonById, moves)[0];
-    expect(m.statsAreActual).toBe(false);
-    expect(m.stats).toEqual(garchomp.baseStats);
+    expect(m.statLevel).toBe(100);
+    expect(m.levelAssumed).toBe(true);
+    expect(m.lv).toBeUndefined(); // no fabricated level badge
+    expect(m.stats).not.toEqual(garchomp.baseStats); // real computed stats, not base
+    expect(m.stats.hp).toBe(357); // base 108 @ L100, 31 IV, 0 EV
   });
 
   it('applies a boosting nature to the right stat', () => {

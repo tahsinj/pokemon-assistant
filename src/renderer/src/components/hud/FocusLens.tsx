@@ -7,9 +7,8 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
   const tint2 = `var(--t-${mon.types[1] || mon.types[0]})`;
   const bstTotal = mon.bst ?? Object.values(mon.stats).reduce((a, b) => a + b, 0);
   const maxStat = Math.max(1, ...Object.values(mon.stats));
-  const statBasis = mon.statsAreActual
-    ? `Lv ${mon.lv ?? '?'} stats`
-    : 'base stats';
+  const statLevel = mon.statLevel ?? mon.lv ?? 100;
+  const statBasis = mon.levelAssumed ? `~Lv ${statLevel} stats` : `Lv ${statLevel} stats`;
   const hasHp = typeof mon.hp === 'number';
 
   return (

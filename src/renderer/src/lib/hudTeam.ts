@@ -64,19 +64,19 @@ export function toHudTeam(
       .filter((mv): mv is HudMove => !!mv)
       .slice(0, 4);
 
-    // Real computed stats need a level; without one (a bare Showdown build)
-    // we can only honestly show species base stats. IVs default to 31, EVs to 0.
+    // Always show real computed stats. The slot's level is used when known
+    // (PC mon or a Showdown build with an explicit "Level:"); otherwise we
+    // assume 100, the competitive default. IVs default to 31, EVs to 0.
     const nature = m.nature || 'Hardy';
-    const hasLevel = typeof m.level === 'number';
-    const stats = hasLevel
-      ? calcAllStats(p.baseStats, toSpread(m.ivs, 31), toSpread(m.evs, 0), m.level as number, nature)
-      : { ...p.baseStats };
+    const knownLevel = typeof m.level === 'number';
+    const statLevel = knownLevel ? (m.level as number) : 100;
+    const stats = calcAllStats(p.baseStats, toSpread(m.ivs, 31), toSpread(m.evs, 0), statLevel, nature);
 
     out.push({
       id: `T${m.slot + 1}`,
       name: p.name,
       dex: `#${String(p.dex).padStart(4, '0')}`,
-      ...(hasLevel ? { lv: m.level as number } : {}),
+      ...(knownLevel ? { lv: m.level as number } : {}),
       types: p.types.map((t) => t.toLowerCase() as HudType),
       role: deriveRole(p),
       sprite: p.dex,
@@ -86,7 +86,8 @@ export function toHudTeam(
       nature,
       stats,
       bst: bst(p.baseStats),
-      statsAreActual: hasLevel,
+      statLevel,
+      levelAssumed: !knownLevel,
       moves: hudMoves,
     });
   }
