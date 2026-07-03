@@ -1,6 +1,10 @@
 import type { CSSProperties } from 'react';
 import { CP_SPRITE, CP_SPRITE_HD, type HudTeamMon } from '../../lib/hudFixtures';
+import { NATURES, STAT_LABELS } from '../../lib/stats';
+import type { StatKey } from '../../lib/types';
 import { TypeChip } from './HudPrimitives';
+
+const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
 export function FocusLens({ mon }: { mon: HudTeamMon }) {
   const tint = `var(--t-${mon.types[0]})`;
@@ -8,8 +12,10 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
   const bstTotal = mon.bst ?? Object.values(mon.stats).reduce((a, b) => a + b, 0);
   const maxStat = Math.max(1, ...Object.values(mon.stats));
   const statLevel = mon.statLevel ?? mon.lv ?? 100;
-  const statBasis = mon.levelAssumed ? `~Lv ${statLevel} stats` : `Lv ${statLevel} stats`;
   const hasHp = typeof mon.hp === 'number';
+
+  const nat = NATURES[mon.nature] || {};
+  const evTotal = mon.evs ? Object.values(mon.evs).reduce((a, b) => a + b, 0) : 0;
 
   return (
     <div className="focus-lens-v" style={{ ['--lens-tint' as string]: tint } as CSSProperties}>
@@ -30,11 +36,9 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
         />
         <div className="scan" aria-hidden="true" />
         <span className="corner-tag">{mon.dex}</span>
-        {typeof mon.lv === 'number' && (
-          <span className="corner-tag r" style={{ color: tint2 }}>
-            LV {mon.lv}
-          </span>
-        )}
+        <span className="corner-tag r" style={{ color: tint2 }}>
+          LV {statLevel}
+        </span>
         <img
           src={CP_SPRITE_HD(mon.sprite)}
           alt={mon.name}
@@ -49,9 +53,6 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
           {mon.name}
           <span className="lens-v-bst">BST {bstTotal}</span>
         </div>
-        <div className="lens-v-sub">
-          {mon.nature} · {statBasis}
-        </div>
         <div className="lens-v-chips">
           {mon.types.map((t) => (
             <TypeChip key={t} t={t} size="md" />
@@ -60,25 +61,61 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
 
         <div className="lens-v-kv">
           <div>
+            <span className="k">NAT</span>
+            <span className="v">
+              {mon.nature}
+              {nat.plus && <em className="nat-up"> ▲{STAT_LABELS[nat.plus]}</em>}
+              {nat.minus && <em className="nat-down"> ▼{STAT_LABELS[nat.minus]}</em>}
+              {!nat.plus && !nat.minus && <em className="nat-neutral"> · neutral</em>}
+            </span>
+          </div>
+          <div>
             <span className="k">ABL</span>
             <span className="v">{mon.ability}</span>
           </div>
           <div>
             <span className="k">ITM</span>
-            <span className="v">{mon.item}</span>
+            <span className="v">{mon.item || '-'}</span>
           </div>
         </div>
 
         <div className="lens-v-stats">
-          {Object.entries(mon.stats).map(([k, v]) => (
-            <div key={k} className="row">
-              <span className="sk">{k}</span>
-              <div className="sbar">
-                <i style={{ width: `${Math.min(100, (v / maxStat) * 100)}%` }} />
+          <div className="row shead">
+            <span className="sk" />
+            <span className="shint">stat</span>
+            <span className="sv" />
+            <span className="ivev">
+              <b className="iv">IV</b>
+              <b className="ev">EV</b>
+            </span>
+          </div>
+          {STAT_KEYS.map((k) => {
+            const v = mon.stats[k];
+            const iv = mon.ivs?.[k] ?? 31;
+            const ev = mon.evs?.[k] ?? 0;
+            const up = nat.plus === k;
+            const down = nat.minus === k;
+            return (
+              <div key={k} className={`row${up ? ' up' : ''}${down ? ' down' : ''}`}>
+                <span className="sk">{k}</span>
+                <div className="sbar">
+                  <i style={{ width: `${Math.min(100, (v / maxStat) * 100)}%` }} />
+                </div>
+                <span className="sv">
+                  {v}
+                  {up && <span className="natmark up">▲</span>}
+                  {down && <span className="natmark down">▼</span>}
+                </span>
+                <span className="ivev">
+                  <b className={`iv${iv < 31 ? ' imperfect' : ''}`}>{iv}</b>
+                  <b className={`ev${ev > 0 ? ' invested' : ''}`}>{ev}</b>
+                </span>
               </div>
-              <span className="sv">{v}</span>
-            </div>
-          ))}
+            );
+          })}
+          <div className="ev-total">
+            EVs {evTotal}/510{evTotal > 510 ? ' ⚠' : ''}
+          </div>
         </div>
 
         <div className="lens-v-moves">

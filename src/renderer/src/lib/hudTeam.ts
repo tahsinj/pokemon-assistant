@@ -70,7 +70,9 @@ export function toHudTeam(
     const nature = m.nature || 'Hardy';
     const knownLevel = typeof m.level === 'number';
     const statLevel = knownLevel ? (m.level as number) : 100;
-    const stats = calcAllStats(p.baseStats, toSpread(m.ivs, 31), toSpread(m.evs, 0), statLevel, nature);
+    const ivs = toSpread(m.ivs, 31);
+    const evs = toSpread(m.evs, 0);
+    const stats = calcAllStats(p.baseStats, ivs, evs, statLevel, nature);
 
     out.push({
       id: `T${m.slot + 1}`,
@@ -85,6 +87,8 @@ export function toHudTeam(
       item: m.item || '',
       nature,
       stats,
+      ivs,
+      evs,
       bst: bst(p.baseStats),
       statLevel,
       levelAssumed: !knownLevel,
