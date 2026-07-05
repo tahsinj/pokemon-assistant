@@ -323,8 +323,11 @@ export function TeamBuilderPage({
     c.members.slice(0, 6).forEach((a, i) => {
       next[i] = {
         p: a.p,
+        // Apply the Pokémon's ACTUAL stored set - item/moves/EVs/nature as they
+        // are in the PC. Optimization suggestions (itemSuggestion, evTarget)
+        // stay as advice in this Team tab and are never baked into the team.
         detail: {
-          item: a.itemSuggestion?.suggested ?? a.rec.item,
+          item: a.rec.item,
           ability: a.rec.ability || null,
           nature: a.rec.nature || null,
           level: a.rec.level,
