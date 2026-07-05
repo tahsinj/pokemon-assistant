@@ -60,22 +60,24 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
         </div>
 
         <div className="lens-v-kv">
-          <div>
-            <span className="k">NAT</span>
-            <span className="v">
-              {mon.nature}
-              {nat.plus && <em className="nat-up"> ▲{STAT_LABELS[nat.plus]}</em>}
-              {nat.minus && <em className="nat-down"> ▼{STAT_LABELS[nat.minus]}</em>}
-              {!nat.plus && !nat.minus && <em className="nat-neutral"> · neutral</em>}
-            </span>
-          </div>
-          <div>
+          <div className="kv-cell">
             <span className="k">ABL</span>
             <span className="v">{mon.ability}</span>
           </div>
-          <div>
-            <span className="k">ITM</span>
-            <span className="v">{mon.item || '-'}</span>
+          <div className="kv-pair">
+            <div className="kv-cell">
+              <span className="k">NAT</span>
+              <span className="v">
+                {mon.nature}
+                {nat.plus && <em className="nat-up"> +{STAT_LABELS[nat.plus]}</em>}
+                {nat.minus && <em className="nat-down"> −{STAT_LABELS[nat.minus]}</em>}
+                {!nat.plus && !nat.minus && <em className="nat-neutral"> ·</em>}
+              </span>
+            </div>
+            <div className="kv-cell">
+              <span className="k">ITM</span>
+              <span className="v">{mon.item || '-'}</span>
+            </div>
           </div>
         </div>
 
@@ -101,11 +103,7 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
                 <div className="sbar">
                   <i style={{ width: `${Math.min(100, (v / maxStat) * 100)}%` }} />
                 </div>
-                <span className="sv">
-                  {v}
-                  {up && <span className="natmark up">▲</span>}
-                  {down && <span className="natmark down">▼</span>}
-                </span>
+                <span className="sv">{v}</span>
                 <span className="ivev">
                   <b className={`iv${iv < 31 ? ' imperfect' : ''}`}>{iv}</b>
                   <b className={`ev${ev > 0 ? ' invested' : ''}`}>{ev}</b>

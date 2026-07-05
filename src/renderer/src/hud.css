@@ -919,7 +919,7 @@
     linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01));
   border: 1px solid var(--hairline);
   aspect-ratio: 1;
-  max-height: 220px;
+  max-height: 184px;
   overflow: hidden;
   display: grid; place-items: center;
   flex-shrink: 0;
@@ -961,9 +961,9 @@
 
 .lens-v-body {
   position: relative;
-  padding: 12px 14px 14px;
+  padding: 10px 14px 12px;
   display: flex; flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
   overflow: auto;
 }
@@ -990,7 +990,10 @@
   display: grid; grid-template-columns: 1fr; gap: 5px;
   margin-top: 2px;
 }
-.lens-v-kv > div {
+.lens-v-kv .kv-pair {
+  display: grid; grid-template-columns: 1.45fr 1fr; gap: 5px;
+}
+.lens-v-kv .kv-cell {
   padding: 5px 9px;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.10);
@@ -1043,19 +1046,12 @@
   color: var(--ink-1);
 }
 .lens-v-stats .sv {
-  position: relative;
   font-family: 'Space Grotesk', sans-serif; font-size: 13px;
   font-weight: 600; color: var(--ink-0); text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.lens-v-stats .sv .natmark {
-  position: absolute; right: -1px; top: -7px;
-  font-size: 8px; line-height: 1;
-}
 .lens-v-stats .row.up .sv { color: #7cd87b; }
 .lens-v-stats .row.down .sv { color: #ff7b8a; }
-.lens-v-stats .sv .natmark.up { color: #7cd87b; }
-.lens-v-stats .sv .natmark.down { color: #ff7b8a; }
 .lens-v-stats .ivev {
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
   font-family: 'VT323', monospace; font-size: 12px;
@@ -1098,13 +1094,13 @@
 }
 .lens-v-moves .lens-move {
   position: relative;
-  padding: 7px 10px 8px;
+  padding: 6px 10px 7px;
   border-radius: 9px;
   border: 1px solid rgba(255,255,255,.08);
   background: rgba(255,255,255,.035);
   border-top-width: 2px;
   overflow: hidden;
-  min-height: 50px;
+  min-height: 42px;
   display: flex; flex-direction: column; justify-content: center;
 }
 .lens-v-moves .lens-move::after {

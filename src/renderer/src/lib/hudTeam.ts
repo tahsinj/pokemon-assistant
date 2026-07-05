@@ -16,6 +16,21 @@ function toSpread(src: Record<string, number> | null | undefined, fallback: numb
   return { hp: f('hp'), atk: f('atk'), def: f('def'), spa: f('spa'), spd: f('spd'), spe: f('spe') };
 }
 
+/**
+ * Abilities can be stored id-form ("innerfocus") from a Showdown import. Resolve
+ * to the species' proper display name ("Inner Focus") by normalised match, with
+ * a title-case fallback for anything not on the species.
+ */
+function prettyAbility(raw: string | null, p: Pokemon): string {
+  const fallback = p.abilities[0] || '';
+  if (!raw) return fallback;
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const target = norm(raw);
+  const hit = [...p.abilities, ...p.hiddenAbilities].find((a) => norm(a) === target);
+  if (hit) return hit;
+  return raw.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function catLetter(category: Move['category']): string {
   if (category === 'Physical') return 'P';
   if (category === 'Special') return 'S';
@@ -83,7 +98,7 @@ export function toHudTeam(
       role: deriveRole(p),
       sprite: p.dex,
       status: null,
-      ability: m.ability || p.abilities[0] || '',
+      ability: prettyAbility(m.ability, p),
       item: m.item || '',
       nature,
       stats,

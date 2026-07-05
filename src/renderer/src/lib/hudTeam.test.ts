@@ -68,6 +68,15 @@ describe('toHudTeam', () => {
     expect(adamant.stats.spa).toBeLessThan(neutral.stats.spa);
   });
 
+  it('resolves an id-form ability to the species display name', () => {
+    expect(toHudTeam([member({ ability: 'roughskin' })], pokemonById, moves)[0].ability).toBe('Rough Skin');
+    expect(toHudTeam([member({ ability: 'sandveil' })], pokemonById, moves)[0].ability).toBe('Sand Veil');
+  });
+
+  it('title-cases an unknown ability as a fallback', () => {
+    expect(toHudTeam([member({ ability: 'some-ability' })], pokemonById, moves)[0].ability).toBe('Some Ability');
+  });
+
   it('falls back to the first ability when the member has none', () => {
     const team = toHudTeam([member()], pokemonById, moves);
     expect(team[0].ability).toBe('Rough Skin');
