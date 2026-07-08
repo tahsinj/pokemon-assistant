@@ -229,6 +229,44 @@ export function TeamBuilderPage({
     };
   };
 
+  // Refresh each filled slot's set (item/moves/EVs/IVs/nature/level) from the
+  // matching PC mon, so a team built before a change picks up the real data.
+  // Matches by species (first PC mon of that species). Slots not in the PC are
+  // left as-is. The user saves afterwards to persist.
+  const onSyncFromPc = () => {
+    if (!pc.available) {
+      setImportMsg('PC storage is not available.');
+      return;
+    }
+    let synced = 0;
+    const missing: string[] = [];
+    const next = team.map((s) => {
+      if (!s) return s;
+      const rec = pc.mons.find((r) => r.speciesId === s.p.id);
+      if (!rec) {
+        missing.push(s.p.name);
+        return s;
+      }
+      synced++;
+      return {
+        p: s.p,
+        detail: {
+          item: rec.item,
+          ability: rec.ability || null,
+          nature: rec.nature || null,
+          level: rec.level,
+          ivs: { ...rec.ivs },
+          evs: { ...rec.evs },
+          moves: rec.moves.length ? rec.moves : null,
+        },
+      };
+    });
+    setTeam(next);
+    setImportMsg(
+      `Synced ${synced} from PC${missing.length ? ` · not in PC: ${missing.join(', ')}` : ''}. Save to persist.`,
+    );
+  };
+
   const onSave = async () => {
     if (!bridge?.teamsSave) {
       setImportMsg('Saving requires the desktop app (Electron).');
@@ -381,6 +419,17 @@ export function TeamBuilderPage({
           >
             IMPORT
           </button>
+          {pc.available && (
+            <button
+              type="button"
+              className="chunky ghost font-display text-[12px]"
+              style={{ padding: '6px 12px' }}
+              onClick={onSyncFromPc}
+              title="Refresh each slot's item, moves, EVs/IVs, nature and level from the matching PC Pokémon"
+            >
+              SYNC FROM PC
+            </button>
+          )}
           <button
             type="button"
             className="chunky font-display text-[12px]"
