@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { CP_SPRITE, CP_SPRITE_HD, type HudTeamMon } from '../../lib/hudFixtures';
-import { NATURES, STAT_LABELS } from '../../lib/stats';
+import { NATURES } from '../../lib/stats';
 import type { StatKey } from '../../lib/types';
 import { TypeChip } from './HudPrimitives';
 
@@ -67,12 +67,7 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
           <div className="kv-pair">
             <div className="kv-cell">
               <span className="k">NAT</span>
-              <span className="v">
-                {mon.nature}
-                {nat.plus && <em className="nat-up"> +{STAT_LABELS[nat.plus]}</em>}
-                {nat.minus && <em className="nat-down"> −{STAT_LABELS[nat.minus]}</em>}
-                {!nat.plus && !nat.minus && <em className="nat-neutral"> ·</em>}
-              </span>
+              <span className="v">{mon.nature}</span>
             </div>
             <div className="kv-cell">
               <span className="k">ITM</span>

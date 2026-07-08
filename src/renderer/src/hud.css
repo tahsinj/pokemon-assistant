@@ -918,11 +918,11 @@
     radial-gradient(60% 50% at 50% 60%, rgba(255,255,255,.10), transparent 70%),
     linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.01));
   border: 1px solid var(--hairline);
-  aspect-ratio: 1;
-  max-height: 184px;
+  flex: 1 1 auto;
+  min-height: 190px;
+  max-height: 300px;
   overflow: hidden;
   display: grid; place-items: center;
-  flex-shrink: 0;
 }
 .lens-v-sprite::after {
   content: ""; position: absolute; inset: 0;
@@ -991,7 +991,7 @@
   margin-top: 2px;
 }
 .lens-v-kv .kv-pair {
-  display: grid; grid-template-columns: 1.45fr 1fr; gap: 5px;
+  display: grid; grid-template-columns: auto 1fr; gap: 5px;
 }
 .lens-v-kv .kv-cell {
   padding: 5px 9px;
@@ -1012,15 +1012,6 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 1; min-width: 0;
 }
-.lens-v-kv .v .nat-up,
-.lens-v-kv .v .nat-down,
-.lens-v-kv .v .nat-neutral {
-  font-family: 'VT323', monospace; font-style: normal;
-  font-size: 12px; letter-spacing: .06em;
-}
-.lens-v-kv .v .nat-up { color: #7cd87b; }
-.lens-v-kv .v .nat-down { color: #ff7b8a; }
-.lens-v-kv .v .nat-neutral { color: var(--ink-2); opacity: .7; }
 
 .lens-v-stats {
   display: grid; gap: 4px;
