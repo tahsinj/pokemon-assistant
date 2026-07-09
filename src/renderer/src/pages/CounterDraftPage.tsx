@@ -62,6 +62,20 @@ export function CounterDraftPage({
   };
   const candidates = useMemo<Candidate[]>(() => candidatesFor(opponents), [pc.mons, pokemonById, opponents]);
 
+  // PC mons dropped by the underlevel gate - surfaced so an excluded mon
+  // (e.g. a freshly added one) doesn't silently vanish from the draft.
+  const minLevelGate = useMemo(
+    () => Math.ceil(opponents.reduce((m, o) => Math.max(m, o.level), 1) * 0.6),
+    [opponents],
+  );
+  const excludedUnderleveled = useMemo(
+    () =>
+      pc.mons
+        .filter((rec) => !!pokemonById[rec.speciesId] && rec.level < minLevelGate)
+        .map((rec) => `${pokemonById[rec.speciesId].name} (Lv ${rec.level})`),
+    [pc.mons, pokemonById, minLevelGate],
+  );
+
   const addOpponent = (p: Pokemon) => {
     if (opponents.length >= 6) return;
     setOpponents((prev) => [...prev, { p, level: 100 }]);
@@ -184,6 +198,14 @@ export function CounterDraftPage({
             </button>
           )}
         </div>
+
+        {excludedUnderleveled.length > 0 && (
+          <div className="font-mono-hud text-[13px] text-[var(--ink-2)] px-1 mt-2.5 leading-relaxed">
+            ⚠ Skipped as underleveled (below Lv {minLevelGate}, ~60% of the top opponent):{' '}
+            <span className="text-[var(--ink-1)]">{excludedUnderleveled.join(', ')}</span>. Level them up
+            or lower the opponent levels to include them.
+          </div>
+        )}
 
         {picking && (
           <div className="mt-3 h-[38vh] min-h-[240px] glass rounded-[12px] p-2">
