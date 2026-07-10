@@ -29,6 +29,14 @@ const BULK_TABS: { id: OpponentBulk; label: string }[] = [
 
 interface OppSlot { p: Pokemon; level: number; }
 
+/** Battle-level normalization: null = each mon's own level; a number flattens
+ *  BOTH sides to that level (e.g. Lv 50 tournament format). */
+const LEVEL_MODES: { label: string; val: number | null; hint: string }[] = [
+  { label: 'Actual', val: null, hint: "Each Pokémon at its own level" },
+  { label: 'Lv 50', val: 50, hint: 'Tournament - everything normalized to Lv 50' },
+  { label: 'Lv 100', val: 100, hint: 'Smogon singles - everything at Lv 100' },
+];
+
 export function CounterDraftPage({
   pokemon,
   moves,
@@ -45,28 +53,35 @@ export function CounterDraftPage({
   const [picking, setPicking] = useState(false);
   const [result, setResult] = useState<DraftResult | null>(null);
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
+  const [flatLevel, setFlatLevel] = useState<number | null>(null);
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
 
-  // PC mons usable against a given opponent team (drop the badly underleveled).
-  const candidatesFor = (opps: OppSlot[]): Candidate[] => {
-    const maxLevel = opps.reduce((m, o) => Math.max(m, o.level), 1);
+  // PC mons usable against a given opponent team. In a flat-level format both
+  // sides are normalized, so the underlevel gate doesn't apply (every mon is
+  // eligible at the flat level); otherwise drop the badly underleveled.
+  const candidatesFor = (opps: OppSlot[], flat: number | null): Candidate[] => {
+    const maxLevel = flat ?? opps.reduce((m, o) => Math.max(m, o.level), 1);
     const minLevel = maxLevel * 0.6;
     const out: Candidate[] = [];
     for (const rec of pc.mons) {
-      if (rec.level < minLevel) continue;
+      const level = flat ?? rec.level;
+      if (level < minLevel) continue;
       const p = pokemonById[rec.speciesId];
-      if (p) out.push({ rec, p });
+      if (p) out.push({ rec: flat == null ? rec : { ...rec, level: flat }, p });
     }
     return out;
   };
-  const candidates = useMemo<Candidate[]>(() => candidatesFor(opponents), [pc.mons, pokemonById, opponents]);
+  const candidates = useMemo<Candidate[]>(
+    () => candidatesFor(opponents, flatLevel),
+    [pc.mons, pokemonById, opponents, flatLevel],
+  );
 
   // PC mons dropped by the underlevel gate - surfaced so an excluded mon
-  // (e.g. a freshly added one) doesn't silently vanish from the draft.
+  // (e.g. a freshly added one) doesn't silently vanish. Flat formats exclude none.
   const minLevelGate = useMemo(
-    () => Math.ceil(opponents.reduce((m, o) => Math.max(m, o.level), 1) * 0.6),
-    [opponents],
+    () => (flatLevel != null ? 0 : Math.ceil(opponents.reduce((m, o) => Math.max(m, o.level), 1) * 0.6)),
+    [opponents, flatLevel],
   );
   const excludedUnderleveled = useMemo(
     () =>
@@ -91,11 +106,11 @@ export function CounterDraftPage({
     setResult(null);
   };
 
-  const runDraftFor = (opps: OppSlot[], b: OpponentBulk) => {
-    const opp: OpponentEntry[] = opps.map((o) => ({ p: o.p, level: o.level }));
-    setResult(draftCounterTeam(opp, candidatesFor(opps), moves, smogon, b));
+  const runDraftFor = (opps: OppSlot[], b: OpponentBulk, flat: number | null) => {
+    const opp: OpponentEntry[] = opps.map((o) => ({ p: o.p, level: flat ?? o.level }));
+    setResult(draftCounterTeam(opp, candidatesFor(opps, flat), moves, smogon, b));
   };
-  const runDraft = () => runDraftFor(opponents, bulk);
+  const runDraft = () => runDraftFor(opponents, bulk, flatLevel);
 
   // Save the current opponent team (label optional) for later re-analysis.
   const saveCurrent = () => {
@@ -121,7 +136,7 @@ export function CounterDraftPage({
       .map((s) => ({ p: pokemonById[s.speciesId], level: s.level }))
       .filter((o): o is OppSlot => !!o.p);
     setOpponents(opps);
-    runDraftFor(opps, bulk);
+    runDraftFor(opps, bulk, flatLevel);
   };
 
   // Switching tabs re-scores the SAME drafted team under the new assumption.
@@ -129,10 +144,17 @@ export function CounterDraftPage({
     setBulk(next);
     setResult((prev) => {
       if (!prev) return prev;
-      const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: o.level }));
+      const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: flatLevel ?? o.level }));
       const { matrix, oppOrder, tips } = evaluateTeam(prev.team, opps, moves, smogon, next);
       return { ...prev, matrix, oppOrder, tips };
     });
+  };
+
+  // Changing the battle level re-drafts: the eligible pool and the best answers
+  // genuinely differ once levels are flattened (no level-gap advantage).
+  const changeFlatLevel = (next: number | null) => {
+    setFlatLevel(next);
+    if (result) runDraftFor(opponents, bulk, next);
   };
 
   return (
@@ -142,15 +164,38 @@ export function CounterDraftPage({
           <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)]">
             Opponent team - species &amp; level
           </div>
-          <button
-            type="button"
-            onClick={runDraft}
-            disabled={opponents.length === 0 || candidates.length === 0}
-            className="chunky font-display text-[12px]"
-            style={{ padding: '8px 16px', opacity: opponents.length === 0 || candidates.length === 0 ? 0.5 : 1 }}
-          >
-            ⚙ Draft from my PC
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5" title="Flatten both sides to one level so a level gap doesn't skew the matchup">
+              <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Level</span>
+              <div className="flex gap-1">
+                {LEVEL_MODES.map((m) => (
+                  <button
+                    key={m.label}
+                    type="button"
+                    onClick={() => changeFlatLevel(m.val)}
+                    aria-pressed={flatLevel === m.val}
+                    title={m.hint}
+                    className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                      flatLevel === m.val
+                        ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                        : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={runDraft}
+              disabled={opponents.length === 0 || candidates.length === 0}
+              className="chunky font-display text-[12px]"
+              style={{ padding: '8px 16px', opacity: opponents.length === 0 || candidates.length === 0 ? 0.5 : 1 }}
+            >
+              ⚙ Draft from my PC
+            </button>
+          </div>
         </div>
 
         {!pc.available || candidates.length === 0 ? (
@@ -178,12 +223,14 @@ export function CounterDraftPage({
                   type="number"
                   min={1}
                   max={100}
-                  value={o.level}
+                  value={flatLevel ?? o.level}
+                  disabled={flatLevel != null}
+                  title={flatLevel != null ? `Normalized to Lv ${flatLevel} for this format` : undefined}
                   onChange={(e) => {
                     const v = Number(e.target.value);
                     if (Number.isFinite(v)) setLevel(i, Math.max(1, Math.min(100, Math.round(v))));
                   }}
-                  className="w-14 bg-black/40 border border-white/15 rounded-full px-2 py-0.5 font-mono-hud text-[13px] text-center text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)]"
+                  className="w-14 bg-black/40 border border-white/15 rounded-full px-2 py-0.5 font-mono-hud text-[13px] text-center text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)] disabled:opacity-50"
                 />
               </div>
             </div>
@@ -198,6 +245,12 @@ export function CounterDraftPage({
             </button>
           )}
         </div>
+
+        {flatLevel != null && (
+          <div className="font-mono-hud text-[13px] text-[var(--hud-accent-2)] px-1 mt-2.5">
+            ◢ Both sides normalized to Lv {flatLevel} - matchups reflect the format, not a level gap.
+          </div>
+        )}
 
         {excludedUnderleveled.length > 0 && (
           <div className="font-mono-hud text-[13px] text-[var(--ink-2)] px-1 mt-2.5 leading-relaxed">
