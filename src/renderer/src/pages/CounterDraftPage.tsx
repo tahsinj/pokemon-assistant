@@ -54,6 +54,7 @@ export function CounterDraftPage({
   const [result, setResult] = useState<DraftResult | null>(null);
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
   const [flatLevel, setFlatLevel] = useState<number | null>(null);
+  const [mode, setMode] = useState(6); // team size per side (3v3 … 6v6)
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
 
@@ -92,7 +93,7 @@ export function CounterDraftPage({
   );
 
   const addOpponent = (p: Pokemon) => {
-    if (opponents.length >= 6) return;
+    if (opponents.length >= mode) return;
     setOpponents((prev) => [...prev, { p, level: 100 }]);
     setPicking(false);
     setResult(null);
@@ -106,11 +107,11 @@ export function CounterDraftPage({
     setResult(null);
   };
 
-  const runDraftFor = (opps: OppSlot[], b: OpponentBulk, flat: number | null) => {
+  const runDraftFor = (opps: OppSlot[], b: OpponentBulk, flat: number | null, size: number) => {
     const opp: OpponentEntry[] = opps.map((o) => ({ p: o.p, level: flat ?? o.level }));
-    setResult(draftCounterTeam(opp, candidatesFor(opps, flat), moves, smogon, b));
+    setResult(draftCounterTeam(opp, candidatesFor(opps, flat), moves, smogon, b, undefined, size));
   };
-  const runDraft = () => runDraftFor(opponents, bulk, flatLevel);
+  const runDraft = () => runDraftFor(opponents, bulk, flatLevel, mode);
 
   // Save the current opponent team (label optional) for later re-analysis.
   const saveCurrent = () => {
@@ -135,8 +136,8 @@ export function CounterDraftPage({
     const opps: OppSlot[] = saved.opponents
       .map((s) => ({ p: pokemonById[s.speciesId], level: s.level }))
       .filter((o): o is OppSlot => !!o.p);
-    setOpponents(opps);
-    runDraftFor(opps, bulk, flatLevel);
+    setOpponents(opps.slice(0, mode));
+    runDraftFor(opps.slice(0, mode), bulk, flatLevel, mode);
   };
 
   // Switching tabs re-scores the SAME drafted team under the new assumption.
@@ -154,48 +155,79 @@ export function CounterDraftPage({
   // genuinely differ once levels are flattened (no level-gap advantage).
   const changeFlatLevel = (next: number | null) => {
     setFlatLevel(next);
-    if (result) runDraftFor(opponents, bulk, next);
+    if (result) runDraftFor(opponents, bulk, next, mode);
+  };
+
+  // Switching format (3v3 … 6v6) caps the opponent team and the drafted answer
+  // to that size; trims any extra opponents and re-drafts.
+  const changeMode = (next: number) => {
+    setMode(next);
+    const trimmed = opponents.slice(0, next);
+    if (trimmed.length !== opponents.length) setOpponents(trimmed);
+    if (result) runDraftFor(trimmed, bulk, flatLevel, next);
   };
 
   return (
     <ModuleFrame kicker="◢ MATCHUP DRAFT" title="Counter Draft" subtitle="Build a PC answer to their team">
       <div className="glass rounded-[14px] p-3.5 mb-4">
+        {/* Format bar - team size + battle level */}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3 pb-3 border-b border-white/8">
+          <div className="flex items-center gap-1.5" title="Battle format - how many Pokémon each side brings">
+            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Mode</span>
+            <div className="flex gap-1">
+              {[3, 4, 5, 6].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => changeMode(n)}
+                  aria-pressed={mode === n}
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                    mode === n
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  {n}v{n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5" title="Flatten both sides to one level so a level gap doesn't skew the matchup">
+            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Level</span>
+            <div className="flex gap-1">
+              {LEVEL_MODES.map((m) => (
+                <button
+                  key={m.label}
+                  type="button"
+                  onClick={() => changeFlatLevel(m.val)}
+                  aria-pressed={flatLevel === m.val}
+                  title={m.hint}
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                    flatLevel === m.val
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-2.5">
           <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)]">
             Opponent team - species &amp; level
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5" title="Flatten both sides to one level so a level gap doesn't skew the matchup">
-              <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Level</span>
-              <div className="flex gap-1">
-                {LEVEL_MODES.map((m) => (
-                  <button
-                    key={m.label}
-                    type="button"
-                    onClick={() => changeFlatLevel(m.val)}
-                    aria-pressed={flatLevel === m.val}
-                    title={m.hint}
-                    className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
-                      flatLevel === m.val
-                        ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
-                        : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={runDraft}
-              disabled={opponents.length === 0 || candidates.length === 0}
-              className="chunky font-display text-[12px]"
-              style={{ padding: '8px 16px', opacity: opponents.length === 0 || candidates.length === 0 ? 0.5 : 1 }}
-            >
-              ⚙ Draft from my PC
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={runDraft}
+            disabled={opponents.length === 0 || candidates.length === 0}
+            className="chunky font-display text-[12px]"
+            style={{ padding: '8px 16px', opacity: opponents.length === 0 || candidates.length === 0 ? 0.5 : 1 }}
+          >
+            ⚙ Draft from my PC
+          </button>
         </div>
 
         {!pc.available || candidates.length === 0 ? (
@@ -235,7 +267,7 @@ export function CounterDraftPage({
               </div>
             </div>
           ))}
-          {opponents.length < 6 && (
+          {opponents.length < mode && (
             <button
               type="button"
               onClick={() => setPicking((v) => !v)}

@@ -39,6 +39,15 @@ describe('draftCounterTeam', () => {
     expect(res.team).toHaveLength(1);
     expect(res.matrix).toHaveLength(1);
   });
+
+  it('caps the drafted team at the requested size (e.g. 3v3)', () => {
+    const opponents = [{ p: mon('A'), level: 100 }];
+    const candidates = ['a', 'b', 'c', 'd', 'e'].map(rec);
+    // Everything wins with a positive score, so without a cap all 5 would fill.
+    const res = draftCounterTeam(opponents, candidates, {} as Record<string, Move>, null, 'maxIv', () => cell('win', 50), 3);
+    expect(res.team).toHaveLength(3);
+    expect(res.matrix).toHaveLength(3);
+  });
 });
 
 describe('evaluateTeam', () => {

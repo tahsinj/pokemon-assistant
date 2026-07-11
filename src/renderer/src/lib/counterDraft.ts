@@ -102,6 +102,7 @@ export function draftCounterTeam(
   smogon: SmogonBundle | null,
   bulk: OpponentBulk = 'maxIv',
   evaluate: Evaluator = evaluateMatchup,
+  teamSize = 6,
 ): DraftResult {
   const oppSets = buildOppSets(opponents, moves, smogon, bulk);
   const fullMatrix: MatchupCell[][] = candidates.map((c) => oppSets.map((o) => evaluate(c, o, moves)));
@@ -113,7 +114,7 @@ export function draftCounterTeam(
 
   const coverPass = (floor: number) => {
     let progress = true;
-    while (chosenIdx.length < 6 && progress) {
+    while (chosenIdx.length < teamSize && progress) {
       progress = false;
       let best = -1, bestNew = 0, bestScore = -Infinity;
       for (let ci = 0; ci < candidates.length; ci++) {
@@ -139,13 +140,13 @@ export function draftCounterTeam(
   coverPass(VERDICT_RANK.win);
   coverPass(VERDICT_RANK.trade);
 
-  if (chosenIdx.length < 6) {
+  if (chosenIdx.length < teamSize) {
     const rest = candidates
       .map((_, ci) => ci)
       .filter((ci) => !chosenIdx.includes(ci) && sumScore(ci) > 0)
       .sort((a, b) => sumScore(b) - sumScore(a));
     for (const ci of rest) {
-      if (chosenIdx.length >= 6) break;
+      if (chosenIdx.length >= teamSize) break;
       chosenIdx.push(ci);
     }
   }
