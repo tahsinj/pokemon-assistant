@@ -19,6 +19,7 @@ import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { bst } from '../lib/stats';
+import { TeamCompositionPanel } from '../components/team/TeamCompositionPanel';
 
 const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -88,6 +89,12 @@ export function TeamBuilderPage({
   }, [pokemon]);
 
   const fuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
+
+  const intelBy = useCallback((id: string) => smogon?.species[id] ?? null, [smogon]);
+  const pcMons = useMemo(
+    () => pc.mons.map((r) => pokemonById[r.speciesId]).filter((p): p is Pokemon => !!p),
+    [pc.mons, pokemonById],
+  );
 
   const refreshSaved = useCallback(async () => {
     if (!bridge?.teamsList) return;
@@ -739,6 +746,22 @@ export function TeamBuilderPage({
             )}
           </div>
         </div>
+
+        {/* Team composition / role audit */}
+        {teamMembers.length > 0 && (
+          <TeamCompositionPanel
+            slots={team.filter((s): s is TeamSlot => !!s)}
+            pcMons={pcMons}
+            dex={pokemon}
+            smogon={smogon}
+            moves={moves}
+            intelBy={intelBy}
+            onAdd={(p) => {
+              const empty = team.findIndex((s) => s === null);
+              if (empty >= 0) setSlot(empty, p);
+            }}
+          />
+        )}
 
         {/* Suggested teammates - Smogon co-usage + coverage analysis */}
         {suggestions.length > 0 && (

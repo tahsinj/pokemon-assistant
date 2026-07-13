@@ -49,7 +49,9 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // Setup moves boost the user's offensive stats -> they enable sweeps and are
 // slot-worthy on offensive mons, not generic "utility". Keyed by normalized name.
-const SETUP_MOVES = new Set(
+// Exported so the team role classifier (`teamRoles.ts`) shares one source of
+// truth for what counts as setup / recovery / utility. Keyed by normalized name.
+export const SETUP_MOVES = new Set(
   [
     'Swords Dance', 'Dragon Dance', 'Bulk Up', 'Coil', 'Howl', 'Sharpen', 'Work Up', 'Meditate',
     'Nasty Plot', 'Calm Mind', 'Quiver Dance', 'Tail Glow', 'Growth', 'Geomancy', 'Charge Beam',
@@ -58,10 +60,10 @@ const SETUP_MOVES = new Set(
     'Iron Defense', 'Acid Armor', 'Cosmic Power', 'Hone Claws', 'Calm Mind',
   ].map(norm),
 );
-const RECOVERY_MOVES = new Set(
+export const RECOVERY_MOVES = new Set(
   ['Recover', 'Roost', 'Slack Off', 'Soft-Boiled', 'Synthesis', 'Moonlight', 'Morning Sun', 'Shore Up', 'Milk Drink', 'Strength Sap', 'Wish', 'Rest'].map(norm),
 );
-const UTILITY_MOVES = new Set(
+export const UTILITY_MOVES = new Set(
   [
     'Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web', 'Defog', 'Rapid Spin', 'Thunder Wave',
     'Will-O-Wisp', 'Toxic', 'Taunt', 'Encore', 'Trick', 'Switcheroo', 'Parting Shot', 'Heal Bell',
