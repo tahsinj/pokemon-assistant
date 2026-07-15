@@ -32,6 +32,13 @@ for (const m of js.matchAll(/([a-z0-9]+):\{([^}]*)\}/g)) {
   if (tier) tierById.set(id, tier);
 }
 
+// Manual tier corrections. The upstream formats-data occasionally mislabels a
+// species for our NatDex-OU purposes - e.g. Dragapult, a NatDex OU staple, has
+// shown up as "Uber", which wrongly bans it from the Best-6 / suggestion pools.
+// Keyed by `toId(name)`; applied on top of the fetched tiers.
+const TIER_OVERRIDES = { dragapult: 'OU' };
+for (const [id, tier] of Object.entries(TIER_OVERRIDES)) tierById.set(id, tier);
+
 const pokemon = JSON.parse(fs.readFileSync(POKEMON_JSON, 'utf8'));
 let patched = 0;
 for (const p of pokemon) {
