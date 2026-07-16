@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Move, Pokemon } from '../lib/types';
+import type { Move, Pokemon, HeldItem } from '../lib/types';
 import { buildBestTeams, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
 import type { LoadedTeamRecord, MemberDetail, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
 import { setTeamDraft } from '../lib/teamDraft';
@@ -20,6 +20,8 @@ import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { bst } from '../lib/stats';
 import { isSuggestableTeammate } from '../lib/legality';
+import { buildGatedItemIds, gatedItemsByKind, makeItemFilter, normItemId } from '../lib/itemKinds';
+import { loadOwnedItems, toggleOwnedItem } from '../lib/ownedItems';
 import { TeamCompositionPanel } from '../components/team/TeamCompositionPanel';
 
 const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
@@ -66,8 +68,9 @@ const EMPTY_TEAM: (TeamSlot | null)[] = [null, null, null, null, null, null];
 export function TeamBuilderPage({
   pokemon,
   moves,
+  items,
   smogon,
-}: { pokemon: Pokemon[]; moves: Record<string, Move>; smogon: SmogonBundle | null }) {
+}: { pokemon: Pokemon[]; moves: Record<string, Move>; items: HeldItem[]; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<'species' | 'pc'>('species');
@@ -95,6 +98,17 @@ export function TeamBuilderPage({
   const pcMons = useMemo(
     () => pc.mons.map((r) => pokemonById[r.speciesId]).filter((p): p is Pokemon => !!p),
     [pc.mons, pokemonById],
+  );
+
+  // Mega Stones / Z-Crystals are only suggested when the player marks them owned.
+  const gatedItemIds = useMemo(() => buildGatedItemIds(items), [items]);
+  const gatedItems = useMemo(() => gatedItemsByKind(items), [items]);
+  const [ownedItems, setOwnedItems] = useState<Set<string>>(() => loadOwnedItems());
+  const [ownedOpen, setOwnedOpen] = useState(false);
+  const [ownedQuery, setOwnedQuery] = useState('');
+  const allowItem = useMemo(
+    () => makeItemFilter(gatedItemIds, ownedItems),
+    [gatedItemIds, ownedItems],
   );
 
   const refreshSaved = useCallback(async () => {
@@ -362,7 +376,7 @@ export function TeamBuilderPage({
   const [legalOnly, setLegalOnly] = useState(true);
 
   const onAnalyzePc = () => {
-    setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon, { legalOnly }));
+    setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon, { legalOnly, allowItem }));
     setExpandedAdvice(null);
   };
 
@@ -825,6 +839,16 @@ export function TeamBuilderPage({
                 </label>
                 <button
                   type="button"
+                  className="chunky ghost font-display text-[12px]"
+                  style={{ padding: '6px 12px' }}
+                  onClick={() => setOwnedOpen((v) => !v)}
+                  aria-expanded={ownedOpen}
+                  title="Mega Stones / Z-Crystals are only suggested if you mark them owned here"
+                >
+                  ◇ ITEMS I OWN{ownedItems.size ? ` · ${ownedItems.size}` : ''}
+                </button>
+                <button
+                  type="button"
                   className="chunky font-display text-[12px]"
                   style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
                   onClick={onAnalyzePc}
@@ -834,6 +858,51 @@ export function TeamBuilderPage({
                 </button>
               </div>
             </div>
+
+            {ownedOpen && (
+              <div className="rounded-[10px] border border-white/10 bg-black/30 p-2.5 mb-2.5">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+                    Mega Stones / Z-Crystals you own - only these get suggested (others fall back to craftable items)
+                  </span>
+                  <input
+                    value={ownedQuery}
+                    onChange={(e) => setOwnedQuery(e.target.value)}
+                    placeholder="Search…"
+                    aria-label="Search special items"
+                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[13px] text-white outline-none focus:border-[var(--hud-accent-2)] w-[160px] flex-shrink-0"
+                  />
+                </div>
+                <div className="max-h-[180px] overflow-y-auto grid grid-cols-3 gap-1 no-scrollbar pr-1">
+                  {[...gatedItems.mega, ...gatedItems.zcrystal]
+                    .filter((it) => it.name.toLowerCase().includes(ownedQuery.toLowerCase()))
+                    .map((it) => {
+                      const id = normItemId(it.name);
+                      const on = ownedItems.has(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setOwnedItems(toggleOwnedItem(ownedItems, id))}
+                          aria-pressed={on}
+                          className={`flex items-center gap-1.5 px-2 py-1 rounded-[8px] border text-left font-mono-hud text-[12px] transition ${
+                            on
+                              ? 'border-[var(--hud-accent-2)] bg-white/[.06] text-[var(--ink-0)]'
+                              : 'border-white/10 text-[var(--ink-2)] hover:border-white/25'
+                          }`}
+                        >
+                          <span className="flex-shrink-0">{on ? '☑' : '☐'}</span>
+                          <span className="truncate">{it.name}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+                <div className="mt-1.5 font-mono-hud text-[11px] text-[var(--ink-2)]">
+                  Re-analyze to apply your owned items.
+                </div>
+              </div>
+            )}
+
             {!bestSix ? (
               <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
                 {pc.mons.length < 3

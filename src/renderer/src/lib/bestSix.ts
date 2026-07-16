@@ -38,6 +38,12 @@ export interface BestSixOptions {
   refLevel?: number;
   /** Exclude Pokémon banned from NatDex OU (Uber/AG). Default true. */
   legalOnly?: boolean;
+  /**
+   * Item recommendation gate. Return false to forbid suggesting an item (e.g.
+   * a Mega Stone / Z-Crystal the player doesn't own); advice then falls back to
+   * the best allowed item. Default allows everything.
+   */
+  allowItem?: (name: string) => boolean;
 }
 
 export interface MemberAdvice {
@@ -274,6 +280,7 @@ function buildAdvice(
   member: PoolMember,
   refLevel: number,
   moves: Record<string, Move>,
+  allowItem: (name: string) => boolean = () => true,
 ): MemberAdvice {
   const { rec, p, intel, matched } = member;
 
@@ -290,14 +297,18 @@ function buildAdvice(
     targetName = matched.name;
     targetNature = matched.set.nature;
     targetEvs = evArrayToStats(matched.set.evs);
-    targetItem = matched.set.item[0] ?? null;
+    // Prefer the set's first item the player can actually use (skips an unowned
+    // Mega Stone / Z-Crystal in favour of the next slash option).
+    targetItem = matched.set.item.find((it) => allowItem(it)) ?? null;
     targetMoves = matched.moves;
     reason = `Smogon "${matched.name}"`;
   } else if (intel) {
     const spread = intel.spreads[0];
     targetNature = spread?.nature ?? null;
     targetEvs = spread ? evArrayToStats(spread.evs) : null;
-    targetItem = intel.items[0]?.name === 'No item' ? null : (intel.items[0]?.name ?? null);
+    targetItem = intel.items
+      .map((i) => i.name)
+      .find((name) => name !== 'No item' && allowItem(name)) ?? null;
     const canLearn = new Set(p.moves.map((m) => m.move));
     targetMoves = intel.moves
       .filter((m) => canLearn.has(norm(m.name)))
@@ -372,6 +383,7 @@ export function buildBestTeams(
   const poolLimit = opts.poolSize ?? 24;
   const minLevelRatio = opts.minLevelRatio ?? 0.6;
   const legalOnly = opts.legalOnly ?? true;
+  const allowItem = opts.allowItem ?? (() => true);
 
   // Drop banned (Uber/AG) mons first so the team is NatDex OU-legal.
   let excludedBanned = 0;
@@ -487,7 +499,7 @@ export function buildBestTeams(
         offense: Math.round(ev.breakdown.offense * 100) / 100,
         roles: Math.round(ev.breakdown.roles * 100) / 100,
       },
-      members: team.map((m) => buildAdvice(m, refLevel, moves)),
+      members: team.map((m) => buildAdvice(m, refLevel, moves, allowItem)),
       stackedWeaknesses: ev.stacked,
       uncoveredTypes: ev.uncovered,
     });
