@@ -19,6 +19,7 @@ import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { bst } from '../lib/stats';
+import { isSuggestableTeammate } from '../lib/legality';
 import { TeamCompositionPanel } from '../components/team/TeamCompositionPanel';
 
 const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
@@ -155,11 +156,13 @@ export function TeamBuilderPage({
 
   const coverageCount = offensive.filter((o) => o.bestMult >= 2).length;
   const weakTypes = defensive.filter((d) => d.weakCount >= 2).map((d) => d.type);
+  // Recommend only "normal" NatDex OU mons - no legendaries / paradox / Ubers.
+  const suggestablePool = useMemo(() => pokemon.filter(isSuggestableTeammate), [pokemon]);
   const suggestions = useMemo(() => {
     if (teamMembers.length === 0 || teamMembers.length >= 6) return [];
-    return suggestTeammates(teamMembers, pokemon, smogon, 6);
+    return suggestTeammates(teamMembers, suggestablePool, smogon, 6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamMembers.map((m) => m.id).join(','), pokemon, smogon]);
+  }, [teamMembers.map((m) => m.id).join(','), suggestablePool, smogon]);
 
   const notableWeak = useMemo(() => weaknessCounts(teamMembers).filter((r) => r.weakCount >= 2), [teamMembers]);
   const massiveWeak = useMemo(() => massiveSharedWeaknesses(teamMembers, 3), [teamMembers]);

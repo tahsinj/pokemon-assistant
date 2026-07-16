@@ -10,7 +10,7 @@ import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 import { effectiveness } from './typechart';
 import { massiveSharedWeaknesses } from './teamWeaknessSummary';
 import { suggestTeammates } from './teamSynergy';
-import { isNatDexOULegal } from './legality';
+import { isSuggestableTeammate } from './legality';
 import { bst } from './stats';
 import {
   classifyMember,
@@ -195,7 +195,7 @@ export function suggestForGap(
   const pcPool = dedupe(pcMons).filter((p) => !onTeam.has(p.id) && fills(p));
   const pcIds = new Set(pcPool.map((p) => p.id));
   const dexPool = dex.filter(
-    (p) => !onTeam.has(p.id) && !pcIds.has(p.id) && isNatDexOULegal(p) && fills(p),
+    (p) => !onTeam.has(p.id) && !pcIds.has(p.id) && isSuggestableTeammate(p) && fills(p),
   );
 
   const score = (pool: Pokemon[], source: 'pc' | 'dex'): RoleSuggestion[] => {
