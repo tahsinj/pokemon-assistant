@@ -14,7 +14,14 @@ import { evaluateMatchup, type MatchupCell } from './matchup';
 import { assumedOpponentSpec, type AssumedSet, type OpponentBulk } from './opponentSet';
 
 export interface Candidate { rec: PcPokemonRecord; p: Pokemon; }
-export interface OpponentEntry { p: Pokemon; level: number; }
+export interface OpponentEntry {
+  p: Pokemon;
+  level: number;
+  /** Tera type the opponent terastallizes into (format-gated); null/undefined = no Tera. */
+  teraType?: string | null;
+  /** Whether the opponent Dynamaxes (doubles HP). */
+  dynamax?: boolean;
+}
 interface OppSet extends OpponentEntry { set: AssumedSet; }
 
 export interface ThreatAnswer { oppId: string; oppName: string; pcId: string | null; pcName: string | null; cell: MatchupCell | null; }

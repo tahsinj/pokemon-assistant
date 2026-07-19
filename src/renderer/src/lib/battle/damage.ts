@@ -55,6 +55,7 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
     ability: spec.ability,
     item: spec.item,
     teraType: teraType as never,
+    isDynamaxed: spec.isDynamaxed ?? false,
     ivs: spec.ivs,
     evs: spec.evs,
     boosts: spec.boosts,

@@ -39,6 +39,7 @@ function toBattleSpec(
   input: CombatImportInput,
   species: Pokemon,
   fallbackMoves: string[],
+  opts?: { tera?: string | null; dynamax?: boolean },
 ): { spec: BattlePokemonSpec; fields: ReturnType<typeof toCombatFields> } {
   const fields = toCombatFields(input, species, fallbackMoves);
   const spec: BattlePokemonSpec = {
@@ -51,6 +52,11 @@ function toBattleSpec(
     evs: fields.evs,
     moves: fields.moves.filter(Boolean).map((name) => ({ name })),
   };
+  if (opts?.tera) {
+    spec.isTerastallized = true;
+    spec.teraType = opts.tera;
+  }
+  if (opts?.dynamax) spec.isDynamaxed = true;
   return { spec, fields };
 }
 
@@ -70,14 +76,17 @@ function speedOf(species: Pokemon, fields: ReturnType<typeof toCombatFields>): n
 
 export function evaluateMatchup(
   pcSide: { rec: PcPokemonRecord; p: Pokemon },
-  oppSide: { p: Pokemon; level: number; set: AssumedSet },
+  oppSide: { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; dynamax?: boolean },
   moves: Record<string, Move>,
 ): MatchupCell {
   const myFallback = bestDamagingMoveNames(pcSide.p, moves);
   const oppFallback = bestDamagingMoveNames(oppSide.p, moves);
 
   const me = toBattleSpec(fromPcRecord(pcSide.rec), pcSide.p, myFallback);
-  const opp = toBattleSpec(oppSide.set.input, oppSide.p, oppFallback);
+  const opp = toBattleSpec(oppSide.set.input, oppSide.p, oppFallback, {
+    tera: oppSide.teraType,
+    dynamax: oppSide.dynamax,
+  });
 
   const myBest = bestDamaging(calcAllMoves(9, me.spec, opp.spec, EMPTY_FIELD));
   const theirBest = bestDamaging(calcAllMoves(9, opp.spec, me.spec, EMPTY_FIELD));

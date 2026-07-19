@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
+import { TYPES } from '../lib/typechart';
 import { draftCounterTeam, evaluateTeam, type DraftResult, type Candidate, type OpponentEntry } from '../lib/counterDraft';
 import type { OpponentBulk } from '../lib/opponentSet';
 import {
@@ -27,7 +28,10 @@ const BULK_TABS: { id: OpponentBulk; label: string }[] = [
   { id: 'competitive', label: 'Competitive' },
 ];
 
-interface OppSlot { p: Pokemon; level: number; }
+interface OppSlot { p: Pokemon; level: number; teraType?: string | null; }
+
+const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const TERA_OPTIONS = TYPES.map(cap);
 
 /** Battle-level normalization: null = each mon's own level; a number flattens
  *  BOTH sides to that level (e.g. Lv 50 tournament format). */
@@ -55,6 +59,8 @@ export function CounterDraftPage({
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
   const [flatLevel, setFlatLevel] = useState<number | null>(null);
   const [mode, setMode] = useState(6); // team size per side (3v3 … 6v6)
+  const [teraOn, setTeraOn] = useState(false); // opponents may Terastallize
+  const [dynamaxOn, setDynamaxOn] = useState(false); // opponents may Dynamax
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
 
@@ -107,11 +113,37 @@ export function CounterDraftPage({
     setResult(null);
   };
 
-  const runDraftFor = (opps: OppSlot[], b: OpponentBulk, flat: number | null, size: number) => {
-    const opp: OpponentEntry[] = opps.map((o) => ({ p: o.p, level: flat ?? o.level }));
-    setResult(draftCounterTeam(opp, candidatesFor(opps, flat), moves, smogon, b, undefined, size));
-  };
-  const runDraft = () => runDraftFor(opponents, bulk, flatLevel, mode);
+  // The opponent's default Tera type - its most-used Smogon tera, else its
+  // primary type. (@smogon/calc expects a capitalized type name.)
+  const defaultTera = useCallback(
+    (p: Pokemon): string =>
+      smogon?.species[p.id]?.teraTypes?.[0]?.name || cap(p.types[0] ?? 'Normal'),
+    [smogon],
+  );
+
+  // All current format knobs in one bag so the change handlers can re-run with
+  // the NEW value (React state updates are async within a tick).
+  type Format = { bulk: OpponentBulk; flat: number | null; size: number; tera: boolean; dynamax: boolean };
+  const format = (over?: Partial<Format>): Format =>
+    ({ bulk, flat: flatLevel, size: mode, tera: teraOn, dynamax: dynamaxOn, ...over });
+
+  const toEntries = (opps: OppSlot[], f: Format): OpponentEntry[] =>
+    opps.map((o) => ({
+      p: o.p,
+      level: f.flat ?? o.level,
+      teraType: f.tera ? (o.teraType ?? defaultTera(o.p)) : null,
+      dynamax: f.dynamax,
+    }));
+
+  const runDraftWith = (opps: OppSlot[], f: Format) =>
+    setResult(draftCounterTeam(toEntries(opps, f), candidatesFor(opps, f.flat), moves, smogon, f.bulk, undefined, f.size));
+  const runDraft = () => runDraftWith(opponents, format());
+
+  // Re-score the EXISTING drafted team (no re-draft) under updated assumptions.
+  const rescore = (opps: OppSlot[], f: Format) =>
+    setResult((prev) =>
+      prev ? { ...prev, ...evaluateTeam(prev.team, toEntries(opps, f), moves, smogon, f.bulk) } : prev,
+    );
 
   // Save the current opponent team (label optional) for later re-analysis.
   const saveCurrent = () => {
@@ -135,27 +167,23 @@ export function CounterDraftPage({
   const reanalyze = (saved: SavedDraft) => {
     const opps: OppSlot[] = saved.opponents
       .map((s) => ({ p: pokemonById[s.speciesId], level: s.level }))
-      .filter((o): o is OppSlot => !!o.p);
-    setOpponents(opps.slice(0, mode));
-    runDraftFor(opps.slice(0, mode), bulk, flatLevel, mode);
+      .filter((o): o is OppSlot => !!o.p)
+      .slice(0, mode);
+    setOpponents(opps);
+    runDraftWith(opps, format());
   };
 
   // Switching tabs re-scores the SAME drafted team under the new assumption.
   const changeBulk = (next: OpponentBulk) => {
     setBulk(next);
-    setResult((prev) => {
-      if (!prev) return prev;
-      const opps: OpponentEntry[] = opponents.map((o) => ({ p: o.p, level: flatLevel ?? o.level }));
-      const { matrix, oppOrder, tips } = evaluateTeam(prev.team, opps, moves, smogon, next);
-      return { ...prev, matrix, oppOrder, tips };
-    });
+    rescore(opponents, format({ bulk: next }));
   };
 
   // Changing the battle level re-drafts: the eligible pool and the best answers
   // genuinely differ once levels are flattened (no level-gap advantage).
   const changeFlatLevel = (next: number | null) => {
     setFlatLevel(next);
-    if (result) runDraftFor(opponents, bulk, next, mode);
+    if (result) runDraftWith(opponents, format({ flat: next }));
   };
 
   // Switching format (3v3 … 6v6) caps the opponent team and the drafted answer
@@ -164,7 +192,24 @@ export function CounterDraftPage({
     setMode(next);
     const trimmed = opponents.slice(0, next);
     if (trimmed.length !== opponents.length) setOpponents(trimmed);
-    if (result) runDraftFor(trimmed, bulk, flatLevel, next);
+    if (result) runDraftWith(trimmed, format({ size: next }));
+  };
+
+  // Tera / Dynamax legality changes the matchups, so re-draft (a Tera mon may
+  // need a different answer).
+  const changeTera = (next: boolean) => {
+    setTeraOn(next);
+    if (result) runDraftWith(opponents, format({ tera: next }));
+  };
+  const changeDynamax = (next: boolean) => {
+    setDynamaxOn(next);
+    if (result) runDraftWith(opponents, format({ dynamax: next }));
+  };
+  // Tweaking one opponent's Tera type re-scores the current team.
+  const setTeraTypeFor = (i: number, teraType: string) => {
+    const next = opponents.map((o, idx) => (idx === i ? { ...o, teraType } : o));
+    setOpponents(next);
+    if (result && teraOn) rescore(next, format());
   };
 
   return (
@@ -209,6 +254,46 @@ export function CounterDraftPage({
                   }`}
                 >
                   {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5" title="Whether opponents may Terastallize (change type). Set each mon's Tera type below.">
+            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Tera</span>
+            <div className="flex gap-1">
+              {[{ l: 'Off', v: false }, { l: 'On', v: true }].map((o) => (
+                <button
+                  key={o.l}
+                  type="button"
+                  onClick={() => changeTera(o.v)}
+                  aria-pressed={teraOn === o.v}
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                    teraOn === o.v
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5" title="Whether opponents may Dynamax (doubles their HP for the matchup math)">
+            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Dynamax</span>
+            <div className="flex gap-1">
+              {[{ l: 'Off', v: false }, { l: 'On', v: true }].map((o) => (
+                <button
+                  key={o.l}
+                  type="button"
+                  onClick={() => changeDynamax(o.v)}
+                  aria-pressed={dynamaxOn === o.v}
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                    dynamaxOn === o.v
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  {o.l}
                 </button>
               ))}
             </div>
@@ -265,6 +350,21 @@ export function CounterDraftPage({
                   className="w-14 bg-black/40 border border-white/15 rounded-full px-2 py-0.5 font-mono-hud text-[13px] text-center text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)] disabled:opacity-50"
                 />
               </div>
+              {teraOn && (
+                <div className="flex items-center justify-center gap-1 mt-1.5" title="Tera type this opponent terastallizes into">
+                  <span className="font-mono-hud text-[12px] text-[var(--hud-accent-2)]">Tera</span>
+                  <select
+                    value={o.teraType ?? defaultTera(o.p)}
+                    onChange={(e) => setTeraTypeFor(i, e.target.value)}
+                    aria-label={`${o.p.name} Tera type`}
+                    className="bg-black/40 border border-white/15 rounded-full px-2 py-0.5 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+                  >
+                    {TERA_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           ))}
           {opponents.length < mode && (

@@ -74,4 +74,23 @@ describe('evaluateMatchup', () => {
     const b = evaluateMatchup(pc, oppComp, moves);
     expect(a.myKoChance).toBeGreaterThanOrEqual(b.myKoChance);
   });
+
+  it('opponent Dynamax doubles HP, taking an extra hit to KO', () => {
+    const set = assumedOpponentSpec(garchomp, 100, null, moves);
+    const pc = { rec: rec('weavile', 'Weavile', 100, ['Icicle Crash', 'Ice Shard', 'Knock Off']), p: weavile };
+    const base = evaluateMatchup(pc, { p: garchomp, level: 100, set }, moves);
+    const dmax = evaluateMatchup(pc, { p: garchomp, level: 100, set, dynamax: true }, moves);
+    // 4× Icicle Crash OHKOs a 357-HP Garchomp but not a 714-HP Dynamaxed one.
+    expect(base.label).toBe('OHKO');
+    expect(dmax.label).not.toBe('OHKO');
+  });
+
+  it('opponent Tera replaces defensive typing (Garchomp Tera Fairy resists Ice)', () => {
+    const set = assumedOpponentSpec(garchomp, 100, null, moves);
+    const pc = { rec: rec('weavile', 'Weavile', 100, ['Icicle Crash', 'Ice Shard', 'Knock Off']), p: weavile };
+    const base = evaluateMatchup(pc, { p: garchomp, level: 100, set }, moves);
+    const tera = evaluateMatchup(pc, { p: garchomp, level: 100, set, teraType: 'Fairy' }, moves);
+    // Ice is 4× vs Dragon/Ground but only 1× vs a pure-Fairy Tera form.
+    expect(tera.myKoChance).toBeLessThan(base.myKoChance);
+  });
 });

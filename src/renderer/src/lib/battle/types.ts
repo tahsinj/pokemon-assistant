@@ -18,6 +18,8 @@ export interface BattlePokemonSpec {
   item?: string;
   teraType?: string;
   isTerastallized?: boolean;
+  /** Dynamaxed - doubles HP (and Max-move handling) in the calc. */
+  isDynamaxed?: boolean;
   ivs: BaseStats;
   evs: BaseStats;
   moves: MoveSlot[];
