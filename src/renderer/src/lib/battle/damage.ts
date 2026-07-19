@@ -1,6 +1,20 @@
-import { calculate, Generations, Pokemon as CalcPokemon, Move as CalcMove, Field as CalcField, Result } from '@smogon/calc';
+import { calculate, Generations, Pokemon as CalcPokemon, Move as CalcMove, Field as CalcField, Result, ABILITIES } from '@smogon/calc';
 import type { BattlePokemonSpec, FieldSpec, Generation } from './types';
 import { getMergedMove, getMergedSpecies } from './dex';
+
+// Our data stores abilities id-form ("levitate", "sturdy"); @smogon/calc matches
+// abilities by exact display name, so an unmapped id is silently ignored (no
+// Levitate immunity, no Sturdy, no Huge Power, …). Normalize id -> display name.
+const ABILITY_BY_ID: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  const latest = ABILITIES[ABILITIES.length - 1] ?? [];
+  for (const name of latest) map[name.toLowerCase().replace(/[^a-z0-9]/g, '')] = name;
+  return map;
+})();
+function properAbility(ability?: string): string | undefined {
+  if (!ability) return undefined;
+  return ABILITY_BY_ID[ability.toLowerCase().replace(/[^a-z0-9]/g, '')] ?? ability;
+}
 
 export interface DamageOutcome {
   moveName: string;
@@ -52,7 +66,7 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
   const baseOpts = {
     level: spec.level,
     nature: spec.nature,
-    ability: spec.ability,
+    ability: properAbility(spec.ability),
     item: spec.item,
     teraType: teraType as never,
     isDynamaxed: spec.isDynamaxed ?? false,
@@ -161,7 +175,7 @@ export function calcDamage(
     const def = buildPokemon(generation, defender);
     const overrides = moveOverridePayload(moveName, generation);
     const move = new CalcMove(g, moveName, {
-      ability: attacker.ability,
+      ability: properAbility(attacker.ability),
       item: attacker.item,
       species: attacker.speciesName,
       ...(overrides ? { overrides: overrides as never } : {}),

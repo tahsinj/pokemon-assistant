@@ -93,4 +93,35 @@ describe('evaluateMatchup', () => {
     // Ice is 4× vs Dragon/Ground but only 1× vs a pure-Fairy Tera form.
     expect(tera.myKoChance).toBeLessThan(base.myKoChance);
   });
+
+  it('respects an opponent immunity ability (Levitate negates Ground)', () => {
+    const levitator = {
+      id: 'levitator', name: 'Levitator', dex: 1, types: ['Poison'],
+      baseStats: { hp: 70, atk: 70, def: 70, spa: 70, spd: 70, spe: 70 },
+      abilities: ['levitate'], moves: [{ move: 'earthquake', learn: 'level' }],
+    } as unknown as Pokemon;
+    const set = assumedOpponentSpec(levitator, 100, null, moves);
+    const groundOnly = { rec: rec('mudbray', 'Mudbray', 100, ['Earthquake']), p: {
+      id: 'mudbray', name: 'Mudbray', dex: 2, types: ['Ground'],
+      baseStats: { hp: 90, atk: 125, def: 100, spa: 55, spd: 85, spe: 35 },
+      abilities: ['Stamina'], moves: [{ move: 'earthquake', learn: 'level' }],
+    } as unknown as Pokemon };
+    const cell = evaluateMatchup(groundOnly, { p: levitator, level: 100, set }, moves);
+    expect(cell.moveName).toBeNull();   // Earthquake is the only move and it's immune
+    expect(cell.verdict).toBe('lose');
+  });
+
+  it('respects Sturdy in the opponent ability pool (denies the OHKO)', () => {
+    // Rock mon whose ability pool includes Sturdy though it isn't its first ability.
+    const sturdyRock = {
+      id: 'sturdyrock', name: 'Sturdy Rock', dex: 3, types: ['Rock'],
+      abilities: ['rockhead', 'sturdy'],
+      baseStats: { hp: 60, atk: 80, def: 60, spa: 40, spd: 60, spe: 50 },
+      moves: [{ move: 'earthquake', learn: 'level' }],
+    } as unknown as Pokemon;
+    const set = assumedOpponentSpec(sturdyRock, 100, null, moves);
+    const pc = { rec: rec('garchomp', 'Garchomp', 100, ['Earthquake']), p: garchomp };
+    const cell = evaluateMatchup(pc, { p: sturdyRock, level: 100, set }, moves);
+    expect(cell.label).not.toBe('OHKO'); // Ground is 2× but Sturdy survives from full
+  });
 });

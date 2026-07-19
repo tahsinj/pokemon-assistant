@@ -35,18 +35,39 @@ function kosWithin(o: DamageOutcome | null, n: number): boolean {
   return !!o && o.ko.n > 0 && o.ko.n <= n && o.ko.chance >= 0.5;
 }
 
+// Abilities that change the OHKO/immunity verdict. For a counter-draft we
+// assume the opponent's most defensive plausible ability (worst case for us):
+// an immunity ability beats relying on that move type; an OHKO-denier means no
+// clean one-shot. Keyed by normalized id.
+const IMMUNITY_ABILITIES = new Set([
+  'levitate', 'flashfire', 'waterabsorb', 'voltabsorb', 'lightningrod', 'stormdrain',
+  'sapsipper', 'motordrive', 'dryskin', 'eartheater', 'wellbakedbody', 'voltabsorb',
+]);
+const DENY_OHKO_ABILITIES = new Set(['sturdy', 'multiscale', 'shadowshield', 'disguise', 'iceface']);
+const normAbil = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** The opponent's most defensively-significant ability from its pool, else the assumed one. */
+function defensiveAbility(p: Pokemon, fallback: string | null): string | null {
+  const pool = [...p.abilities, ...(p.hiddenAbilities ?? [])].map(normAbil);
+  const imm = pool.find((a) => IMMUNITY_ABILITIES.has(a));
+  if (imm) return imm;
+  const deny = pool.find((a) => DENY_OHKO_ABILITIES.has(a));
+  if (deny) return deny;
+  return fallback;
+}
+
 function toBattleSpec(
   input: CombatImportInput,
   species: Pokemon,
   fallbackMoves: string[],
-  opts?: { tera?: string | null; dynamax?: boolean },
+  opts?: { tera?: string | null; dynamax?: boolean; ability?: string | null },
 ): { spec: BattlePokemonSpec; fields: ReturnType<typeof toCombatFields> } {
   const fields = toCombatFields(input, species, fallbackMoves);
   const spec: BattlePokemonSpec = {
     speciesName: fields.speciesName,
     level: fields.level,
     nature: fields.nature,
-    ability: fields.ability || undefined,
+    ability: (opts?.ability ?? fields.ability) || undefined,
     item: fields.item || undefined,
     ivs: fields.ivs,
     evs: fields.evs,
@@ -86,6 +107,9 @@ export function evaluateMatchup(
   const opp = toBattleSpec(oppSide.set.input, oppSide.p, oppFallback, {
     tera: oppSide.teraType,
     dynamax: oppSide.dynamax,
+    // Assume the opponent's most defensive ability (Levitate immunity, Sturdy,
+    // …) so the draft doesn't over-promise a KO it can't guarantee.
+    ability: defensiveAbility(oppSide.p, oppSide.set.ability),
   });
 
   const myBest = bestDamaging(calcAllMoves(9, me.spec, opp.spec, EMPTY_FIELD));
