@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateMatchup } from './matchup';
+import { evaluateMatchup, opponentAbility } from './matchup';
 import { assumedOpponentSpec } from './opponentSet';
 import type { Pokemon, Move } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
@@ -123,5 +123,26 @@ describe('evaluateMatchup', () => {
     const pc = { rec: rec('garchomp', 'Garchomp', 100, ['Earthquake']), p: garchomp };
     const cell = evaluateMatchup(pc, { p: sturdyRock, level: 100, set }, moves);
     expect(cell.label).not.toBe('OHKO'); // Ground is 2× but Sturdy survives from full
+  });
+});
+
+describe('opponentAbility (tier-aware assumption)', () => {
+  const magnezone = {
+    abilities: ['magnetpull', 'sturdy'], hiddenAbilities: ['analytic'],
+  } as unknown as Pokemon;
+  const levitator = { abilities: ['levitate'], hiddenAbilities: [] } as unknown as Pokemon;
+
+  it('Competitive uses the realistic most-used ability (no speculative Sturdy)', () => {
+    expect(opponentAbility(magnezone, 'Magnet Pull', 'competitive')).toBe('Magnet Pull');
+  });
+
+  it('Min / Max IV assume the worst-case defensive ability (Sturdy)', () => {
+    expect(opponentAbility(magnezone, 'Magnet Pull', 'maxIv')).toBe('sturdy');
+    expect(opponentAbility(magnezone, 'Magnet Pull', 'min')).toBe('sturdy');
+  });
+
+  it('keeps a real immunity ability on every tier (Levitate)', () => {
+    expect(opponentAbility(levitator, 'Levitate', 'competitive')).toBe('Levitate');
+    expect(opponentAbility(levitator, 'Levitate', 'maxIv')).toBe('levitate');
   });
 });

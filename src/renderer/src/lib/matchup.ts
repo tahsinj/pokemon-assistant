@@ -8,7 +8,7 @@
  */
 import type { Pokemon, Move, BaseStats } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
-import type { AssumedSet } from './opponentSet';
+import type { AssumedSet, OpponentBulk } from './opponentSet';
 import { fromPcRecord, toCombatFields, type CombatImportInput } from './toCombatSpec';
 import { calcAllMoves, type DamageOutcome } from './battle/damage';
 import { EMPTY_FIELD, type BattlePokemonSpec } from './battle/types';
@@ -56,6 +56,16 @@ function defensiveAbility(p: Pokemon, fallback: string | null): string | null {
   return fallback;
 }
 
+/**
+ * Which ability to assume for the opponent given the assumption tier. The
+ * realistic "Competitive" tab uses the most-used ability (still applies real
+ * abilities like a Levitate mon's Levitate); the theoretical Min / Max-IV tabs
+ * assume the most defensive ability it *could* run (worst case for the drafter).
+ */
+export function opponentAbility(p: Pokemon, setAbility: string | null, bulk: OpponentBulk): string | null {
+  return bulk === 'competitive' ? setAbility : defensiveAbility(p, setAbility);
+}
+
 function toBattleSpec(
   input: CombatImportInput,
   species: Pokemon,
@@ -97,7 +107,7 @@ function speedOf(species: Pokemon, fields: ReturnType<typeof toCombatFields>): n
 
 export function evaluateMatchup(
   pcSide: { rec: PcPokemonRecord; p: Pokemon },
-  oppSide: { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; dynamax?: boolean },
+  oppSide: { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; dynamax?: boolean; assumedAbility?: string | null },
   moves: Record<string, Move>,
 ): MatchupCell {
   const myFallback = bestDamagingMoveNames(pcSide.p, moves);
@@ -107,9 +117,12 @@ export function evaluateMatchup(
   const opp = toBattleSpec(oppSide.set.input, oppSide.p, oppFallback, {
     tera: oppSide.teraType,
     dynamax: oppSide.dynamax,
-    // Assume the opponent's most defensive ability (Levitate immunity, Sturdy,
-    // …) so the draft doesn't over-promise a KO it can't guarantee.
-    ability: defensiveAbility(oppSide.p, oppSide.set.ability),
+    // Tier-aware (set by the caller per assumption tab); direct callers fall
+    // back to the conservative worst-case ability.
+    ability:
+      oppSide.assumedAbility !== undefined
+        ? oppSide.assumedAbility
+        : defensiveAbility(oppSide.p, oppSide.set.ability),
   });
 
   const myBest = bestDamaging(calcAllMoves(9, me.spec, opp.spec, EMPTY_FIELD));

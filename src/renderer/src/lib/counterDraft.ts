@@ -10,7 +10,7 @@
 import type { Pokemon, Move } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
 import type { SmogonBundle } from './smogon';
-import { evaluateMatchup, type MatchupCell } from './matchup';
+import { evaluateMatchup, opponentAbility, type MatchupCell } from './matchup';
 import { assumedOpponentSpec, type AssumedSet, type OpponentBulk } from './opponentSet';
 
 export interface Candidate { rec: PcPokemonRecord; p: Pokemon; }
@@ -22,7 +22,7 @@ export interface OpponentEntry {
   /** Whether the opponent Dynamaxes (doubles HP). */
   dynamax?: boolean;
 }
-interface OppSet extends OpponentEntry { set: AssumedSet; }
+interface OppSet extends OpponentEntry { set: AssumedSet; assumedAbility: string | null; }
 
 export interface ThreatAnswer { oppId: string; oppName: string; pcId: string | null; pcName: string | null; cell: MatchupCell | null; }
 export interface DraftTips {
@@ -43,10 +43,10 @@ type Evaluator = (pc: Candidate, opp: OppSet, moves: Record<string, Move>) => Ma
 const VERDICT_RANK: Record<MatchupCell['verdict'], number> = { win: 2, trade: 1, lose: 0 };
 
 function buildOppSets(opponents: OpponentEntry[], moves: Record<string, Move>, smogon: SmogonBundle | null, bulk: OpponentBulk): OppSet[] {
-  return opponents.map((o) => ({
-    ...o,
-    set: assumedOpponentSpec(o.p, o.level, smogon?.species[o.p.id] ?? null, moves, bulk),
-  }));
+  return opponents.map((o) => {
+    const set = assumedOpponentSpec(o.p, o.level, smogon?.species[o.p.id] ?? null, moves, bulk);
+    return { ...o, set, assumedAbility: opponentAbility(o.p, set.ability, bulk) };
+  });
 }
 
 function buildTips(team: Candidate[], oppSets: OppSet[], matrix: MatchupCell[][]): DraftTips {
