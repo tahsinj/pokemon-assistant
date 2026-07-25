@@ -16,6 +16,10 @@ function properAbility(ability?: string): string | undefined {
   return ABILITY_BY_ID[ability.toLowerCase().replace(/[^a-z0-9]/g, '')] ?? ability;
 }
 
+// Abilities the calc doesn't model that let a mon survive an otherwise-lethal
+// hit from full HP (handled manually in calcDamage). Proper-name form.
+const FIRST_HIT_SURVIVORS = new Set(['Sturdy', 'Disguise', 'Ice Face']);
+
 export interface DamageOutcome {
   moveName: string;
   category: 'Physical' | 'Special' | 'Status';
@@ -206,7 +210,19 @@ export function calcDamage(
     const max = rolls[rolls.length - 1];
     const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
     const defMax = def.maxHP();
-    const ko = result.kochance();
+    let ko = { chance: result.kochance().chance ?? 0, n: result.kochance().n ?? 0, text: result.kochance().text || '' };
+
+    // @smogon/calc reduces damage for Multiscale/Filter etc. but does NOT model
+    // "survive the first hit from full HP" effects (Sturdy / Focus Sash / Disguise
+    // / Ice Face), so a guaranteed OHKO sails through. Apply them: from full HP a
+    // single hit can't KO, so it becomes a (guaranteed) 2HKO.
+    const atFull = defender.currentHPPercent == null || defender.currentHPPercent >= 100;
+    const blockerAbility = FIRST_HIT_SURVIVORS.has(properAbility(defender.ability) ?? '');
+    const focusSash = defender.item === 'Focus Sash';
+    if (atFull && ko.n === 1 && (blockerAbility || focusSash)) {
+      const why = blockerAbility ? properAbility(defender.ability) : 'Focus Sash';
+      ko = { chance: 1, n: 2, text: `survives one hit (${why})` };
+    }
     return {
       moveName,
       category: move.category as DamageOutcome['category'],
@@ -217,7 +233,7 @@ export function calcDamage(
       avgDamage: avg,
       pctMin: defMax > 0 ? (min / defMax) * 100 : 0,
       pctMax: defMax > 0 ? (max / defMax) * 100 : 0,
-      ko: { chance: ko.chance ?? 0, n: ko.n ?? 0, text: ko.text || '' },
+      ko,
       desc: safeDesc(result),
       isZero: false,
     };
