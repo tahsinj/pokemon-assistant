@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateMatchup, opponentAbility } from './matchup';
+import { evaluateMatchup, opponentAbility, classifyRace } from './matchup';
 import { assumedOpponentSpec } from './opponentSet';
 import type { Pokemon, Move } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
@@ -123,6 +123,39 @@ describe('evaluateMatchup', () => {
     const pc = { rec: rec('garchomp', 'Garchomp', 100, ['Earthquake']), p: garchomp };
     const cell = evaluateMatchup(pc, { p: sturdyRock, level: 100, set }, moves);
     expect(cell.label).not.toBe('OHKO'); // Ground is 2× but Sturdy survives from full
+  });
+
+});
+
+describe('classifyRace (speed-race verdict)', () => {
+  const r = (over: Partial<Parameters<typeof classifyRace>[0]>) =>
+    classifyRace({ myKoN: 2, theirKoN: Infinity, iAmFaster: true, myPctMax: 60, theirPctMax: 30, ...over });
+
+  it('faster OHKO is a clean win', () => {
+    expect(r({ myKoN: 1, theirKoN: 1 }).verdict).toBe('win');
+  });
+
+  it('faster 2HKO is a win when it survives the return hit', () => {
+    expect(r({ myKoN: 2, theirKoN: 2 }).verdict).toBe('win'); // they need 2 hits, I KO on my 2nd first
+    expect(r({ myKoN: 2, theirKoN: 3 }).verdict).toBe('win');
+  });
+
+  it('faster 2HKO is NOT a win when the opponent OHKOs back', () => {
+    const v = r({ myKoN: 2, theirKoN: 1, myPctMax: 60 });
+    expect(v.verdict).not.toBe('win'); // I hit once, get OHKO'd before my 2nd
+    expect(v.verdict).toBe('trade');   // …but I chunked them ≥50% → trade
+  });
+
+  it('slower must KO strictly sooner; a tie is a trade, not a win', () => {
+    expect(r({ iAmFaster: false, myKoN: 2, theirKoN: 3 }).verdict).toBe('win');
+    expect(r({ iAmFaster: false, myKoN: 2, theirKoN: 2 }).verdict).toBe('trade');
+    expect(r({ iAmFaster: false, myKoN: 3, theirKoN: 2, myPctMax: 35 }).verdict).toBe('lose');
+  });
+
+  it('can KO + opponent can not = wall win; neither can KO + I chip = stall trade', () => {
+    expect(r({ myKoN: 3, theirKoN: Infinity }).verdict).toBe('win'); // grind wall
+    expect(r({ myKoN: Infinity, theirKoN: Infinity, myPctMax: 30 }).verdict).toBe('trade');
+    expect(r({ myKoN: Infinity, theirKoN: 2, myPctMax: 30 }).verdict).toBe('lose');
   });
 });
 

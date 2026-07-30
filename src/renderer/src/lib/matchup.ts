@@ -31,10 +31,6 @@ function bestDamaging(outcomes: DamageOutcome[]): DamageOutcome | null {
   return dmg.sort((a, b) => (b.ko.chance - a.ko.chance) || (b.pctMax - a.pctMax))[0];
 }
 
-function kosWithin(o: DamageOutcome | null, n: number): boolean {
-  return !!o && o.ko.n > 0 && o.ko.n <= n && o.ko.chance >= 0.5;
-}
-
 // Abilities that change the OHKO/immunity verdict. For a counter-draft we
 // assume the opponent's most defensive plausible ability (worst case for us):
 // an immunity ability beats relying on that move type; an OHKO-denier means no
@@ -134,26 +130,72 @@ export function evaluateMatchup(
 
   const myKoChance = myBest?.ko.chance ?? 0;
   const theirPctMax = theirBest?.pctMax ?? 0;
-  const ohko = !!myBest && myBest.ko.n === 1 && myBest.ko.chance >= 0.5;
-  const ko2 = kosWithin(myBest, 2);
-  const ko3 = kosWithin(myBest, 3);
-  const survives = theirPctMax <= 45;
+  const myPctMax = myBest?.pctMax ?? 0;
+
+  // Turns each side needs to KO the other (∞ = can't KO at ≥50% reliability).
+  const realKo = (o: DamageOutcome | null) => (o && o.ko.n > 0 && o.ko.chance >= 0.5 ? o.ko.n : Infinity);
+  const r = classifyRace({ myKoN: realKo(myBest), theirKoN: realKo(theirBest), iAmFaster, myPctMax, theirPctMax });
+
+  return { ...r, iAmFaster, myKoChance, theirPctMax, moveName: myBest?.moveName ?? null };
+}
+
+export interface RaceInputs {
+  /** Turns I need to KO them (Infinity = can't). */
+  myKoN: number;
+  /** Turns they need to KO me (Infinity = can't). */
+  theirKoN: number;
+  iAmFaster: boolean;
+  /** My best move as % of their HP, and theirs as % of mine. */
+  myPctMax: number;
+  theirPctMax: number;
+}
+
+/**
+ * Resolve a 1v1 as a speed race. The key correctness point: a "faster 2HKO" is
+ * only a win when the mon survives the opponent's hit in between - a faster mon
+ * lands its KO before the opponent acts that turn (so it wins ties), a slower
+ * mon must KO strictly sooner. Pure / unit-tested.
+ */
+export function classifyRace({ myKoN, theirKoN, iAmFaster, myPctMax, theirPctMax }: RaceInputs): {
+  verdict: MatchupCell['verdict']; label: string; sub: string; score: number;
+} {
+  const iCanKo = myKoN !== Infinity;
+  const theyCanKo = theirKoN !== Infinity;
+  const iWinRace = iCanKo && (iAmFaster ? myKoN <= theirKoN : myKoN < theirKoN);
+  const koLabel = (n: number) => (n === 1 ? 'OHKO' : `${n}HKO`);
 
   let verdict: MatchupCell['verdict'];
   let label: string;
   let sub: string;
 
-  if (iAmFaster && ohko) { verdict = 'win'; label = 'OHKO'; sub = '↑ faster'; }
-  else if (iAmFaster && ko2) { verdict = 'win'; label = '2HKO'; sub = '↑ faster'; }
-  else if (survives && ko3) { verdict = 'win'; label = 'wall'; sub = `takes ${Math.round(theirPctMax)}%`; }
-  else if (ko2) { verdict = 'trade'; label = ohko ? 'OHKO' : '2HKO'; sub = iAmFaster ? '↑' : 'slower'; }
-  else if (ko3 && theirPctMax <= 75) { verdict = 'trade'; label = '3HKO'; sub = 'pressures'; }
-  else { verdict = 'lose'; label = 'lose'; sub = iAmFaster ? 'no KO' : 'slower'; }
+  if (iWinRace) {
+    verdict = 'win';
+    label = myKoN >= 3 ? 'wall' : koLabel(myKoN);
+    sub = myKoN >= 3 ? `takes ${Math.round(theirPctMax)}%`
+      : iAmFaster ? '↑ faster' : '↓ survives';
+  } else if (iCanKo && (myKoN <= theirKoN || myPctMax >= 50)) {
+    // Lose the speed race but KO in comparable turns or chunk them ≥50% before
+    // going down - a genuine trade / check, not a clean answer.
+    verdict = 'trade';
+    label = koLabel(myKoN);
+    sub = iAmFaster ? 'KO’d first' : 'slower';
+  } else if (!theyCanKo && myPctMax >= 20) {
+    // Can't cleanly KO them, but they can't KO me either and I chip - a stall.
+    verdict = 'trade';
+    label = 'wall';
+    sub = `takes ${Math.round(theirPctMax)}% · no KO`;
+  } else {
+    verdict = 'lose';
+    label = 'lose';
+    sub = iCanKo ? 'too slow' : 'no KO';
+  }
 
   const score =
-    (ohko ? 100 : 0) + (ko2 ? 60 : 0) + (ko3 ? 30 : 0) +
-    (iAmFaster ? 20 : 0) + (100 - theirPctMax) * 0.4 -
+    (iWinRace ? (myKoN === 1 ? 100 : myKoN === 2 ? 65 : 35) : 0) +
+    (verdict === 'trade' ? 25 : 0) +
+    (iAmFaster ? 15 : 0) +
+    (100 - theirPctMax) * 0.35 -
     (verdict === 'lose' ? 50 : 0);
 
-  return { verdict, label, sub, iAmFaster, myKoChance, theirPctMax, moveName: myBest?.moveName ?? null, score };
+  return { verdict, label, sub, score };
 }
