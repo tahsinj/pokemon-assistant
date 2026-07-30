@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Move, Pokemon } from '../lib/types';
-import type { SmogonBundle } from '../lib/smogon';
+import type { SmogonBundle, SmogonSpeciesIntel } from '../lib/smogon';
 import { DexDetailModal } from '../components/DexDetailModal';
 import type { PcBoxSummary, PcPokemonRecord, PcGender, SavePcPokemonPayload } from '../lib/bridgeTypes';
 import { SpeciesList } from '../components/SpeciesList';
@@ -37,6 +37,8 @@ import {
   exportBoxShowdown,
   exportBoxTxt,
 } from '../lib/pc/export';
+import { reviewStoredMon, type OptSuggestion, type OptSeverity } from '../lib/pc/optimize';
+import type { StatKey } from '../lib/types';
 
 type EditorMode = 'closed' | 'pick-species' | 'edit';
 
@@ -815,6 +817,8 @@ export function PcPage({
               draft={editor}
               species={editor.species}
               items={items}
+              intel={smogon?.species[editor.species.id] ?? null}
+              metaLabel={smogon?.meta.label ?? null}
               onViewDex={() => editor.species && setDexSpecies(editor.species)}
               onCommit={setEditor}
               onSave={(committed) => void saveDraft(committed)}
@@ -849,6 +853,8 @@ function PcEditor({
   draft,
   species,
   items,
+  intel,
+  metaLabel,
   onViewDex,
   onCommit,
   onSave,
@@ -858,6 +864,8 @@ function PcEditor({
   draft: EditorDraft;
   species: Pokemon;
   items: HeldItem[];
+  intel: SmogonSpeciesIntel | null;
+  metaLabel: string | null;
   onViewDex: () => void;
   onCommit: (d: EditorDraft) => void;
   onSave: (committed: EditorDraft) => void;
@@ -882,6 +890,54 @@ function PcEditor({
   const preview = previewNumericForm(numeric, { level: draft.level, ivs: draft.ivs, evs: draft.evs });
   const computed = calcAllStats(species.baseStats, preview.ivs, preview.evs, preview.level, local.nature);
   const evTotal = evTotalFromForm(numeric);
+
+  const review = useMemo(
+    () =>
+      reviewStoredMon(
+        {
+          moves: local.moves,
+          nature: local.nature,
+          item: local.item.trim() || null,
+          ability: local.ability,
+          evs: preview.evs,
+        },
+        species,
+        intel,
+      ),
+    [local.moves, local.nature, local.item, local.ability, preview.evs, species, intel],
+  );
+
+  const applyFix = (s: OptSuggestion) => {
+    const fix = s.fix;
+    if (!fix) return;
+    setLocal((d) => {
+      let next = { ...d };
+      if (fix.nature) next.nature = fix.nature;
+      if (fix.item !== undefined) next.item = fix.item;
+      if (fix.ability) next.ability = fix.ability;
+      if (fix.addMove) {
+        const moves = [...next.moves];
+        const target = norm(fix.replaceMove ?? '');
+        let idx = target ? moves.findIndex((m) => norm(m) === target) : -1;
+        if (idx < 0) idx = moves.findIndex((m) => !m.trim());
+        if (idx >= 0 && !moves.some((m) => norm(m) === norm(fix.addMove!))) {
+          moves[idx] = fix.addMove;
+          next.moves = moves;
+        }
+      }
+      return next;
+    });
+    if (fix.nature || fix.evs) {
+      setNumeric((n) => {
+        const out = { ...n };
+        if (fix.evs) {
+          out.evs = { ...n.evs };
+          for (const k of STAT_ORDER) out.evs[k] = String(fix.evs![k as StatKey] ?? 0);
+        }
+        return out;
+      });
+    }
+  };
 
   const handleSave = () => {
     const parsed = parseNumericForm(numeric);
@@ -936,6 +992,8 @@ function PcEditor({
           ◢ VIEW IN POKÉDEX
         </button>
       </div>
+
+      <CoachPanel review={review} metaLabel={metaLabel} hasIntel={!!intel} onApply={applyFix} />
 
       <label style={{ display: 'block', marginBottom: 8 }}>
         <span className="cell-label" style={{ display: 'block', marginBottom: 4 }}>Nickname (optional)</span>
@@ -1076,6 +1134,92 @@ function PcEditor({
   );
 }
 
+const SEVERITY_STYLE: Record<OptSeverity, { dot: string; label: string }> = {
+  high: { dot: 'var(--hud-danger)', label: 'FIX' },
+  medium: { dot: 'var(--hud-accent)', label: 'TIP' },
+  low: { dot: 'var(--ink-2)', label: 'NOTE' },
+};
+
+/**
+ * Coaching panel: shows where the stored set diverges from NatDex OU usage and
+ * offers a one-click fix per finding. Silent when there's no usage data; a clean
+ * "looks meta-standard" note when the set already matches.
+ */
+function CoachPanel({
+  review,
+  metaLabel,
+  hasIntel,
+  onApply,
+}: {
+  review: OptSuggestion[];
+  metaLabel: string | null;
+  hasIntel: boolean;
+  onApply: (s: OptSuggestion) => void;
+}) {
+  if (!hasIntel) return null;
+  return (
+    <div className="mono-panel p-3 rounded-[10px]" style={{ marginBottom: 12 }}>
+      <div className="font-mono-hud text-[13px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+        ◢ SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
+      </div>
+      {review.length === 0 ? (
+        <p className="font-mono-hud text-[13px] m-0" style={{ color: '#7cd87b' }}>
+          ✓ This set looks meta-standard - nothing to flag.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {review.map((s, i) => {
+            const sev = SEVERITY_STYLE[s.severity];
+            const fixLabel =
+              s.fix?.addMove && s.fix?.replaceMove
+                ? `Swap in ${s.fix.addMove}`
+                : s.fix?.addMove
+                  ? `Add ${s.fix.addMove}`
+                  : s.fix?.evs
+                    ? 'Use spread'
+                    : s.fix?.nature
+                      ? `Use ${s.fix.nature}`
+                      : s.fix?.item
+                        ? `Use ${s.fix.item}`
+                        : s.fix?.ability
+                          ? `Use ${s.fix.ability}`
+                          : null;
+            return (
+              <div
+                key={i}
+                className="flex items-start gap-2 px-2 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03]"
+              >
+                <span
+                  className="font-mono-hud text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 mt-0.5"
+                  style={{ background: sev.dot, color: '#100b06' }}
+                  title={s.severity}
+                >
+                  {sev.label}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-display text-[13px] font-semibold text-[var(--ink-0)]">{s.title}</div>
+                  <div className="font-mono-hud text-[12px] text-[var(--ink-2)] leading-snug">{s.detail}</div>
+                </div>
+                {fixLabel && (
+                  <button
+                    type="button"
+                    className="chunky ghost font-display text-[11px] flex-shrink-0"
+                    style={{ padding: '4px 9px' }}
+                    onClick={() => onApply(s)}
+                    title={fixLabel}
+                  >
+                    {fixLabel}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatGridText({
   values,
   onChange,
@@ -1099,6 +1243,8 @@ function StatGridText({
     </div>
   );
 }
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 function slugify(s: string): string {
   return s
