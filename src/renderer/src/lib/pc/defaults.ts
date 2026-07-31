@@ -35,6 +35,9 @@ export function defaultGender(): PcGender {
 /** MIME for HTML5 drag-and-drop between PC slots/boxes. */
 export const PC_POKEMON_DRAG_TYPE = 'application/x-cobblemon-pc-pokemon';
 
+/** MIME for dragging a box tab to reorder the box list. */
+export const PC_BOX_DRAG_TYPE = 'application/x-cobblemon-pc-box';
+
 export function firstEmptySlot(occupants: { slot: number }[]): number | null {
   const used = new Set(occupants.map((o) => o.slot));
   for (let slot = 0; slot < PC_SLOTS_PER_BOX; slot++) {

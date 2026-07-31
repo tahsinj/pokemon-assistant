@@ -12,6 +12,7 @@ import {
   loadTeam,
   movePcPokemon,
   renamePcBox,
+  reorderPcBoxes,
   savePcPokemon,
   saveTeam,
 } from './rivalsDb';
@@ -73,6 +74,10 @@ async function bootstrap() {
   });
   ipcMain.handle('pc:boxes:delete', (_e, id: string) => {
     deletePcBox(id);
+    return undefined;
+  });
+  ipcMain.handle('pc:boxes:reorder', (_e, ids: string[]) => {
+    reorderPcBoxes(ids);
     return undefined;
   });
   ipcMain.handle('pc:pokemon:list', (_e, boxId: string) => listPcPokemon(boxId));

@@ -16,6 +16,7 @@ import {
   DEFAULT_IVS,
   ZERO_EVS,
   PC_POKEMON_DRAG_TYPE,
+  PC_BOX_DRAG_TYPE,
   PC_SLOTS_PER_BOX,
   STAT_ORDER,
   emptyMoves,
@@ -146,6 +147,8 @@ export function PcPage({
   const [hasLastExport, setHasLastExport] = useState(false);
   const [dragOver, setDragOver] = useState<{ boxId: string; slot?: number } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggingBoxId, setDraggingBoxId] = useState<string | null>(null);
+  const [boxDropTargetId, setBoxDropTargetId] = useState<string | null>(null);
   const suppressClickRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -264,7 +267,28 @@ export function PcPage({
   const clearDragUi = () => {
     setDragOver(null);
     setDraggingId(null);
+    setDraggingBoxId(null);
+    setBoxDropTargetId(null);
   };
+
+  // Reorder box tabs by dropping one tab onto another. Persists the new order;
+  // optimistically reorders the local list so the UI doesn't flash.
+  const reorderBoxesByDrop = useCallback(
+    async (fromId: string, toId: string) => {
+      if (fromId === toId) return;
+      const ids = boxes.map((b) => b.id);
+      const from = ids.indexOf(fromId);
+      const to = ids.indexOf(toId);
+      if (from < 0 || to < 0) return;
+      ids.splice(to, 0, ...ids.splice(from, 1));
+      setBoxes((prev) => ids.map((id) => prev.find((b) => b.id === id)!).filter(Boolean));
+      if (bridge?.pcBoxReorder) {
+        await bridge.pcBoxReorder(ids);
+        await refreshBoxes();
+      }
+    },
+    [boxes, bridge, refreshBoxes],
+  );
 
   const movePokemon = useCallback(
     async (payload: PcDragPayload, toBoxId: string, toSlot: number) => {
@@ -495,15 +519,23 @@ export function PcPage({
               <button
                 key={b.id}
                 type="button"
-                title="Double-click to rename"
+                draggable
+                title="Drag to reorder · double-click to rename"
                 className={[
                   'box-tab',
                   b.id === activeBoxId ? 'box-tab-active' : '',
-                  dragOver?.boxId === b.id && dragOver.slot === undefined ? 'pc-drag-over' : '',
+                  (dragOver?.boxId === b.id && dragOver.slot === undefined) || boxDropTargetId === b.id
+                    ? 'pc-drag-over'
+                    : '',
+                  draggingBoxId === b.id ? 'pc-drag-source' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
                 onClick={() => {
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false;
+                    return;
+                  }
                   setActiveBoxId(b.id);
                   setEditorMode('closed');
                   setSelectedSlot(null);
@@ -512,7 +544,23 @@ export function PcPage({
                   setTabRenameDraft(b.name);
                   setRenamingTabId(b.id);
                 }}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(PC_BOX_DRAG_TYPE, b.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDraggingBoxId(b.id);
+                }}
+                onDragEnd={() => {
+                  clearDragUi();
+                  suppressClickRef.current = true;
+                }}
                 onDragOver={(e) => {
+                  const boxId = e.dataTransfer.getData(PC_BOX_DRAG_TYPE) || draggingBoxId;
+                  if (boxId) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setBoxDropTargetId(b.id);
+                    return;
+                  }
                   const payload = readDragPayload(e.dataTransfer);
                   if (!payload) return;
                   e.preventDefault();
@@ -521,9 +569,18 @@ export function PcPage({
                 }}
                 onDragLeave={() => {
                   setDragOver((prev) => (prev?.boxId === b.id && prev.slot === undefined ? null : prev));
+                  setBoxDropTargetId((prev) => (prev === b.id ? null : prev));
                 }}
                 onDrop={async (e) => {
                   e.preventDefault();
+                  // Box reorder takes priority - its drag carries a box id.
+                  const fromBoxId = e.dataTransfer.getData(PC_BOX_DRAG_TYPE) || draggingBoxId;
+                  if (fromBoxId) {
+                    clearDragUi();
+                    suppressClickRef.current = true;
+                    await reorderBoxesByDrop(fromBoxId, b.id);
+                    return;
+                  }
                   const payload = readDragPayload(e.dataTransfer);
                   clearDragUi();
                   suppressClickRef.current = true;

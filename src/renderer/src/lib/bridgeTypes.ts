@@ -129,6 +129,7 @@ export interface CobblemonBridge {
   pcBoxCreate: (name: string) => Promise<PcBoxSummary>;
   pcBoxRename: (id: string, name: string) => Promise<void>;
   pcBoxDelete: (id: string) => Promise<void>;
+  pcBoxReorder: (ids: string[]) => Promise<void>;
   pcPokemonList: (boxId: string) => Promise<PcPokemonRecord[]>;
   pcPokemonSave: (payload: SavePcPokemonPayload) => Promise<{ id: string }>;
   pcPokemonDelete: (id: string) => Promise<void>;

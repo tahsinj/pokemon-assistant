@@ -448,6 +448,16 @@ export function deletePcBox(id: string): void {
   ensureDefaultPcBox();
 }
 
+/** Persist a new box order. `ids` is the full list of box ids in display order. */
+export function reorderPcBoxes(ids: string[]): void {
+  if (!db) return;
+  const now = Date.now();
+  ids.forEach((id, i) => {
+    db!.run('UPDATE pc_boxes SET sort_order = ?, updated_at = ? WHERE id = ?', [i, now, id]);
+  });
+  persist();
+}
+
 export function listPcPokemon(boxId: string): PcPokemonRow[] {
   if (!db) return [];
   const stmt = db.prepare(

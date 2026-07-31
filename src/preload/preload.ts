@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('cobblemon', {
   pcBoxCreate: (name: string) => ipcRenderer.invoke('pc:boxes:create', name),
   pcBoxRename: (id: string, name: string) => ipcRenderer.invoke('pc:boxes:rename', id, name),
   pcBoxDelete: (id: string) => ipcRenderer.invoke('pc:boxes:delete', id),
+  pcBoxReorder: (ids: string[]) => ipcRenderer.invoke('pc:boxes:reorder', ids),
   pcPokemonList: (boxId: string) => ipcRenderer.invoke('pc:pokemon:list', boxId),
   pcPokemonSave: (payload: unknown) => ipcRenderer.invoke('pc:pokemon:save', payload) as Promise<{ id: string }>,
   pcPokemonDelete: (id: string) => ipcRenderer.invoke('pc:pokemon:delete', id),
