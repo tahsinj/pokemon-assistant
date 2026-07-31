@@ -1156,13 +1156,32 @@ function CoachPanel({
   hasIntel: boolean;
   onApply: (s: OptSuggestion) => void;
 }) {
+  const [open, setOpen] = useState(true);
   if (!hasIntel) return null;
   return (
     <div className="mono-panel p-3 rounded-[10px]" style={{ marginBottom: 12 }}>
-      <div className="font-mono-hud text-[13px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-        ◢ SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
-      </div>
-      {review.length === 0 ? (
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 font-mono-hud text-[13px] uppercase tracking-widest text-[var(--hud-accent-2)]"
+        aria-expanded={open}
+        style={{ marginBottom: open ? 8 : 0 }}
+      >
+        <span style={{ display: 'inline-block', width: 10 }}>{open ? '▾' : '▸'}</span>
+        <span>
+          ◢ SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
+        </span>
+        <span
+          className="ml-auto font-mono-hud text-[11px] px-1.5 py-0.5 rounded-[4px]"
+          style={{
+            background: review.length === 0 ? 'rgba(124,216,123,0.15)' : 'rgba(255,255,255,0.06)',
+            color: review.length === 0 ? '#7cd87b' : 'var(--ink-2)',
+          }}
+        >
+          {review.length === 0 ? 'OK' : review.length}
+        </span>
+      </button>
+      {!open ? null : review.length === 0 ? (
         <p className="font-mono-hud text-[13px] m-0" style={{ color: '#7cd87b' }}>
           ✓ This set looks meta-standard - nothing to flag.
         </p>
