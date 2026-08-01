@@ -277,10 +277,10 @@ export function PcPage({
     async (fromId: string, toId: string) => {
       if (fromId === toId) return;
       const ids = boxes.map((b) => b.id);
-      const from = ids.indexOf(fromId);
-      const to = ids.indexOf(toId);
-      if (from < 0 || to < 0) return;
-      ids.splice(to, 0, ...ids.splice(from, 1));
+      if (ids.indexOf(fromId) < 0 || ids.indexOf(toId) < 0) return;
+      const [moved] = ids.splice(ids.indexOf(fromId), 1);
+      // Insert before the drop target (recompute its index after removal).
+      ids.splice(ids.indexOf(toId), 0, moved);
       setBoxes((prev) => ids.map((id) => prev.find((b) => b.id === id)!).filter(Boolean));
       if (bridge?.pcBoxReorder) {
         await bridge.pcBoxReorder(ids);
