@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { TYPES } from '../lib/typechart';
@@ -336,18 +336,11 @@ export function CounterDraftPage({
               <div className="font-display text-[13px] font-semibold truncate mt-1">{o.p.name}</div>
               <div className="flex items-center justify-center gap-1 mt-1.5">
                 <span className="font-mono-hud text-[13px] text-[var(--ink-2)]">Lv</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
+                <LevelInput
                   value={flatLevel ?? o.level}
                   disabled={flatLevel != null}
                   title={flatLevel != null ? `Normalized to Lv ${flatLevel} for this format` : undefined}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (Number.isFinite(v)) setLevel(i, Math.max(1, Math.min(100, Math.round(v))));
-                  }}
-                  className="w-14 bg-black/40 border border-white/15 rounded-full px-2 py-0.5 font-mono-hud text-[13px] text-center text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)] disabled:opacity-50"
+                  onCommit={(n) => setLevel(i, n)}
                 />
               </div>
               {teraOn && (
@@ -417,42 +410,6 @@ export function CounterDraftPage({
           </div>
         )}
       </div>
-
-      {savedDrafts.length > 0 && (
-        <div className="glass rounded-[14px] p-3.5 mb-4">
-          <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)] mb-2">
-            Saved matchups
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {savedDrafts.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 bg-white/[.03] border border-white/10 rounded-[10px] px-3 py-2">
-                <span className="font-display text-[14px] font-semibold truncate min-w-0 flex-1">{d.label}</span>
-                <span className="flex gap-1 flex-shrink-0">
-                  {d.opponents.slice(0, 6).map((s, i) => {
-                    const p = pokemonById[s.speciesId];
-                    return p ? <PokemonSprite key={i} dex={p.dex} name={p.name} size="xs" /> : null;
-                  })}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => reanalyze(d)}
-                  className="font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)] flex-shrink-0"
-                >
-                  ↻ Re-analyze
-                </button>
-                <button
-                  type="button"
-                  onClick={() => deleteSaved(d.id)}
-                  aria-label={`Delete ${d.label}`}
-                  className="font-mono-hud text-[15px] text-[var(--ink-2)] hover:text-[var(--hud-danger)] flex-shrink-0"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {result && result.team.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-[1.55fr,1fr] gap-4 items-start">
@@ -540,7 +497,91 @@ export function CounterDraftPage({
           </div>
         </div>
       )}
+
+      {savedDrafts.length > 0 && (
+        <div className="glass rounded-[14px] p-3.5 mt-4">
+          <div className="font-mono-hud text-[13px] uppercase tracking-[0.2em] text-[var(--hud-accent-2)] mb-2">
+            Saved matchups
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {savedDrafts.map((d) => (
+              <div key={d.id} className="flex items-center gap-3 bg-white/[.03] border border-white/10 rounded-[10px] px-3 py-2">
+                <span className="font-display text-[14px] font-semibold truncate min-w-0 flex-1">{d.label}</span>
+                <span className="flex gap-1 flex-shrink-0">
+                  {d.opponents.slice(0, 6).map((s, i) => {
+                    const p = pokemonById[s.speciesId];
+                    return p ? <PokemonSprite key={i} dex={p.dex} name={p.name} size="xs" /> : null;
+                  })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => reanalyze(d)}
+                  className="font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)] flex-shrink-0"
+                >
+                  ↻ Re-analyze
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSaved(d.id)}
+                  aria-label={`Delete ${d.label}`}
+                  className="font-mono-hud text-[15px] text-[var(--ink-2)] hover:text-[var(--hud-danger)] flex-shrink-0"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </ModuleFrame>
+  );
+}
+
+/**
+ * Level field that holds its own editable string so you can fully clear it
+ * (an empty box doesn't snap back to 1 mid-edit) and is wide enough not to clip
+ * "100". Commits a clamped 1–100 value on blur / Enter.
+ */
+function LevelInput({
+  value,
+  disabled,
+  title,
+  onCommit,
+}: {
+  value: number;
+  disabled?: boolean;
+  title?: string;
+  onCommit: (n: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const n = parseInt(draft, 10);
+    if (Number.isFinite(n)) onCommit(Math.max(1, Math.min(100, n)));
+    else setDraft(String(value));
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={disabled ? String(value) : draft}
+      disabled={disabled}
+      title={title}
+      aria-label="Level"
+      onChange={(e) => {
+        const v = e.target.value;
+        if (/^\d{0,3}$/.test(v)) setDraft(v);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+      }}
+      className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-0.5 font-mono-hud text-[13px] text-center text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)] disabled:opacity-50"
+    />
   );
 }
 
