@@ -11,10 +11,13 @@ export function SpeciesList({
   pokemon,
   selectedId,
   onSelect,
+  compact,
 }: {
   pokemon: Pokemon[];
   selectedId?: string;
   onSelect: (p: Pokemon) => void;
+  /** Narrow columns: drop the dex number so the name has room (avoids clipping). */
+  compact?: boolean;
 }) {
   const [q, setQ] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -94,9 +97,11 @@ export function SpeciesList({
                 }`}
               >
                 <PokemonSprite dex={p.dex} name={p.name} size="xs" />
-                <span className="font-mono-hud text-[14px] text-[var(--ink-2)] w-12 flex-shrink-0">
-                  #{String(p.dex).padStart(4, '0')}
-                </span>
+                {!compact && (
+                  <span className="font-mono-hud text-[14px] text-[var(--ink-2)] w-12 flex-shrink-0">
+                    #{String(p.dex).padStart(4, '0')}
+                  </span>
+                )}
                 <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
                   {p.name}
                 </span>

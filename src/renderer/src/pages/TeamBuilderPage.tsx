@@ -73,7 +73,8 @@ export function TeamBuilderPage({
 }: { pokemon: Pokemon[]; moves: Record<string, Move>; items: HeldItem[]; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
-  const [pickSource, setPickSource] = useState<'species' | 'pc'>('species');
+  const [pickSource, setPickSource] = useState<'species' | 'pc' | 'suggested'>('species');
+  const [pcQuery, setPcQuery] = useState('');
   const pc = usePcCollection();
   const [teamTag, setTeamTag] = useState<RivalsTeamTag>('general');
   const [teamName, setTeamName] = useState('My team');
@@ -180,6 +181,64 @@ export function TeamBuilderPage({
 
   const notableWeak = useMemo(() => weaknessCounts(teamMembers).filter((r) => r.weakCount >= 2), [teamMembers]);
   const massiveWeak = useMemo(() => massiveSharedWeaknesses(teamMembers, 3), [teamMembers]);
+
+  // PC box mons filtered by the picker search (name or nickname).
+  const pcMonsFiltered = useMemo(() => {
+    const q = pcQuery.trim().toLowerCase();
+    if (!q) return pc.mons;
+    return pc.mons.filter((rec) => {
+      const sp = pokemonById[rec.speciesId];
+      return (
+        (sp?.name.toLowerCase().includes(q) ?? false) ||
+        (rec.nickname?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [pc.mons, pcQuery, pokemonById]);
+
+  // Unique species you own, for the "Suggested" (owned-only) picker tab.
+  const ownedSpecies = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Pokemon[] = [];
+    for (const p of pcMons) {
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        out.push(p);
+      }
+    }
+    return out;
+  }, [pcMons]);
+
+  // Synergy-ranked teammates restricted to mons you actually own. With no team
+  // yet there's no context to rank against, so just list owned species.
+  const pickerSuggestions = useMemo(() => {
+    const onTeam = new Set(teamMembers.map((m) => m.id));
+    const pool = ownedSpecies.filter((p) => !onTeam.has(p.id));
+    if (teamMembers.length === 0) return pool.map((p) => ({ p, reasons: ['In your PC'] }));
+    return suggestTeammates(teamMembers, pool, smogon, 24);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownedSpecies, teamMembers.map((m) => m.id).join(','), smogon]);
+
+  // Add a species you own to the picking slot, carrying its stored PC set.
+  const pickOwnedSpecies = (sp: Pokemon) => {
+    if (pickingSlot === null) return;
+    const rec = pc.mons.find((r) => r.speciesId === sp.id);
+    setSlot(
+      pickingSlot,
+      sp,
+      rec
+        ? {
+            item: rec.item,
+            ability: rec.ability || null,
+            nature: rec.nature || null,
+            level: rec.level,
+            ivs: { ...rec.ivs },
+            evs: { ...rec.evs },
+            moves: rec.moves.length ? rec.moves : null,
+          }
+        : null,
+    );
+    setPickingSlot(null);
+  };
 
   const onImportPaste = () => {
     setImportMsg(null);
@@ -635,7 +694,7 @@ export function TeamBuilderPage({
               {sectionHead(`PICK SPECIES FOR SLOT ${pickingSlot + 1}`)}
               {pc.available && (
                 <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 mb-2">
-                  {(['species', 'pc'] as const).map((s) => (
+                  {(['species', 'pc', 'suggested'] as const).map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -646,7 +705,7 @@ export function TeamBuilderPage({
                           : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
                       }`}
                     >
-                      {s === 'species' ? 'All species' : `PC box · ${pc.mons.length}`}
+                      {s === 'species' ? 'All species' : s === 'pc' ? `PC box · ${pc.mons.length}` : 'Suggested'}
                     </button>
                   ))}
                 </div>
@@ -654,49 +713,97 @@ export function TeamBuilderPage({
             </div>
             <div className="h-[320px]">
               {pickSource === 'pc' && pc.available ? (
-                pc.mons.length === 0 ? (
+                <div className="flex flex-col h-full">
+                  <input
+                    value={pcQuery}
+                    onChange={(e) => setPcQuery(e.target.value)}
+                    placeholder="Search your PC…"
+                    aria-label="Search PC Pokémon"
+                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 mb-2 font-mono-hud text-[14px] text-[var(--ink-0)] placeholder:text-[var(--ink-2)] outline-none focus:border-[var(--hud-accent-2)]"
+                  />
+                  {pcMonsFiltered.length === 0 ? (
+                    <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-6 text-center">
+                      {pc.loading
+                        ? 'Loading PC…'
+                        : pc.mons.length === 0
+                          ? 'No Pokémon stored in the PC yet.'
+                          : 'No PC Pokémon match your search.'}
+                    </div>
+                  ) : (
+                    <div className="flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
+                      {pcMonsFiltered.map((rec) => {
+                        const sp = pokemonById[rec.speciesId];
+                        if (!sp) return null;
+                        return (
+                          <button
+                            key={rec.id}
+                            type="button"
+                            onClick={() => pickOwnedSpecies(sp)}
+                            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                          >
+                            <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
+                            <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                              {rec.nickname || sp.name}
+                              {rec.nickname && (
+                                <span className="font-mono-hud text-[11px] text-[var(--ink-2)] ml-1.5">{sp.name}</span>
+                              )}
+                            </span>
+                            <span className="flex gap-1 flex-shrink-0">
+                              {sp.types.map((t) => (
+                                <TypeChip key={t} t={t.toLowerCase()} />
+                              ))}
+                            </span>
+                            <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0 w-12 text-right">
+                              Lv {rec.level}
+                            </span>
+                            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                              {pc.boxNameById[rec.boxId] ?? 'Box'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : pickSource === 'suggested' && pc.available ? (
+                pickerSuggestions.length === 0 ? (
                   <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-6 text-center">
-                    {pc.loading ? 'Loading PC…' : 'No Pokémon stored in the PC yet.'}
+                    {pc.loading
+                      ? 'Loading PC…'
+                      : ownedSpecies.length === 0
+                        ? 'No Pokémon stored in the PC yet.'
+                        : 'Every owned species is already on the team.'}
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
-                    {pc.mons.map((rec) => {
-                      const sp = pokemonById[rec.speciesId];
-                      if (!sp) return null;
-                      return (
-                        <button
-                          key={rec.id}
-                          type="button"
-                          onClick={() => {
-                            setSlot(pickingSlot, sp, {
-                              item: rec.item,
-                              ability: rec.ability || null,
-                              nature: rec.nature || null,
-                              level: rec.level,
-                              ivs: { ...rec.ivs },
-                              evs: { ...rec.evs },
-                              moves: rec.moves.length ? rec.moves : null,
-                            });
-                            setPickingSlot(null);
-                          }}
-                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
-                        >
-                          <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
-                          <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
-                            {rec.nickname || sp.name}
-                            {rec.nickname && (
-                              <span className="font-mono-hud text-[11px] text-[var(--ink-2)] ml-1.5">{sp.name}</span>
-                            )}
+                    <div className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] px-1 pb-1">
+                      {teamMembers.length === 0
+                        ? 'Owned species - add some to your team to rank these by synergy'
+                        : 'Owned species ranked for this team · Smogon co-usage + coverage'}
+                    </div>
+                    {pickerSuggestions.map(({ p, reasons }) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => pickOwnedSpecies(p)}
+                        className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                      >
+                        <PokemonSprite dex={p.dex} name={p.name} size="xs" />
+                        <span className="flex-1 min-w-0">
+                          <span className="block font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                            {p.name}
                           </span>
-                          <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0">
-                            Lv {rec.level}
+                          <span className="block font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                            {reasons[0] ?? ''}
                           </span>
-                          <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
-                            {pc.boxNameById[rec.boxId] ?? 'Box'}
-                          </span>
-                        </button>
-                      );
-                    })}
+                        </span>
+                        <span className="flex gap-1 flex-shrink-0">
+                          {p.types.map((t) => (
+                            <TypeChip key={t} t={t.toLowerCase()} />
+                          ))}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 )
               ) : (

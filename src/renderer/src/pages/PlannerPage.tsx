@@ -89,9 +89,9 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
         </div>
       }
     >
-      <div className="grid grid-cols-[minmax(250px,310px),200px,1fr] gap-5 items-start">
+      <div className="grid grid-cols-[minmax(280px,330px),200px,1fr] gap-5 items-start">
         <div className="h-[62vh] min-h-[320px] overflow-hidden">
-          <SpeciesList pokemon={pokemon} selectedId={species?.id} onSelect={setSpecies} />
+          <SpeciesList pokemon={pokemon} selectedId={species?.id} onSelect={setSpecies} compact />
         </div>
 
         {species && computed && (
