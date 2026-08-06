@@ -9,6 +9,15 @@ function evLine(evs: number[]): string {
     .join(' / ');
 }
 
+/** Only the IVs that deviate from a perfect 31 (e.g. 0 Atk to cut Foul Play). */
+function ivLine(ivs?: number[]): string {
+  if (!ivs) return '';
+  return ivs
+    .map((v, i) => (v !== 31 ? `${v} ${STAT_LABELS[i]}` : null))
+    .filter(Boolean)
+    .join(' / ');
+}
+
 function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-1.5 min-w-0">
@@ -18,6 +27,9 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
       </div>
       {evLine(set.evs) && (
         <div className="font-mono-hud text-[12px] tabular-nums text-[var(--ink-2)]">EVs {evLine(set.evs)}</div>
+      )}
+      {ivLine(set.ivs) && (
+        <div className="font-mono-hud text-[12px] tabular-nums text-[var(--ink-2)]">IVs {ivLine(set.ivs)}</div>
       )}
       <div className="flex flex-col gap-0.5 mt-0.5">
         {set.moves.map((slot, i) => (
