@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reviewStoredMon, formatEvs, type StoredMonForReview } from './optimize';
+import { reviewStoredMon, assessReadiness, formatEvs, type StoredMonForReview } from './optimize';
 import type { Pokemon, StatKey } from '../types';
 import type { SmogonSpeciesIntel } from '../smogon';
 
@@ -152,6 +152,26 @@ describe('reviewStoredMon', () => {
     };
     const res = reviewStoredMon(mon, species, intel);
     expect(res[0].severity).toBe('high');
+  });
+});
+
+describe('assessReadiness', () => {
+  it('is "ready" for a meta-standard set', () => {
+    expect(assessReadiness(optimalMon, species, intel)).toBe('ready');
+  });
+
+  it('is "unknown" without intel', () => {
+    expect(assessReadiness(optimalMon, species, null)).toBe('unknown');
+  });
+
+  it('is "minor" when only low/medium findings exist', () => {
+    const mon = { ...optimalMon, item: 'Choice Scarf' }; // off-meta item = low severity
+    expect(assessReadiness(mon, species, intel)).toBe('minor');
+  });
+
+  it('is "heavy" when there is a high-severity finding', () => {
+    const mon = { ...optimalMon, evs: evObj([0, 0, 0, 0, 0, 0]) }; // no EVs = high
+    expect(assessReadiness(mon, species, intel)).toBe('heavy');
   });
 });
 

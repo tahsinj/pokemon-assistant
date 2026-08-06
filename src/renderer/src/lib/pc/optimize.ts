@@ -77,6 +77,29 @@ export interface StoredMonForReview {
 
 const SEVERITY_RANK: Record<OptSeverity, number> = { high: 0, medium: 1, low: 2 };
 
+/** Competitive-readiness verdict for at-a-glance indicators. */
+export type Readiness = 'ready' | 'minor' | 'heavy' | 'unknown';
+
+/** Collapse a review into a single readiness level. */
+export function reviewReadiness(suggestions: OptSuggestion[]): Exclude<Readiness, 'unknown'> {
+  if (suggestions.some((s) => s.severity === 'high')) return 'heavy';
+  if (suggestions.length > 0) return 'minor';
+  return 'ready';
+}
+
+/**
+ * One-shot readiness for a stored mon. 'unknown' when there's no usage data to
+ * judge against (so callers can render nothing rather than a misleading "ready").
+ */
+export function assessReadiness(
+  mon: StoredMonForReview,
+  species: Pokemon,
+  intel: SmogonSpeciesIntel | null,
+): Readiness {
+  if (!intel) return 'unknown';
+  return reviewReadiness(reviewStoredMon(mon, species, intel));
+}
+
 function evArrayToObject(evs: number[]): Record<StatKey, number> {
   const out = {} as Record<StatKey, number>;
   STAT_ORDER.forEach((k, i) => (out[k] = evs[i] ?? 0));

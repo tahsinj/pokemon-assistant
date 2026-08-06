@@ -38,7 +38,7 @@ import {
   exportBoxShowdown,
   exportBoxTxt,
 } from '../lib/pc/export';
-import { reviewStoredMon, type OptSuggestion, type OptSeverity } from '../lib/pc/optimize';
+import { reviewStoredMon, assessReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
 import type { StatKey } from '../lib/types';
 
 type EditorMode = 'closed' | 'pick-species' | 'edit';
@@ -167,6 +167,25 @@ export function PcPage({
     for (const p of occupants) m.set(p.slot, p);
     return m;
   }, [occupants]);
+
+  // Per-slot competitive-readiness verdict (vs Smogon usage) for the corner dot.
+  const readinessBySlot = useMemo(() => {
+    const m = new Map<number, Readiness>();
+    if (!smogon) return m;
+    for (const mon of occupants) {
+      const sp = pokemonById[mon.speciesId];
+      if (!sp) continue;
+      m.set(
+        mon.slot,
+        assessReadiness(
+          { moves: mon.moves, nature: mon.nature, item: mon.item ?? null, ability: mon.ability, evs: mon.evs },
+          sp,
+          smogon.species[sp.id] ?? null,
+        ),
+      );
+    }
+    return m;
+  }, [occupants, pokemonById, smogon]);
 
   const refreshBoxes = useCallback(async () => {
     if (!bridge?.pcBoxesList) return;
@@ -682,9 +701,12 @@ export function PcPage({
             ) : (
               <span>Select a box</span>
             )}
-            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
-              {occupants.length} / {PC_SLOTS_PER_BOX}
-            </span>
+            <div className="flex items-center gap-3">
+              {smogon && occupants.length > 0 && <ReadinessLegend />}
+              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
+                {occupants.length} / {PC_SLOTS_PER_BOX}
+              </span>
+            </div>
           </div>
           <div className="box-grid">
             {Array.from({ length: PC_SLOTS_PER_BOX }, (_, slot) => {
@@ -772,6 +794,7 @@ export function PcPage({
                           ✦
                         </span>
                       )}
+                      <ReadinessDot level={readinessBySlot.get(slot)} />
                       <div className="cell-portrait">
                         <PokemonSprite
                           dex={pokemonById[mon.speciesId]?.dex ?? 0}
@@ -1188,6 +1211,68 @@ function PcEditor({
         )}
       </div>
     </div>
+  );
+}
+
+const READINESS_STYLE: Record<Exclude<Readiness, 'unknown'>, { color: string; title: string }> = {
+  ready: { color: '#7cd87b', title: 'Competitively ready - matches the meta' },
+  minor: { color: 'var(--hud-accent)', title: 'Minor tweaks suggested - open to review' },
+  heavy: { color: 'var(--hud-danger)', title: 'Needs work - off-meta set, open to review' },
+};
+
+/** Compact key for the readiness dots, shown above the box grid. */
+function ReadinessLegend() {
+  const items: { level: Exclude<Readiness, 'unknown'>; label: string }[] = [
+    { level: 'ready', label: 'ready' },
+    { level: 'minor', label: 'tweaks' },
+    { level: 'heavy', label: 'rework' },
+  ];
+  return (
+    <div
+      className="flex items-center gap-2 mono"
+      style={{ fontSize: 10, color: 'var(--fg-dim)' }}
+      title="Competitive readiness vs Smogon usage - open a Pokémon for the full set review"
+    >
+      {items.map(({ level, label }) => (
+        <span key={level} className="inline-flex items-center gap-1">
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: READINESS_STYLE[level].color,
+              display: 'inline-block',
+            }}
+          />
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Subtle corner dot showing how competitively ready a stored mon is. */
+function ReadinessDot({ level }: { level?: Readiness }) {
+  if (!level || level === 'unknown') return null;
+  const s = READINESS_STYLE[level];
+  return (
+    <span
+      className="cell-readiness"
+      title={s.title}
+      aria-label={s.title}
+      style={{
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+        width: 7,
+        height: 7,
+        borderRadius: '50%',
+        background: s.color,
+        boxShadow: `0 0 4px ${s.color}`,
+        opacity: 0.85,
+        pointerEvents: 'none',
+      }}
+    />
   );
 }
 
