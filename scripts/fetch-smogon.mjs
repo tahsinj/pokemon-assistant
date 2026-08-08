@@ -111,6 +111,16 @@ function evsToArray(evObj) {
   return STAT_ORDER.map((k) => Number(evObj?.[k]) || 0);
 }
 
+// IVs: pkmn sets list only the stats that deviate; everything unspecified is a
+// perfect 31 (NOT 0 like EVs). e.g. { atk: 0 } -> [31,0,31,31,31,31].
+function ivsToArray(ivObj) {
+  if (Array.isArray(ivObj)) ivObj = ivObj[0];
+  return STAT_ORDER.map((k) => {
+    const v = ivObj?.[k];
+    return v == null ? 31 : Number(v);
+  });
+}
+
 const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
 // ── Build bundle ────────────────────────────────────────────────────────────
@@ -162,7 +172,7 @@ for (const [name, d] of chaosEntries) {
       ability: asArray(s.ability)[0] ?? null,
       nature: asArray(s.nature)[0] ?? null,
       evs: evsToArray(s.evs),
-      ...(s.ivs ? { ivs: evsToArray(s.ivs) } : {}),
+      ...(s.ivs ? { ivs: ivsToArray(s.ivs) } : {}),
       ...(s.teratypes ?? s.teraType ? { teraType: asArray(s.teratypes ?? s.teraType)[0] } : {}),
     };
   }
