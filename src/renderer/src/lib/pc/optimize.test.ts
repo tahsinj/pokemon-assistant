@@ -155,6 +155,71 @@ describe('reviewStoredMon', () => {
   });
 });
 
+describe('reviewStoredMon - IVs', () => {
+  // A special-attacker set whose closest curated set wants 0 Atk IV.
+  const specialSpecies: Pokemon = {
+    ...species,
+    id: 'gholdengo',
+    name: 'Gholdengo',
+    moves: moveIds('Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover', 'Thunderbolt'),
+  };
+  const specialIntel: SmogonSpeciesIntel = {
+    ...intel,
+    name: 'Gholdengo',
+    items: [{ name: 'Air Balloon', pct: 40 }],
+    spreads: [{ nature: 'Timid', evs: [0, 0, 0, 252, 4, 252], pct: 80 }],
+    moves: [
+      { name: 'Make It Rain', pct: 95 },
+      { name: 'Shadow Ball', pct: 80 },
+      { name: 'Nasty Plot', pct: 70 },
+      { name: 'Recover', pct: 60 },
+    ],
+    sets: {
+      'Nasty Plot': {
+        moves: [['Make It Rain'], ['Shadow Ball'], ['Nasty Plot'], ['Recover']],
+        item: ['Air Balloon'],
+        ability: 'Good as Gold',
+        nature: 'Timid',
+        evs: [0, 0, 0, 252, 4, 252],
+        ivs: [31, 0, 31, 31, 31, 31],
+      },
+    },
+  };
+  const base: StoredMonForReview = {
+    moves: ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'],
+    nature: 'Timid',
+    item: 'Air Balloon',
+    ability: 'Good as Gold',
+    evs: evObj([0, 0, 0, 252, 4, 252]),
+  };
+
+  it('flags a 31 Atk IV when the set wants 0 (medium, with a 0 fix)', () => {
+    const res = reviewStoredMon({ ...base, ivs: evObj([31, 31, 31, 31, 31, 31]) }, specialSpecies, specialIntel);
+    const iv = res.find((s) => s.category === 'iv');
+    expect(iv).toBeTruthy();
+    expect(iv!.severity).toBe('medium');
+    expect(iv!.title).toBe('Atk IV too high');
+    expect(iv!.fix?.ivs).toEqual({ atk: 0 });
+  });
+
+  it('flags "not low enough" when the Atk IV is reduced but above 0', () => {
+    const res = reviewStoredMon({ ...base, ivs: evObj([31, 8, 31, 31, 31, 31]) }, specialSpecies, specialIntel);
+    const iv = res.find((s) => s.category === 'iv');
+    expect(iv?.title).toBe('Atk IV not low enough');
+    expect(iv?.detail).toContain('8');
+  });
+
+  it('does not flag when the Atk IV already matches the set (0)', () => {
+    const res = reviewStoredMon({ ...base, ivs: evObj([31, 0, 31, 31, 31, 31]) }, specialSpecies, specialIntel);
+    expect(res.find((s) => s.category === 'iv')).toBeUndefined();
+  });
+
+  it('treats omitted IVs as a perfect 31 (so a 0-Atk set gets flagged)', () => {
+    const res = reviewStoredMon(base, specialSpecies, specialIntel);
+    expect(res.find((s) => s.category === 'iv')?.title).toBe('Atk IV too high');
+  });
+});
+
 describe('assessReadiness', () => {
   it('is "ready" for a meta-standard set', () => {
     expect(assessReadiness(optimalMon, species, intel)).toBe('ready');

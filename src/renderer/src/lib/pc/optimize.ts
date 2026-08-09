@@ -11,6 +11,7 @@
 
 import type { Pokemon, StatKey } from '../types';
 import type { SmogonSpeciesIntel, SmogonSpread } from '../smogon';
+import { bestMatchingSet } from '../smogonSets';
 
 const STAT_ORDER: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 const STAT_LABELS: Record<StatKey, string> = {
@@ -43,7 +44,14 @@ export const OPT_THRESHOLDS = {
 } as const;
 
 export type OptSeverity = 'high' | 'medium' | 'low';
-export type OptCategory = 'move' | 'nature' | 'item' | 'ability' | 'ev';
+export type OptCategory = 'move' | 'nature' | 'item' | 'ability' | 'ev' | 'iv';
+
+/** Why a stat's IV is intentionally lowered on competitive sets. */
+const IV_REASON: Partial<Record<StatKey, string>> = {
+  atk: 'cuts Foul Play & confusion self-damage',
+  spe: 'to move last (Trick Room / slower pivot)',
+  hp: 'tunes Life Orb / hazard math',
+};
 
 /** Structured patch the editor can apply with one click. All fields optional. */
 export interface OptFix {
@@ -55,6 +63,8 @@ export interface OptFix {
   /** A low-usage move worth reconsidering (paired with addMove when possible). */
   replaceMove?: string;
   evs?: Record<StatKey, number>;
+  /** Partial IV patch - only the stats to change. */
+  ivs?: Partial<Record<StatKey, number>>;
 }
 
 export interface OptSuggestion {
@@ -73,6 +83,8 @@ export interface StoredMonForReview {
   item: string | null;
   ability: string;
   evs: Record<StatKey, number>;
+  /** Defaults to a perfect 31 in every stat when omitted. */
+  ivs?: Record<StatKey, number>;
 }
 
 const SEVERITY_RANK: Record<OptSeverity, number> = { high: 0, medium: 1, low: 2 };
@@ -269,6 +281,38 @@ export function reviewStoredMon(
         }
       }
     }
+  }
+
+  // --- IVs (vs the closest curated set) -----------------------------------
+  // Competitive sets sometimes drop an IV to 0 (e.g. 0 Atk to cut Foul Play /
+  // confusion). Compare against the set this mon most resembles so we never tell
+  // a physical attacker to zero its Attack.
+  const matched = bestMatchingSet(
+    { moves: ownMoves, nature: mon.nature, item: mon.item },
+    species,
+    intel,
+  );
+  if (matched?.set.ivs) {
+    const targets = matched.set.ivs;
+    STAT_ORDER.forEach((stat, i) => {
+      const target = targets[i];
+      if (target == null || target >= 31) return; // only deliberately-lowered IVs
+      const current = mon.ivs?.[stat] ?? 31;
+      if (current <= target) return; // already at/below the target
+      const label = STAT_LABELS[stat];
+      const reason = IV_REASON[stat];
+      const detail =
+        current >= 31
+          ? `${label} IV is 31 - drop it to ${target}${reason ? ` (${reason})` : ''}.`
+          : `${label} IV is ${current} - not low enough; drop it to ${target}${reason ? ` (${reason})` : ''}.`;
+      out.push({
+        category: 'iv',
+        severity: 'medium',
+        title: current >= 31 ? `${label} IV too high` : `${label} IV not low enough`,
+        detail,
+        fix: { ivs: { [stat]: target } },
+      });
+    });
   }
 
   return out.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);

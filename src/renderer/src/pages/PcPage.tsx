@@ -178,7 +178,7 @@ export function PcPage({
       m.set(
         mon.slot,
         assessReadiness(
-          { moves: mon.moves, nature: mon.nature, item: mon.item ?? null, ability: mon.ability, evs: mon.evs },
+          { moves: mon.moves, nature: mon.nature, item: mon.item ?? null, ability: mon.ability, evs: mon.evs, ivs: mon.ivs },
           sp,
           smogon.species[sp.id] ?? null,
         ),
@@ -980,11 +980,12 @@ function PcEditor({
           item: local.item.trim() || null,
           ability: local.ability,
           evs: preview.evs,
+          ivs: preview.ivs,
         },
         species,
         intel,
       ),
-    [local.moves, local.nature, local.item, local.ability, preview.evs, species, intel],
+    [local.moves, local.nature, local.item, local.ability, preview.evs, preview.ivs, species, intel],
   );
 
   const applyFix = (s: OptSuggestion) => {
@@ -1007,12 +1008,19 @@ function PcEditor({
       }
       return next;
     });
-    if (fix.nature || fix.evs) {
+    if (fix.nature || fix.evs || fix.ivs) {
       setNumeric((n) => {
         const out = { ...n };
         if (fix.evs) {
           out.evs = { ...n.evs };
           for (const k of STAT_ORDER) out.evs[k] = String(fix.evs![k as StatKey] ?? 0);
+        }
+        if (fix.ivs) {
+          out.ivs = { ...n.ivs };
+          for (const k of STAT_ORDER) {
+            const v = fix.ivs[k as StatKey];
+            if (v != null) out.ivs[k] = String(v);
+          }
         }
         return out;
       });
@@ -1338,13 +1346,15 @@ function CoachPanel({
                   ? `Add ${s.fix.addMove}`
                   : s.fix?.evs
                     ? 'Use spread'
-                    : s.fix?.nature
-                      ? `Use ${s.fix.nature}`
-                      : s.fix?.item
-                        ? `Use ${s.fix.item}`
-                        : s.fix?.ability
-                          ? `Use ${s.fix.ability}`
-                          : null;
+                    : s.fix?.ivs
+                      ? 'Fix IV'
+                      : s.fix?.nature
+                        ? `Use ${s.fix.nature}`
+                        : s.fix?.item
+                          ? `Use ${s.fix.item}`
+                          : s.fix?.ability
+                            ? `Use ${s.fix.ability}`
+                            : null;
             return (
               <div
                 key={i}
