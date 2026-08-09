@@ -18,6 +18,7 @@
     "fetch-missing-species": "node scripts/fetch-missing-species.mjs",
     "fetch-formes": "node scripts/fetch-formes.mjs",
     "fetch-tiers": "node scripts/fetch-tiers.mjs",
+    "fetch-form-sprites": "node scripts/fetch-form-sprites.mjs",
     "fetch-smogon": "node scripts/fetch-smogon.mjs",
     "parse-spawns": "node scripts/spawn-parser.mjs",
     "diff-cobblemon": "node scripts/diff-cobblemon.mjs",

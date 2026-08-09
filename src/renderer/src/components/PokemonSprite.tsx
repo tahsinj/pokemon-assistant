@@ -32,12 +32,12 @@ export function PokemonSprite({
   // glyph fallback so a missing shiny still shows the species.
   const [shinyMissing, setShinyMissing] = useState(false);
   const effectiveVariant = variant === 'shiny' && shinyMissing ? 'default' : variant;
-  const url = useMemo(() => pokemonSpriteUrl(dex, effectiveVariant), [dex, effectiveVariant]);
+  const url = useMemo(() => pokemonSpriteUrl(dex, effectiveVariant, name), [dex, effectiveVariant, name]);
 
   useEffect(() => {
     setFailed(false);
     setShinyMissing(false);
-  }, [dex, variant]);
+  }, [dex, variant, name]);
   const glyph = (name.trim()[0] ?? '?').toUpperCase();
   const sizeClass = SIZE_CLASS[size];
   const wrapClasses = ['poke-sprite-wrap', sizeClass, wrapClassName].filter(Boolean).join(' ');

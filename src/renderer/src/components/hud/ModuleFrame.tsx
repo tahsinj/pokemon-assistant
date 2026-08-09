@@ -65,8 +65,8 @@ export function SpriteFrame({
   className?: string;
 }) {
   const [stage, setStage] = useState<'artwork' | 'pixel' | 'glyph'>('artwork');
-  useEffect(() => setStage('artwork'), [dex]);
-  const url = stage === 'glyph' ? null : pokemonSpriteUrl(dex, stage === 'artwork' ? 'artwork' : 'default');
+  useEffect(() => setStage('artwork'), [dex, name]);
+  const url = stage === 'glyph' ? null : pokemonSpriteUrl(dex, stage === 'artwork' ? 'artwork' : 'default', name);
   return (
     <div className={`sprite-frame relative rounded-[14px] aspect-square overflow-hidden ${className}`}>
       <div className="scanline" />
