@@ -21,6 +21,7 @@ import { TelemetryStrip } from './components/hud/TelemetryStrip';
 const PokedexPage = lazy(() =>
   import('./pages/PokedexPage').then((m) => ({ default: m.PokedexPage })),
 );
+const MovesPage = lazy(() => import('./pages/MovesPage').then((m) => ({ default: m.MovesPage })));
 const TeamBuilderPage = lazy(() =>
   import('./pages/TeamBuilderPage').then((m) => ({ default: m.TeamBuilderPage })),
 );
@@ -49,6 +50,7 @@ const CounterDraftPage = lazy(() =>
 
 type ToolId =
   | 'pokedex'
+  | 'moves'
   | 'team'
   | 'battle'
   | 'session'
@@ -61,6 +63,7 @@ type ToolId =
 
 const TOOL_TITLES: Record<ToolId, string> = {
   pokedex: 'Pokédex',
+  moves: 'Move Index',
   team: 'Team Builder',
   battle: 'Battle Calculator',
   session: 'Live Battle Tracker',
@@ -315,6 +318,8 @@ export function App() {
     switch (openTool) {
       case 'pokedex':
         return <PokedexPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'moves':
+        return <MovesPage pokemon={pokemon} moves={moves} />;
       case 'team':
         return <TeamBuilderPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
       case 'battle':
