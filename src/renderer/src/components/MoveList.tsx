@@ -1,21 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { Move } from '../lib/types';
 import { TYPES } from '../lib/typechart';
 import { TypeChip } from './hud/HudPrimitives';
 import { SearchPill } from './hud/ModuleFrame';
+import { Segmented } from './hud/Segmented';
 
 type SortKey = 'name' | 'power' | 'accuracy' | 'pp';
 type CatFilter = 'all' | Move['category'];
 
-const CAT_FILTERS: CatFilter[] = ['all', 'Physical', 'Special', 'Status'];
-const SORTS: { id: SortKey; label: string }[] = [
-  { id: 'name', label: 'A–Z' },
-  { id: 'power', label: 'Power' },
-  { id: 'accuracy', label: 'Acc' },
-  { id: 'pp', label: 'PP' },
-];
-
 const accVal = (a: Move['accuracy']) => (a === true ? 100 : a);
+const CAT_LETTER: Record<Move['category'], string> = { Physical: 'PHY', Special: 'SPC', Status: 'STA' };
 
 export function MoveList({
   moves,
@@ -70,40 +64,26 @@ export function MoveList({
       </div>
 
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <div className="flex gap-1">
-          {CAT_FILTERS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCatFilter(c)}
-              aria-pressed={catFilter === c}
-              className={`font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
-                catFilter === c
-                  ? 'bg-white/10 border-[var(--hud-accent-2)]/50 text-[var(--ink-0)]'
-                  : 'bg-white/[.03] border-white/10 text-[var(--ink-2)] hover:bg-white/[.06]'
-              }`}
-            >
-              {c === 'all' ? 'All' : c}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1">
-          {SORTS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSort(s.id)}
-              aria-pressed={sort === s.id}
-              className={`font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
-                sort === s.id
-                  ? 'bg-white/10 border-[var(--hud-accent-2)]/50 text-[var(--ink-0)]'
-                  : 'bg-white/[.03] border-white/10 text-[var(--ink-2)] hover:bg-white/[.06]'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          value={catFilter}
+          onChange={setCatFilter}
+          options={[
+            { id: 'all', label: 'All' },
+            { id: 'Physical', label: 'Phys' },
+            { id: 'Special', label: 'Spec' },
+            { id: 'Status', label: 'Status' },
+          ]}
+        />
+        <Segmented
+          value={sort}
+          onChange={setSort}
+          options={[
+            { id: 'name', label: 'A–Z' },
+            { id: 'power', label: 'Pwr' },
+            { id: 'accuracy', label: 'Acc' },
+            { id: 'pp', label: 'PP' },
+          ]}
+        />
       </div>
 
       <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-2 px-1">
@@ -122,17 +102,19 @@ export function MoveList({
                 type="button"
                 aria-pressed={isSel}
                 onClick={() => onSelect(m)}
-                className={`relative flex items-center gap-3 pl-4 pr-3 py-2 rounded-[10px] text-left transition border overflow-hidden ${
+                style={{ borderLeft: `3px solid var(--t-${m.type.toLowerCase()})` } as CSSProperties}
+                className={`grid grid-cols-[1fr,auto,30px,32px] items-center gap-3 pl-3 pr-3 py-2 rounded-[10px] text-left transition border ${
                   isSel ? 'bg-white/10 border-[var(--hud-accent-2)]/40' : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
                 }`}
               >
-                <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: `var(--t-${m.type.toLowerCase()})` }} />
-                <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">{m.name}</span>
-                <TypeChip t={m.type.toLowerCase()} />
-                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] w-9 text-right flex-shrink-0" title={m.category}>
-                  {m.category === 'Physical' ? 'PHY' : m.category === 'Special' ? 'SPC' : 'STA'}
+                <span className="font-display text-[15px] font-semibold leading-normal truncate min-w-0 text-[var(--ink-0)]">
+                  {m.name}
                 </span>
-                <span className="font-mono-hud text-[13px] text-[var(--ink-1)] w-8 text-right flex-shrink-0">{m.power || '-'}</span>
+                <TypeChip t={m.type.toLowerCase()} />
+                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] text-right" title={m.category}>
+                  {CAT_LETTER[m.category]}
+                </span>
+                <span className="font-mono-hud text-[13px] text-[var(--ink-1)] text-right">{m.power || '-'}</span>
               </button>
             );
           })
