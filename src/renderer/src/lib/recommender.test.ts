@@ -113,13 +113,69 @@ describe('tmPriorities', () => {
     expect(ids).not.toContain('vinewhip'); // dual-tagged → comes free by level
     expect(ids).not.toContain('tackle');
     expect(ids).toContain('gigadrain');
-    // Smogon-biased ordering: Giga Drain (79%) above Earth Power (absent from intel)
+    // Usage leads: Giga Drain (79%) above Earth Power (absent from intel)
     expect(ids.indexOf('gigadrain')).toBeLessThan(ids.indexOf('earthpower'));
-    for (let i = 1; i < out.length; i++) expect(out[i - 1].score).toBeGreaterThanOrEqual(out[i].score);
+    // Ladder usage is the primary sort key (mechanical score only breaks ties).
+    const usage = (id: string) => intel.moves.find((m) => m.name.toLowerCase().replace(/[^a-z0-9]/g, '') === id)?.pct ?? 0;
+    for (let i = 1; i < out.length; i++) expect(usage(out[i - 1].move.id)).toBeGreaterThanOrEqual(usage(out[i].move.id));
   });
 
   it('respects the limit', () => {
     expect(tmPriorities(venusaur, MOVES, null, 2)).toHaveLength(2);
+  });
+});
+
+describe('tmPriorities - usage leads, redundant attacks pruned', () => {
+  // Garchomp-shaped: physical Dragon/Ground. Earthquake (99%) and Stealth Rock
+  // (56%) are its two staple TMs; the rest of the TM pool is redundant chip the
+  // ladder doesn't run and a level-up move already covers.
+  const M: Record<string, Move> = {
+    dragonclaw: { id: 'dragonclaw', name: 'Dragon Claw', type: 'dragon', category: 'Physical', power: 80, accuracy: 100, pp: 15, priority: 0, desc: '', target: 'normal', flags: ['contact'] },
+    earthquake: { id: 'earthquake', name: 'Earthquake', type: 'ground', category: 'Physical', power: 100, accuracy: 100, pp: 10, priority: 0, desc: '', target: 'normal', flags: [] },
+    stealthrock: { id: 'stealthrock', name: 'Stealth Rock', type: 'rock', category: 'Status', power: 0, accuracy: true, pp: 20, priority: 0, desc: '', target: 'foeSide', flags: [] },
+    breakingswipe: { id: 'breakingswipe', name: 'Breaking Swipe', type: 'dragon', category: 'Physical', power: 60, accuracy: 100, pp: 15, priority: 0, desc: '', target: 'normal', flags: ['contact'] },
+    stoneedge: { id: 'stoneedge', name: 'Stone Edge', type: 'rock', category: 'Physical', power: 100, accuracy: 80, pp: 5, priority: 0, desc: '', target: 'normal', flags: [] },
+  };
+  const chomp: Pokemon = {
+    ...venusaur,
+    id: 'garchomp',
+    types: ['dragon', 'ground'],
+    baseStats: { hp: 108, atk: 130, def: 95, spa: 80, spd: 85, spe: 102 },
+    moves: [
+      { learn: '34', move: 'dragonclaw' },
+      { learn: 'tm', move: 'earthquake' },
+      { learn: 'tm', move: 'stealthrock' },
+      { learn: 'tm', move: 'breakingswipe' },
+      { learn: 'tm', move: 'stoneedge' },
+    ],
+  } as Pokemon;
+  const chompIntel = {
+    ...intel,
+    name: 'Garchomp',
+    moves: [
+      { name: 'Earthquake', pct: 99.3 },
+      { name: 'Stealth Rock', pct: 56.2 },
+      { name: 'Stone Edge', pct: 15.4 },
+    ],
+  } as unknown as SmogonSpeciesIntel;
+
+  it('ranks Stealth Rock (56% usage) second, above zero-usage STAB attacks', () => {
+    const ids = tmPriorities(chomp, M, chompIntel).map((o) => o.move.id);
+    expect(ids[0]).toBe('earthquake');
+    expect(ids[1]).toBe('stealthrock');
+  });
+
+  it("drops a redundant TM attack a level-up move already beats (Breaking Swipe < Dragon Claw)", () => {
+    const ids = tmPriorities(chomp, M, chompIntel).map((o) => o.move.id);
+    expect(ids).not.toContain('breakingswipe');
+    // …but a used / non-redundant coverage move survives.
+    expect(ids).toContain('stoneedge');
+  });
+
+  it('falls back to mechanical score (and still prunes redundant attacks) with no intel', () => {
+    const ids = tmPriorities(chomp, M, null).map((o) => o.move.id);
+    expect(ids).not.toContain('breakingswipe'); // still redundant vs Dragon Claw
+    expect(ids).toContain('earthquake');
   });
 });
 

@@ -285,10 +285,24 @@ export function competitiveMoveset(
     .filter((x): x is { move: Move; reasons: string[] } => !!x);
 }
 
+/** Effective power = base power discounted by accuracy (true accuracy = 100%). */
+function effPower(m: Move): number {
+  return (m.power || 0) * (m.accuracy === true ? 1 : (m.accuracy || 100) / 100);
+}
+
 /**
  * TMs / tutor moves worth teaching, ranked. Excludes moves the species also
  * learns by level-up (those come free) - note a move can appear in the
  * learnset twice with different tags.
+ *
+ * "Worth a TM" is a different question from "build me a balanced set": for a
+ * competitively-played species it's answered by what the ladder actually runs.
+ * So ladder usage is the *primary* sort key (the heuristic `scoreMove` only
+ * breaks ties and orders moves the ladder doesn't cover) - otherwise a 56%-used
+ * hazard setter like Stealth Rock gets buried under zero-usage STAB attacks
+ * whose raw power dwarfs the usage signal. We also prune redundant chip: a TM
+ * attack the species already matches-or-beats with a same-type, same-category
+ * level-up move adds nothing, so it's dropped unless the ladder vouches for it.
  */
 export function tmPriorities(
   p: Pokemon,
@@ -296,13 +310,28 @@ export function tmPriorities(
   smogon?: SmogonSpeciesIntel | null,
   limit = 10,
 ): { move: Move; score: number; reasons: string[] }[] {
-  const levelIds = new Set(learnableMoves(p, moves, 'levelup').map((m) => m.id));
+  const levelMoves = learnableMoves(p, moves, 'levelup');
+  const levelIds = new Set(levelMoves.map((m) => m.id));
   const physical = offensiveBias(p, smogon) === 'physical';
+
+  // Ladder-usage floor (%) below which an attack must earn its slot on merit:
+  // if a same-type/category level-up move already hits as hard, teaching it is
+  // wasted. Used moves are protected - the ladder running it is enough.
+  const USAGE_FLOOR = 3;
+  const redundant = (m: Move): boolean => {
+    if (m.category === 'Status' || !m.power) return false;
+    return levelMoves.some(
+      (lm) => lm.type === m.type && lm.category === m.category && effPower(lm) >= effPower(m),
+    );
+  };
+
   return learnableMoves(p, moves, 'tm')
     .filter((m) => !levelIds.has(m.id))
-    .map((m) => ({ move: m, ...scoreMove(p, m, smogon, physical) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .map((m) => ({ move: m, usage: smogonUsagePct(smogon, m), ...scoreMove(p, m, smogon, physical) }))
+    .filter((s) => s.usage >= USAGE_FLOOR || !redundant(s.move))
+    .sort((a, b) => b.usage - a.usage || b.score - a.score)
+    .slice(0, limit)
+    .map(({ move, score, reasons }) => ({ move, score, reasons }));
 }
 
 // Score how well "candidate" counters "target". Higher = better counter.
