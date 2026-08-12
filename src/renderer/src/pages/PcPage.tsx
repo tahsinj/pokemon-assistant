@@ -38,7 +38,8 @@ import {
   exportBoxShowdown,
   exportBoxTxt,
 } from '../lib/pc/export';
-import { reviewStoredMon, assessReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
+import { reviewStoredMon, reviewReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
+import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import type { StatKey } from '../lib/types';
 
 type EditorMode = 'closed' | 'pick-species' | 'edit';
@@ -136,6 +137,13 @@ export function PcPage({
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [editor, setEditor] = useState<EditorDraft>(emptyDraft(0));
   const [editorMode, setEditorMode] = useState<EditorMode>('closed');
+  // Set-review tips the user has dismissed (species-scoped, persisted).
+  const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => loadDismissed());
+  const toggleTip = useCallback(
+    (speciesId: string, key: string) =>
+      setDismissedTips((cur) => toggleDismissed(cur, dismissalId(speciesId, key))),
+    [],
+  );
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [paste, setPaste] = useState('');
   const [newBoxName, setNewBoxName] = useState('');
@@ -175,17 +183,22 @@ export function PcPage({
     for (const mon of occupants) {
       const sp = pokemonById[mon.speciesId];
       if (!sp) continue;
-      m.set(
-        mon.slot,
-        assessReadiness(
-          { moves: mon.moves, nature: mon.nature, item: mon.item ?? null, ability: mon.ability, evs: mon.evs, ivs: mon.ivs },
-          sp,
-          smogon.species[sp.id] ?? null,
-        ),
+      const intel = smogon.species[sp.id] ?? null;
+      if (!intel) {
+        m.set(mon.slot, 'unknown');
+        continue;
+      }
+      const suggestions = reviewStoredMon(
+        { moves: mon.moves, nature: mon.nature, item: mon.item ?? null, ability: mon.ability, evs: mon.evs, ivs: mon.ivs },
+        sp,
+        intel,
       );
+      // Dismissed tips shouldn't keep a slot's dot red.
+      const { active } = partitionDismissed(suggestions, sp.id, dismissedTips);
+      m.set(mon.slot, reviewReadiness(active));
     }
     return m;
-  }, [occupants, pokemonById, smogon]);
+  }, [occupants, pokemonById, smogon, dismissedTips]);
 
   const refreshBoxes = useCallback(async () => {
     if (!bridge?.pcBoxesList) return;
@@ -899,6 +912,8 @@ export function PcPage({
               items={items}
               intel={smogon?.species[editor.species.id] ?? null}
               metaLabel={smogon?.meta.label ?? null}
+              dismissed={dismissedTips}
+              onToggleDismiss={toggleTip}
               onViewDex={() => editor.species && setDexSpecies(editor.species)}
               onCommit={setEditor}
               onSave={(committed) => void saveDraft(committed)}
@@ -935,6 +950,8 @@ function PcEditor({
   items,
   intel,
   metaLabel,
+  dismissed,
+  onToggleDismiss,
   onViewDex,
   onCommit,
   onSave,
@@ -946,6 +963,8 @@ function PcEditor({
   items: HeldItem[];
   intel: SmogonSpeciesIntel | null;
   metaLabel: string | null;
+  dismissed: Set<string>;
+  onToggleDismiss: (speciesId: string, key: string) => void;
   onViewDex: () => void;
   onCommit: (d: EditorDraft) => void;
   onSave: (committed: EditorDraft) => void;
@@ -986,6 +1005,10 @@ function PcEditor({
         intel,
       ),
     [local.moves, local.nature, local.item, local.ability, preview.evs, preview.ivs, species, intel],
+  );
+  const { active: activeReview, hidden: hiddenReview } = useMemo(
+    () => partitionDismissed(review, species.id, dismissed),
+    [review, species.id, dismissed],
   );
 
   const applyFix = (s: OptSuggestion) => {
@@ -1081,7 +1104,14 @@ function PcEditor({
         </button>
       </div>
 
-      <CoachPanel review={review} metaLabel={metaLabel} hasIntel={!!intel} onApply={applyFix} />
+      <CoachPanel
+        review={activeReview}
+        hidden={hiddenReview}
+        metaLabel={metaLabel}
+        hasIntel={!!intel}
+        onApply={applyFix}
+        onDismiss={(key) => onToggleDismiss(species.id, key)}
+      />
 
       <label style={{ display: 'block', marginBottom: 8 }}>
         <span className="cell-label" style={{ display: 'block', marginBottom: 4 }}>Nickname (optional)</span>
@@ -1297,16 +1327,22 @@ const SEVERITY_STYLE: Record<OptSeverity, { dot: string; label: string }> = {
  */
 function CoachPanel({
   review,
+  hidden,
   metaLabel,
   hasIntel,
   onApply,
+  onDismiss,
 }: {
   review: OptSuggestion[];
+  /** Tips dismissed for this species - hidden from the main list but restorable. */
+  hidden: OptSuggestion[];
   metaLabel: string | null;
   hasIntel: boolean;
   onApply: (s: OptSuggestion) => void;
+  onDismiss: (key: string) => void;
 }) {
   const [open, setOpen] = useState(true);
+  const [showHidden, setShowHidden] = useState(false);
   if (!hasIntel) return null;
   return (
     <div className="mono-panel p-3 rounded-[10px]" style={{ marginBottom: 12 }}>
@@ -1382,9 +1418,54 @@ function CoachPanel({
                     {fixLabel}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="flex-shrink-0 mt-0.5 font-mono-hud text-[14px] leading-none text-[var(--ink-2)] hover:text-[var(--ink-0)] transition-colors"
+                  style={{ padding: '2px 4px' }}
+                  onClick={() => onDismiss(s.key)}
+                  title="Dismiss - hide this tip for every copy of this species (e.g. a move your Cobblemon can't teach)"
+                  aria-label={`Dismiss: ${s.title}`}
+                >
+                  ✕
+                </button>
               </div>
             );
           })}
+        </div>
+      )}
+      {open && hidden.length > 0 && (
+        <div style={{ marginTop: review.length === 0 ? 8 : 10 }}>
+          <button
+            type="button"
+            onClick={() => setShowHidden((v) => !v)}
+            className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] hover:text-[var(--ink-1)] transition-colors"
+            aria-expanded={showHidden}
+          >
+            {showHidden ? '▾' : '▸'} {hidden.length} dismissed
+          </button>
+          {showHidden && (
+            <div className="flex flex-col gap-1 mt-1.5">
+              {hidden.map((s) => (
+                <div
+                  key={s.key}
+                  className="flex items-center gap-2 px-2 py-1 rounded-[6px] border border-white/5 bg-white/[.02]"
+                >
+                  <span className="font-display text-[12px] text-[var(--ink-2)] line-through truncate flex-1 min-w-0">
+                    {s.title}
+                  </span>
+                  <button
+                    type="button"
+                    className="chunky ghost font-display text-[11px] flex-shrink-0"
+                    style={{ padding: '3px 8px' }}
+                    onClick={() => onDismiss(s.key)}
+                    title="Restore this tip"
+                  >
+                    ↺ Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

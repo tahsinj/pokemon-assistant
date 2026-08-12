@@ -70,6 +70,13 @@ export interface OptFix {
 export interface OptSuggestion {
   category: OptCategory;
   severity: OptSeverity;
+  /**
+   * Stable identity for this suggestion within a species, so the UI can let the
+   * user permanently dismiss tips that don't apply to their game (e.g. a move
+   * Showdown lists but Cobblemon can't teach). Move tips key on the move name so
+   * dismissing one move's tip doesn't silence the others.
+   */
+  key: string;
   /** Short label, e.g. "Missing core move". */
   title: string;
   /** One-sentence explanation referencing the usage numbers. */
@@ -162,6 +169,7 @@ export function reviewStoredMon(
     out.push({
       category: 'move',
       severity: m.pct >= 70 ? 'high' : 'medium',
+      key: `move:add:${norm(m.name)}`,
       title: 'Missing core move',
       detail: `${m.name} is on ${m.pct.toFixed(0)}% of competitive ${intel.name}, but this set doesn't run it.`,
       fix: { addMove: m.name },
@@ -180,6 +188,7 @@ export function reviewStoredMon(
       out.push({
         category: 'move',
         severity: 'low',
+        key: `move:drop:${norm(mv)}`,
         title: 'Rarely-used move',
         detail:
           pct === undefined
@@ -200,6 +209,7 @@ export function reviewStoredMon(
       out.push({
         category: 'item',
         severity: 'medium',
+        key: 'item',
         title: 'No held item',
         detail: `${topItem.pct.toFixed(0)}% of ${intel.name} hold ${topItem.name}; this set has no item.`,
         fix: { item: topItem.name },
@@ -208,6 +218,7 @@ export function reviewStoredMon(
       out.push({
         category: 'item',
         severity: 'low',
+        key: 'item',
         title: 'Off-meta item',
         detail:
           (itemPct ?? 0) > 0
@@ -229,6 +240,7 @@ export function reviewStoredMon(
       out.push({
         category: 'ability',
         severity: 'medium',
+        key: 'ability',
         title: 'Sub-optimal ability',
         detail: `${dominantAbility.name} is the standard ability (${dominantAbility.pct.toFixed(0)}%); this set runs ${mon.ability || '-'}.`,
         fix: { ability: dominantAbility.name },
@@ -252,6 +264,7 @@ export function reviewStoredMon(
       out.push({
         category: 'ev',
         severity: 'high',
+        key: 'ev',
         title: 'No EVs invested',
         detail: `This mon has no EVs. The most-used spread is ${topSpread.nature} ${formatEvs(topSpread.evs)} (${topSpread.pct.toFixed(0)}%).`,
         fix: { evs: evArrayToObject(topSpread.evs), nature: topSpread.nature },
@@ -260,6 +273,7 @@ export function reviewStoredMon(
       out.push({
         category: 'ev',
         severity: dominant ? 'high' : 'medium',
+        key: 'ev',
         title: 'Off-meta EV spread',
         detail: `This investment (${formatEvs(ownEvArray)}) doesn't match any common spread. Most-used: ${topSpread.nature} ${formatEvs(topSpread.evs)} (${topSpread.pct.toFixed(0)}%).`,
         fix: { evs: evArrayToObject(topSpread.evs), nature: topSpread.nature },
@@ -274,6 +288,7 @@ export function reviewStoredMon(
           out.push({
             category: 'nature',
             severity: 'medium',
+            key: 'nature',
             title: 'Off-meta nature',
             detail: `${mon.nature} is rare on competitive ${intel.name}; ${best} is the common nature for this spread.`,
             fix: { nature: best },
@@ -308,6 +323,7 @@ export function reviewStoredMon(
       out.push({
         category: 'iv',
         severity: 'medium',
+        key: `iv:${stat}`,
         title: current >= 31 ? `${label} IV too high` : `${label} IV not low enough`,
         detail,
         fix: { ivs: { [stat]: target } },
