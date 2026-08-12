@@ -98,7 +98,7 @@ export function CompetitiveIntel({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2.5 mb-3">
+      <div className="grid grid-cols-[1fr_1fr_1fr_1.3fr] gap-2.5 mb-3">
         <div className="mono-panel p-3 rounded-[10px]">
           <div className={INTEL_HEADER}>
             Top moves
@@ -106,6 +106,16 @@ export function CompetitiveIntel({
           <div className="flex flex-col gap-0.5">
             {intel.moves.slice(0, 6).map((m) => (
               <PctRow key={m.name} name={m.name} pct={m.pct} />
+            ))}
+          </div>
+        </div>
+        <div className="mono-panel p-3 rounded-[10px]">
+          <div className={INTEL_HEADER}>
+            Abilities
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {intel.abilities.filter((a) => a.pct > 0).slice(0, 5).map((a) => (
+              <PctRow key={a.name} name={a.name} pct={a.pct} />
             ))}
           </div>
         </div>
