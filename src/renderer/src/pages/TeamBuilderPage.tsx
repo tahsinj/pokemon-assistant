@@ -51,6 +51,9 @@ function adviceLines(a: MemberAdvice): { text: string; danger?: boolean }[] {
   for (const ch of a.moveChanges) {
     out.push({ text: `TEACH ${ch.teach}${ch.replace ? ` (replace ${ch.replace})` : ''}` });
   }
+  for (const iv of a.ivChanges) {
+    out.push({ text: `IV ${iv.stat.toUpperCase()} ${iv.from} → ${iv.to} (${iv.reason})` });
+  }
   if (a.needsLeveling) {
     out.push({ text: `⚠ LV ${a.needsLeveling.current} → train toward ${a.needsLeveling.target}`, danger: true });
   }

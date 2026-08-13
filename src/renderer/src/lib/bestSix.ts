@@ -13,13 +13,14 @@
  */
 
 import type { BaseStats, Move, Pokemon } from './types';
-import type { PcPokemonRecord } from './bridgeTypes';
+import type { PcPokemonRecord, MemberDetail } from './bridgeTypes';
 import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 import { TYPES, effectiveness } from './typechart';
 import { bst, calcAllStats } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
 import { isNatDexOULegal } from './legality';
+import { classifyMember, type RoleTag } from './teamRoles';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -57,6 +58,8 @@ export interface MemberAdvice {
   evTarget: { current: BaseStats; target: BaseStats } | null;
   itemSuggestion: { current: string | null; suggested: string } | null;
   moveChanges: { teach: string; replace: string | null; reason: string }[];
+  /** Deliberately-lowered IVs worth setting (e.g. 0 Atk on a special attacker). */
+  ivChanges: { stat: keyof BaseStats; from: number; to: number; reason: string }[];
   needsLeveling: { current: number; target: number } | null;
 }
 
@@ -96,6 +99,8 @@ interface PoolMember {
   matched: MatchedSet | null;
   quality: number;
   role: Role;
+  /** Functional roles (hazard-control, win-condition, …) from teamRoles. */
+  tags: Set<RoleTag>;
   weakTo: Set<string>;
   resists: Set<string>;
   stabSE: Set<string>;
@@ -199,10 +204,22 @@ function evaluateTeam(team: PoolMember[], chem: number[][], idx: number[], w: Pr
   const offensive = roleCounts.physical + roleCounts.special + roleCounts.mixed;
   if (offensive > w.maxOffense) roles -= 0.5 * (offensive - w.maxOffense);
 
+  // Functional-role coverage: a team wants a way to close games (win condition),
+  // a hazard setter, and hazard removal. Penalize structural holes; only a team
+  // of 3+ is expected to carry the full backbone.
+  const hasTag = (t: RoleTag) => team.some((m) => m.tags.has(t));
+  const hasWinCon = hasTag('setup-sweeper') || team.some((m) => bst(m.p.baseStats) >= 500 && m.role !== 'bulk');
+  if (team.length >= 3) {
+    if (!hasWinCon) roles -= 1;
+    if (!hasTag('hazard-control')) roles -= 0.5;
+    if (!hasTag('hazard-setter')) roles -= 0.5;
+  }
+
   const breakdown = {
     quality: w.q * quality,
     chemistry: w.c * chemistry,
-    defense: -w.d * stacked.length,
+    // Exponential: a second/third stacked weakness is far worse than the first.
+    defense: -w.d * (Math.pow(2, stacked.length) - 1),
     offense: w.o * (seCount / 3),
     roles: w.r * roles,
   };
@@ -220,6 +237,7 @@ function searchTeam(
   chem: number[][],
   w: PresetWeights,
   banned: Set<number>,
+  seed: number[] = [],
 ): number[] {
   const size = Math.min(6, pool.length - banned.size);
   const inTeam = new Set<number>();
@@ -227,8 +245,18 @@ function searchTeam(
 
   const evalIdx = (ids: number[]) => evaluateTeam(ids.map((i) => pool[i]), chem, ids, w).score;
 
-  // Greedy seed.
-  for (let round = 0; round < size; round++) {
+  // Pre-place a seed core (e.g. a sweeper+pivot pairing) so the greedy fill and
+  // swap phase build the rest of the team around it - a cheap multi-start that
+  // escapes the local optima a single greedy seed can fall into.
+  for (const i of seed) {
+    if (idx.length >= size) break;
+    if (i < 0 || i >= pool.length || inTeam.has(i) || banned.has(i)) continue;
+    inTeam.add(i);
+    idx.push(i);
+  }
+
+  // Greedy fill.
+  for (let round = idx.length; round < size; round++) {
     let bestI = -1;
     let bestScore = -Infinity;
     for (let i = 0; i < pool.length; i++) {
@@ -270,6 +298,79 @@ function searchTeam(
     current += bestGain;
   }
   return idx;
+}
+
+/**
+ * Synergy cores to seed the search from. The doc's "build outward from a core"
+ * idea, implemented as a cheap multi-start: each seed biases the greedy fill
+ * into a different basin, and `bestSearch` keeps whichever finishes strongest
+ * (including the empty/default seed, so a seed can never make the result worse).
+ */
+function coreSeeds(pool: PoolMember[], banned: Set<number>): number[][] {
+  const avail = pool.map((_, i) => i).filter((i) => !banned.has(i));
+  const byQuality = [...avail].sort((a, b) => pool[b].quality - pool[a].quality);
+  const seeds: number[][] = [[]]; // default: pure greedy
+
+  // Role core: a win condition + a wallbreaker + a pivot, best of each by quality.
+  const firstWith = (pred: (m: PoolMember) => boolean) => byQuality.find((i) => pred(pool[i]));
+  const winCon = firstWith((m) => m.tags.has('setup-sweeper'));
+  const breaker = firstWith((m) => bst(m.p.baseStats) >= 500 && m.role !== 'bulk');
+  const pivot = firstWith((m) => m.tags.has('pivot'));
+  const roleCore = [...new Set([winCon, breaker, pivot].filter((i): i is number => i != null))];
+  if (roleCore.length >= 2) seeds.push(roleCore);
+
+  // Defensive core: greedily grow a trio that shares the fewest weaknesses.
+  if (avail.length >= 3) {
+    const defCore: number[] = [byQuality[0]];
+    while (defCore.length < 3) {
+      let best = -1;
+      let bestStacked = Infinity;
+      for (const i of avail) {
+        if (defCore.includes(i)) continue;
+        const team = [...defCore, i].map((j) => pool[j]);
+        let stacked = 0;
+        for (const t of TYPES) {
+          let weak = 0;
+          let resist = 0;
+          for (const m of team) {
+            if (m.weakTo.has(t)) weak++;
+            if (m.resists.has(t)) resist++;
+          }
+          if (weak >= 2 && resist === 0) stacked++;
+        }
+        if (stacked < bestStacked) {
+          bestStacked = stacked;
+          best = i;
+        }
+      }
+      if (best < 0) break;
+      defCore.push(best);
+    }
+    if (defCore.length >= 3) seeds.push(defCore);
+  }
+
+  return seeds;
+}
+
+/** Run the search from every core seed and keep the highest-scoring team. */
+function bestSearch(
+  pool: PoolMember[],
+  chem: number[][],
+  w: PresetWeights,
+  banned: Set<number>,
+): number[] {
+  let best: number[] = [];
+  let bestScore = -Infinity;
+  for (const seed of coreSeeds(pool, banned)) {
+    const idx = searchTeam(pool, chem, w, banned, seed);
+    if (idx.length === 0) continue;
+    const score = evaluateTeam(idx.map((i) => pool[i]), chem, idx, w).score;
+    if (score > bestScore) {
+      bestScore = score;
+      best = idx;
+    }
+  }
+  return best;
 }
 
 // ---------------------------------------------------------------------------
@@ -351,6 +452,8 @@ function buildAdvice(
     reason,
   }));
 
+  const ivChanges = buildIvChanges(member, targetMoves);
+
   const needsLeveling =
     rec.level < Math.round(0.9 * refLevel) ? { current: rec.level, target: refLevel } : null;
 
@@ -364,8 +467,56 @@ function buildAdvice(
     evTarget,
     itemSuggestion,
     moveChanges,
+    ivChanges,
     needsLeveling,
   };
+}
+
+const IV_REASONS: Partial<Record<keyof BaseStats, string>> = {
+  atk: 'cuts Foul Play & confusion self-damage',
+  spe: 'underspeed for Trick Room / Gyro Ball',
+  hp: 'tunes Life Orb / hazard math',
+};
+
+/**
+ * Deliberately-lowered IVs worth setting. Driven first by the matched curated
+ * set (which encodes things like 0 Atk), then a couple of robust heuristics:
+ * a purely special attacker wants 0 Atk, and a Trick Room / Gyro Ball user
+ * wants 0 Spe.
+ */
+function buildIvChanges(
+  member: PoolMember,
+  targetMoves: string[],
+): MemberAdvice['ivChanges'] {
+  const { rec, matched, role, p } = member;
+  const out: MemberAdvice['ivChanges'] = [];
+  const seen = new Set<keyof BaseStats>();
+  const add = (stat: keyof BaseStats, to: number) => {
+    const from = rec.ivs[stat] ?? 31;
+    if (seen.has(stat) || from <= to) return;
+    seen.add(stat);
+    out.push({ stat, from, to, reason: IV_REASONS[stat] ?? `set to ${to}` });
+  };
+
+  // From the curated set's IV spread (any stat intentionally < 31).
+  if (matched?.set.ivs) {
+    STAT_ORDER.forEach((stat, i) => {
+      const target = matched.set.ivs![i];
+      if (target != null && target < 31) add(stat, target);
+    });
+  }
+
+  // Special attacker (by inferred role / stat shape) -> 0 Atk. If the curated set
+  // already addressed Atk this is a no-op via `seen`.
+  if (role === 'special' || (role !== 'physical' && role !== 'mixed' && p.baseStats.spa > p.baseStats.atk)) {
+    add('atk', 0);
+  }
+
+  // Trick Room / Gyro Ball want minimum Speed.
+  const movesNorm = new Set([...rec.moves, ...targetMoves].map(norm));
+  if (movesNorm.has('trickroom') || movesNorm.has('gyroball')) add('spe', 0);
+
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -380,7 +531,7 @@ export function buildBestTeams(
   opts: BestSixOptions = {},
 ): BestSixResult {
   const presets = opts.presets ?? (['balanced', 'offense', 'defense'] as TeamPresetId[]);
-  const poolLimit = opts.poolSize ?? 24;
+  const poolLimit = opts.poolSize ?? 30;
   const minLevelRatio = opts.minLevelRatio ?? 0.6;
   const legalOnly = opts.legalOnly ?? true;
   const allowItem = opts.allowItem ?? (() => true);
@@ -422,9 +573,13 @@ export function buildBestTeams(
     const intel = smogon?.species[rec.speciesId] ?? null;
     const matched = intel ? bestMatchingSet(rec, p, intel) : null;
     const usage = intel?.usage ?? 0;
+    // BST is tapered by usage: for meta mons, ladder usage already reflects stat
+    // quality (counting both double-counts it), but for the many off-ladder
+    // Cobblemon species (usage 0) BST is the only power signal we have.
+    const bstWeight = 0.5 * (1 - Math.min(1, Math.sqrt(usage)));
     const quality =
       Math.sqrt(usage) +
-      0.5 * (bst(p.baseStats) / 600) +
+      bstWeight * (bst(p.baseStats) / 600) +
       0.5 * Math.min(1, rec.level / Math.max(1, refLevel)) +
       0.5 * ivQuality(rec, p);
 
@@ -438,7 +593,15 @@ export function buildBestTeams(
       if (p.types.some((stab) => effectiveness(stab, [t]) >= 2)) stabSE.add(t);
     }
 
-    const base = { rec, p, intel, matched, quality, weakTo, resists, stabSE };
+    // classifyMember only reads moves/ability/item/nature; stat spreads are
+    // irrelevant to role tagging, so we don't bother converting them.
+    const detail: MemberDetail = {
+      item: rec.item, ability: rec.ability || null, nature: rec.nature,
+      level: rec.level, ivs: null, evs: null, moves: rec.moves,
+    };
+    const tags = new Set(classifyMember(p, detail, intel, moves).tags);
+
+    const base = { rec, p, intel, matched, quality, tags, weakTo, resists, stabSE };
     return { ...base, role: inferRole(base) };
   });
 
@@ -463,7 +626,7 @@ export function buildBestTeams(
   for (const presetId of presets) {
     if (pool.length === 0) break;
     const w = PRESETS[presetId];
-    let idx = searchTeam(pool, chem, w, new Set());
+    let idx = bestSearch(pool, chem, w, new Set());
 
     const overlapWith = (ids: number[]) => {
       let best = 0;
@@ -477,7 +640,7 @@ export function buildBestTeams(
       // Ban the highest-quality shared member and retry once for variety.
       const shared = idx.filter((i) => seenTeams.some((s) => s.has(i)));
       const ban = shared.sort((a, b) => pool[b].quality - pool[a].quality)[0];
-      const retry = searchTeam(pool, chem, w, new Set([ban]));
+      const retry = bestSearch(pool, chem, w, new Set([ban]));
       if (retry.length === idx.length && overlapWith(retry) < overlapWith(idx)) idx = retry;
     }
     if (idx.length === 0) continue;

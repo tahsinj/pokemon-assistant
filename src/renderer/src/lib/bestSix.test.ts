@@ -235,6 +235,27 @@ describe('buildBestTeams - member advice', () => {
     }
   });
 
+  it('suggests 0 Atk IVs for a special attacker', () => {
+    const byId = {
+      ...pokemonById,
+      alakazam: species('alakazam', ['psychic'], {
+        baseStats: { hp: 55, atk: 50, def: 45, spa: 135, spd: 95, spe: 120 },
+      }),
+    };
+    const out = buildBestTeams([rec('z', 'alakazam', 50)], byId, MOVES, null);
+    const adv = out.candidates[0].members.find((m) => m.rec.id === 'z')!;
+    const atk = adv.ivChanges.find((c) => c.stat === 'atk');
+    expect(atk).toBeTruthy();
+    expect(atk!.to).toBe(0);
+  });
+
+  it('suggests 0 Speed IVs for a Trick Room user', () => {
+    const byId = { ...pokemonById, bronzong: species('bronzong', ['steel', 'psychic']) };
+    const out = buildBestTeams([rec('tr', 'bronzong', 50, { moves: ['Trick Room', 'Earthquake'] })], byId, MOVES, null);
+    const adv = out.candidates[0].members.find((m) => m.rec.id === 'tr')!;
+    expect(adv.ivChanges.some((c) => c.stat === 'spe' && c.to === 0)).toBe(true);
+  });
+
   it('no advice targets without smogon beyond leveling', () => {
     const out = buildBestTeams(tenRecords, pokemonById, MOVES, null);
     for (const m of out.candidates[0].members) {

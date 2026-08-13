@@ -35,6 +35,9 @@ const moves: Record<string, Move> = Object.fromEntries(
     mv('Recover', 'Status', { flags: ['heal'] }),
     mv('U-turn', 'Physical', { power: 70 }),
     mv('Volt Switch', 'Special', { power: 70 }),
+    mv('Court Change', 'Status'),
+    mv('Mortal Spin', 'Physical', { power: 30 }),
+    mv('Sticky Web', 'Status', { target: 'foeSide' }),
     mv('Extreme Speed', 'Physical', { power: 80, priority: 2 }),
     mv('Close Combat', 'Physical', { power: 120 }),
     mv('Earthquake', 'Physical', { power: 100 }),
@@ -139,6 +142,19 @@ describe('classifyMember', () => {
     });
     const m = classifyMember(p, null, null, moves);
     expect(m.moveSource).toBe('learnset');
+  });
+
+  it('tags Court Change and Mortal Spin users as hazard-control', () => {
+    const court = classifyMember(mon('cinderace'), detail({ moves: ['Court Change', 'Close Combat'] }), null, moves);
+    expect(court.tags).toContain('hazard-control');
+    const spin = classifyMember(mon('forretress'), detail({ moves: ['Mortal Spin', 'Earthquake'] }), null, moves);
+    expect(spin.tags).toContain('hazard-control');
+  });
+
+  it('tags a Sticky Web user as both hazard-setter and speed-control', () => {
+    const m = classifyMember(mon('ribombee'), detail({ moves: ['Sticky Web', 'Scald'] }), null, moves);
+    expect(m.tags).toContain('hazard-setter');
+    expect(m.tags).toContain('speed-control');
   });
 
   it('does not call a frail fast attacker a wall even with recovery', () => {
