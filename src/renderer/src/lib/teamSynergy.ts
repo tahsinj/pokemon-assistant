@@ -22,6 +22,22 @@ export interface TeammateSuggestion {
   reasons: string[];
 }
 
+// Slow-pivot <-> wallbreaker momentum: a slow U-turn / Teleport user that can
+// hand the turn to a frail, hard-hitting partner is a real structural pairing
+// the raw co-usage number doesn't always capture (esp. for Cobblemon-only mons
+// with no ladder stats). Detected off the species' learnset + stat shape.
+const MOMENTUM_PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport']);
+const moveKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function isSlowPivot(p: Pokemon): boolean {
+  return p.baseStats.spe <= 70 && p.moves.some((m) => MOMENTUM_PIVOT_MOVES.has(moveKey(m.move)));
+}
+
+function isFrailBreaker(p: Pokemon): boolean {
+  const b = p.baseStats;
+  return Math.max(b.atk, b.spa) >= 110 && b.hp + b.def + b.spd <= 260;
+}
+
 export function suggestTeammates(
   team: Pokemon[],
   pool: Pokemon[],
@@ -109,6 +125,15 @@ export function suggestTeammates(
     if (usage > 0) {
       score += Math.sqrt(usage);
       reasons.push(`${(usage * 100).toFixed(1)}% NatDex OU usage`);
+    }
+
+    // Momentum pairing: candidate completes a slow-pivot <-> wallbreaker core.
+    const momentum =
+      (isSlowPivot(p) && team.some(isFrailBreaker)) ||
+      (isFrailBreaker(p) && team.some(isSlowPivot));
+    if (momentum) {
+      score += 1;
+      reasons.push(isSlowPivot(p) ? 'pivots into your breaker' : 'wallbreaker for your slow pivot');
     }
 
     // Pile-on penalty: shares an already-stacked weakness.

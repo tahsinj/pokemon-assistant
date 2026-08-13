@@ -58,13 +58,15 @@ export interface MemberRoles {
 export const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb']);
-const HAZARD_CONTROL = new Set(['rapidspin', 'defog']);
+// Court Change / Mortal Spin clear hazards too (alongside Rapid Spin / Defog).
+const HAZARD_CONTROL = new Set(['rapidspin', 'defog', 'mortalspin', 'courtchange']);
 const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport']);
 const CLERIC_MOVES = new Set(['healbell', 'aromatherapy', 'wish']);
 const STATUS_SPREAD = new Set([
   'thunderwave', 'willowisp', 'toxic', 'spore', 'sleeppowder', 'yawn', 'glare', 'nuzzle',
 ]);
-const SPEED_CONTROL_MOVES = new Set(['trickroom', 'tailwind']);
+// Sticky Web is speed control (it slows the opposing side) as well as a hazard.
+const SPEED_CONTROL_MOVES = new Set(['trickroom', 'tailwind', 'stickyweb']);
 const PIVOT_ABILITIES = new Set(['regenerator']);
 
 /** Base-stat role bias - ported from bestSix.inferRole's stat branch. */

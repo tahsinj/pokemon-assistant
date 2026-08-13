@@ -88,4 +88,18 @@ describe('suggestTeammates', () => {
     expect(out.length).toBe(2);
     expect(out[0].score).toBeGreaterThanOrEqual(out[1].score);
   });
+
+  it('rewards a wallbreaker that completes a slow-pivot momentum core', () => {
+    // Slow Teleport pivot on the team; a frail breaker should outrank a vanilla
+    // mon of the same typing (momentum is the only differentiator).
+    const slowPivot = mon('slowking', ['water'], {
+      baseStats: { hp: 100, atk: 60, def: 100, spa: 60, spd: 100, spe: 50 },
+      moves: [{ learn: '1', move: 'teleport' }] as Pokemon['moves'],
+    });
+    const breaker = mon('zard', ['electric'], { baseStats: { hp: 60, atk: 50, def: 50, spa: 130, spd: 50, spe: 130 } });
+    const vanilla = mon('vanilla', ['electric']);
+    const out = suggestTeammates([slowPivot], [vanilla, breaker], null, 2);
+    expect(out[0].p.id).toBe('zard');
+    expect(out[0].reasons.join(' ').toLowerCase()).toContain('slow pivot');
+  });
 });
