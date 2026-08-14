@@ -933,7 +933,7 @@ export function TeamBuilderPage({
               {sectionHead(
                 'BUILD BEST 6 FROM PC',
                 bestSix
-                  ? `${bestSix.poolSize} pooled · ref lv ${bestSix.refLevel}${bestSix.excludedUnderleveled ? ` · ${bestSix.excludedUnderleveled} underleveled` : ''}${bestSix.excludedBanned ? ` · ${bestSix.excludedBanned} banned` : ''}`
+                  ? `${bestSix.poolSize} pooled · ref lv ${bestSix.refLevel}${bestSix.excludedUnderleveled ? ` · ${bestSix.excludedUnderleveled} underleveled` : ''}${bestSix.excludedBanned ? ` · ${bestSix.excludedBanned} banned` : ''}${bestSix.excludedDetrimental ? ` · ${bestSix.excludedDetrimental} unviable ability` : ''}`
                   : smogon
                     ? 'Smogon chemistry + coverage + level/IV quality'
                     : 'coverage + level/IV quality (no Smogon data)',

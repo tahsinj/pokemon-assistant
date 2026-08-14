@@ -157,6 +157,22 @@ describe('classifyMember', () => {
     expect(m.tags).toContain('speed-control');
   });
 
+  it('lets an aggressive EV spread override a bulky base-stat shape', () => {
+    // Armarouge-shaped: base stats read bulky, but 252 SpA / 252 Spe is offense.
+    const armarouge = mon('armarouge', { baseStats: { hp: 85, atk: 60, def: 100, spa: 125, spd: 80, spe: 75 } });
+    const aggro = classifyMember(
+      armarouge,
+      detail({ moves: ['Flamethrower', 'Roost'], evs: { hp: 0, atk: 0, def: 0, spa: 252, spd: 4, spe: 252 } }),
+      null,
+      moves,
+    );
+    expect(aggro.tags).not.toContain('wall');
+    expect(aggro.tags).toContain('special-attacker');
+    // Same mon, no investment -> falls back to base-stat bulk and can wall.
+    const passive = classifyMember(armarouge, detail({ moves: ['Flamethrower', 'Roost'] }), null, moves);
+    expect(passive.tags).toContain('wall');
+  });
+
   it('does not call a frail fast attacker a wall even with recovery', () => {
     const m = classifyMember(
       mon('frail', { baseStats: { hp: 70, atk: 130, def: 60, spa: 60, spd: 60, spe: 120 } }),

@@ -78,6 +78,28 @@ export function statRole(b: BaseStats): 'physical' | 'special' | 'bulk' | 'mixed
   return 'mixed';
 }
 
+/** Heavy Speed + offense investment that overrides a bulky base-stat shape. */
+function aggressiveInvestment(evs?: Record<string, number> | null): 'physical' | 'special' | null {
+  if (!evs) return null;
+  const spe = evs.spe ?? 0;
+  const atk = evs.atk ?? 0;
+  const spa = evs.spa ?? 0;
+  if (spe >= 200 && (atk >= 200 || spa >= 200)) return spa >= atk ? 'special' : 'physical';
+  return null;
+}
+
+/**
+ * Role read that lets the player's actual EV spread override the base-stat
+ * shape: a mon with heavy Speed + offense EVs is an attacker no matter how
+ * bulky its base stats look (e.g. 252 SpA / 252 Spe Armarouge is not a wall).
+ */
+export function effectiveRole(
+  b: BaseStats,
+  evs?: Record<string, number> | null,
+): 'physical' | 'special' | 'bulk' | 'mixed' {
+  return aggressiveInvestment(evs) ?? statRole(b);
+}
+
 /**
  * Resolve the move names to classify against. Priority: the slot's own set ->
  * the mon's top Smogon moves (learnable only) -> a heuristic learnset set -> none.
@@ -123,7 +145,7 @@ export function classifyMember(
   const { names, source } = effectiveMoves(p, detail, intel, moves);
   const moveSet = new Set(names);
   const moveObjs = names.map((k) => moves[k]).filter((m): m is Move => !!m);
-  const role = statRole(p.baseStats);
+  const role = effectiveRole(p.baseStats, detail?.evs);
   const bias = offensiveBias(p, intel);
   const ability = abilityOf(p, detail, intel);
   const item = itemOf(detail, intel);

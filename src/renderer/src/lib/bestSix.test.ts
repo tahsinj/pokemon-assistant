@@ -184,6 +184,33 @@ describe('buildBestTeams - scoring signals', () => {
     expect(def.stackedWeaknesses.length).toBeLessThanOrEqual(off.stackedWeaknesses.length);
   });
 
+  it('keeps a Slow Start mon out of the team despite very high BST', () => {
+    const byId = {
+      ...pokemonById,
+      regigigas: species('regigigas', ['normal'], { baseStats: { hp: 110, atk: 160, def: 110, spa: 80, spd: 110, spe: 100 } }),
+    };
+    const out = buildBestTeams([...tenRecords, rec('giga', 'regigigas', 60, { ability: 'Slow Start' })], byId, MOVES, null);
+    expect(out.excludedDetrimental).toBe(1);
+    for (const c of out.candidates) {
+      expect(c.members.some((m) => m.rec.id === 'giga')).toBe(false);
+    }
+  });
+
+  it('classifies an aggressively-invested base-bulky mon as an attacker, not bulk', () => {
+    const byId = {
+      ...pokemonById,
+      armarouge: species('armarouge', ['fire', 'psychic'], { baseStats: { hp: 85, atk: 60, def: 100, spa: 125, spd: 80, spe: 75 } }),
+    };
+    const out = buildBestTeams(
+      [rec('arm', 'armarouge', 50, { evs: { hp: 0, atk: 0, def: 0, spa: 252, spd: 4, spe: 252 } })],
+      byId,
+      MOVES,
+      null,
+    );
+    const adv = out.candidates[0].members.find((m) => m.rec.id === 'arm')!;
+    expect(adv.role).toBe('special');
+  });
+
   it('produces non-identical candidates (diversity guard)', () => {
     const out = buildBestTeams(tenRecords, pokemonById, MOVES, null);
     const keys = out.candidates.map((c) =>
