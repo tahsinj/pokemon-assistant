@@ -80,6 +80,8 @@ export interface BestSixResult {
   excludedUnderleveled: number;
   /** PC mons dropped for being banned from NatDex OU (when legalOnly). */
   excludedBanned: number;
+  /** PC mons dropped for a crippling ability (Slow Start / Truant / Defeatist). */
+  excludedDetrimental: number;
   dedupedSpecies: number;
   poolSize: number;
   refLevel: number;
@@ -91,6 +93,11 @@ export interface BestSixResult {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 const STAT_ORDER: (keyof BaseStats)[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+
+// Abilities that strictly cripple competitive viability. The zero-usage BST
+// taper would otherwise float high-BST mons that carry one of these (Regigigas,
+// Slaking, Archeops) into the pool; a heavy multiplier keeps them out.
+const DETRIMENTAL_ABILITIES = new Set(['slowstart', 'defeatist', 'truant']);
 
 interface PoolMember {
   rec: PcPokemonRecord;
@@ -130,7 +137,14 @@ function evArrayToStats(arr: number[]): BaseStats {
   return out;
 }
 
-function inferRole(member: { p: Pokemon; matched: MatchedSet | null }): Role {
+function inferRole(member: { p: Pokemon; matched: MatchedSet | null; rec?: PcPokemonRecord }): Role {
+  // The player's actual aggressive EV spread overrides everything: heavy Speed +
+  // offense investment means an attacker, never a wall, regardless of base bulk.
+  const own = member.rec?.evs;
+  if (own && (own.spe ?? 0) >= 200 && ((own.atk ?? 0) >= 200 || (own.spa ?? 0) >= 200)) {
+    return (own.spa ?? 0) >= (own.atk ?? 0) ? 'special' : 'physical';
+  }
+
   const evs = member.matched?.set.evs;
   if (evs) {
     const [hp, atk, def, spa, spd] = evs;
@@ -536,13 +550,20 @@ export function buildBestTeams(
   const legalOnly = opts.legalOnly ?? true;
   const allowItem = opts.allowItem ?? (() => true);
 
-  // Drop banned (Uber/AG) mons first so the team is NatDex OU-legal.
+  // Drop banned (Uber/AG) mons first so the team is NatDex OU-legal, and mons
+  // whose ability strictly cripples them (Slow Start / Truant / Defeatist) -
+  // their raw stats would otherwise float them into a "best" team.
   let excludedBanned = 0;
+  let excludedDetrimental = 0;
   const known = records.filter((r) => {
     const p = pokemonById[r.speciesId];
     if (!p) return false;
     if (legalOnly && !isNatDexOULegal(p)) {
       excludedBanned++;
+      return false;
+    }
+    if (DETRIMENTAL_ABILITIES.has(norm(r.ability))) {
+      excludedDetrimental++;
       return false;
     }
     return true;
@@ -593,11 +614,11 @@ export function buildBestTeams(
       if (p.types.some((stab) => effectiveness(stab, [t]) >= 2)) stabSE.add(t);
     }
 
-    // classifyMember only reads moves/ability/item/nature; stat spreads are
-    // irrelevant to role tagging, so we don't bother converting them.
+    // EVs are forwarded so classifyMember's role read honours an aggressive
+    // offensive spread (it ignores IVs/level).
     const detail: MemberDetail = {
       item: rec.item, ability: rec.ability || null, nature: rec.nature,
-      level: rec.level, ivs: null, evs: null, moves: rec.moves,
+      level: rec.level, ivs: null, evs: rec.evs as unknown as Record<string, number>, moves: rec.moves,
     };
     const tags = new Set(classifyMember(p, detail, intel, moves).tags);
 
@@ -669,7 +690,7 @@ export function buildBestTeams(
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  return { candidates, excludedUnderleveled, excludedBanned, dedupedSpecies, poolSize: pool.length, refLevel };
+  return { candidates, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies, poolSize: pool.length, refLevel };
 }
 
 // Keep learnableMoves referenced for advice extensions (and silence TS unused).
