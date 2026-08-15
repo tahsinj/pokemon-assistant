@@ -1024,8 +1024,34 @@ export function TeamBuilderPage({
                 Not enough battle-ready Pokémon - level some up first.
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2.5 items-start">
-                {bestSix.candidates.map((c) => (
+              <>
+                {bestSix.coreDeficits.length > 0 && (
+                  <div className="rounded-[10px] border border-[#e0a533]/40 bg-[#e0a533]/[.08] p-2.5 mb-2.5">
+                    <div className="font-display text-[13px] font-bold text-[var(--ink-0)] mb-1">
+                      ⚠ CORE + MORE - best team your PC allows, but it can’t fill{' '}
+                      {bestSix.coreDeficits.length === 1 ? 'a key role' : 'some key roles'}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {bestSix.coreDeficits.map((d) => (
+                        <div key={d.role} className="font-mono-hud text-[12px] text-[var(--ink-1)]">
+                          <span className="uppercase tracking-wider text-[var(--ink-2)]">No {d.label.toLowerCase()}</span>
+                          {d.suggestions.length > 0 ? (
+                            <>
+                              {' '}- go catch:{' '}
+                              {d.suggestions
+                                .map((s) => `${s.p.name}${s.usage > 0 ? ` (${(s.usage * 100).toFixed(0)}%)` : ''}`)
+                                .join(' · ')}
+                            </>
+                          ) : (
+                            <> - nothing in the dex covers it</>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-2.5 items-start">
+                  {bestSix.candidates.map((c) => (
                   <div key={c.preset} className="rounded-[10px] border border-white/10 bg-white/[.03] p-2.5 flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-display text-[14px] font-bold text-[var(--ink-0)]">{c.label}</span>
@@ -1112,7 +1138,8 @@ export function TeamBuilderPage({
                     </button>
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}
