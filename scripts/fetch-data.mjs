@@ -131,9 +131,14 @@ if (!fs.existsSync(PS_MOVES_PATH)) {
   process.exit(1);
 }
 const rawMoves = JSON.parse(fs.readFileSync(PS_MOVES_PATH, 'utf8'));
+// Moves any Cobblemon species can actually learn. Cobblemon revives some moves
+// Showdown marks nonstandard (e.g. Pursuit is isNonstandard:'Past' since Gen 8),
+// so we keep those rather than drop them along with truly removed content.
+const referencedMoves = new Set();
+for (const p of pokemon) for (const mv of p.moves) referencedMoves.add(mv.move);
 const moves = {};
 for (const [id, m] of Object.entries(rawMoves)) {
-  if (m.isNonstandard && m.isNonstandard !== 'Unobtainable') continue;
+  if (m.isNonstandard && m.isNonstandard !== 'Unobtainable' && !referencedMoves.has(id)) continue;
   moves[id] = {
     id,
     name: m.name,
