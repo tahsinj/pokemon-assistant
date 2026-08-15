@@ -990,6 +990,22 @@ function PcEditor({
   const computed = calcAllStats(species.baseStats, preview.ivs, preview.evs, preview.level, local.nature);
   const evTotal = evTotalFromForm(numeric);
 
+  // Hover hint for the EVs header: explain the caps and flag values that waste
+  // EVs - only multiples of 4 raise a stat, and a single stat is capped at 252.
+  const evTooltip = (() => {
+    const warns: string[] = [];
+    if (evTotal > 510) warns.push(`⚠ Over the 510 total by ${evTotal - 510}`);
+    for (const k of STAT_ORDER) {
+      const v = parseInt(numeric.evs[k], 10) || 0;
+      if (v > 252) warns.push(`⚠ ${PLANNER_STAT_LABELS[k]} ${v} → over the 252 cap (use 252)`);
+      else if (v % 4 !== 0) {
+        const lo = v - (v % 4);
+        warns.push(`⚠ ${PLANNER_STAT_LABELS[k]} ${v} → wastes ${v % 4} (use ${lo} or ${lo + 4})`);
+      }
+    }
+    return ['252-per-stat cap · only multiples of 4 raise a stat', ...warns].join('\n');
+  })();
+
   const review = useMemo(
     () =>
       reviewStoredMon(
@@ -1173,7 +1189,7 @@ function PcEditor({
       <div className="section-head">IVs</div>
       <StatGridText values={numeric.ivs} onChange={(k, v) => setNumeric((n) => ({ ...n, ivs: { ...n.ivs, [k]: v } }))} />
 
-      <div className="section-head" style={{ marginTop: 14 }}>
+      <div className="section-head" style={{ marginTop: 14, cursor: 'help' }} title={evTooltip}>
         EVs{' '}
         <span style={{ color: evTotal > 510 ? 'var(--danger)' : 'var(--fg-dim)', fontWeight: 400 }}>
           ({evTotal} / 510)
