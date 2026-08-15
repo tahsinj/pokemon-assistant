@@ -57,9 +57,9 @@ export interface MemberRoles {
 
 export const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb']);
+export const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb']);
 // Court Change / Mortal Spin clear hazards too (alongside Rapid Spin / Defog).
-const HAZARD_CONTROL = new Set(['rapidspin', 'defog', 'mortalspin', 'courtchange']);
+export const HAZARD_CONTROL = new Set(['rapidspin', 'defog', 'mortalspin', 'courtchange']);
 const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport']);
 const CLERIC_MOVES = new Set(['healbell', 'aromatherapy', 'wish']);
 const STATUS_SPREAD = new Set([

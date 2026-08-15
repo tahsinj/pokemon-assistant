@@ -20,7 +20,7 @@ import { bst, calcAllStats } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
 import { isNatDexOULegal } from './legality';
-import { classifyMember, type RoleTag } from './teamRoles';
+import { classifyMember, HAZARD_CONTROL, HAZARD_MOVES, type RoleTag } from './teamRoles';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -75,8 +75,28 @@ export interface TeamCandidate {
   uncoveredTypes: string[];
 }
 
+/** A species to acquire that fills a role the PC collection can't. */
+export interface ExternalFiller {
+  p: Pokemon;
+  /** NatDex OU usage share (0 when off-ladder), for the "why this one" note. */
+  usage: number;
+}
+
+/**
+ * A critical structural role no PC mon can provide ("Core + More"): the team is
+ * the best the box allows, but the player needs to hunt for one of `suggestions`
+ * to actually complete it.
+ */
+export interface CoreDeficit {
+  role: RoleTag;
+  label: string;
+  suggestions: ExternalFiller[];
+}
+
 export interface BestSixResult {
   candidates: TeamCandidate[];
+  /** Roles the whole PC can't fill, with external species to go catch. */
+  coreDeficits: CoreDeficit[];
   excludedUnderleveled: number;
   /** PC mons dropped for being banned from NatDex OU (when legalOnly). */
   excludedBanned: number;
@@ -388,6 +408,60 @@ function bestSearch(
 }
 
 // ---------------------------------------------------------------------------
+// Core + More: structural deficits the PC can't fill
+// ---------------------------------------------------------------------------
+
+// The two structural pillars a team can't function without. Detected off the
+// PC's actual role tags; filled (if missing) from the global dex by learnset.
+const DEFICIT_ROLES: { role: RoleTag; label: string; moves: Set<string> }[] = [
+  { role: 'hazard-control', label: 'Hazard control', moves: HAZARD_CONTROL },
+  { role: 'hazard-setter', label: 'Hazard setter', moves: HAZARD_MOVES },
+];
+
+/** Best dex species (not already owned) that learn a role-defining move. */
+function externalFillers(
+  moveSet: Set<string>,
+  ownedSpecies: Set<string>,
+  pokemonById: Record<string, Pokemon>,
+  smogon: SmogonBundle | null,
+  legalOnly: boolean,
+  limit = 4,
+): ExternalFiller[] {
+  return Object.values(pokemonById)
+    .filter((p) => !ownedSpecies.has(p.id))
+    .filter((p) => (legalOnly ? isNatDexOULegal(p) : true))
+    .filter((p) => p.moves.some((m) => moveSet.has(norm(m.move))))
+    .map((p) => ({ p, usage: smogon?.species[p.id]?.usage ?? 0 }))
+    .sort((a, b) => b.usage - a.usage)
+    .slice(0, limit);
+}
+
+/**
+ * "Core + More": roles no eligible PC mon can cover, each with external species
+ * to go catch. Computed over the full eligible pool so it reflects the whole
+ * collection, not whichever 6 a given preset happened to pick.
+ */
+function computeCoreDeficits(
+  members: PoolMember[],
+  pokemonById: Record<string, Pokemon>,
+  smogon: SmogonBundle | null,
+  legalOnly: boolean,
+): CoreDeficit[] {
+  if (members.length === 0) return [];
+  const owned = new Set(members.map((m) => m.p.id));
+  const out: CoreDeficit[] = [];
+  for (const { role, label, moves } of DEFICIT_ROLES) {
+    if (members.some((m) => m.tags.has(role))) continue; // PC covers it
+    out.push({
+      role,
+      label,
+      suggestions: externalFillers(moves, owned, pokemonById, smogon, legalOnly),
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Advice
 // ---------------------------------------------------------------------------
 
@@ -690,7 +764,10 @@ export function buildBestTeams(
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  return { candidates, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies, poolSize: pool.length, refLevel };
+
+  const coreDeficits = computeCoreDeficits(members, pokemonById, smogon, legalOnly);
+
+  return { candidates, coreDeficits, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies, poolSize: pool.length, refLevel };
 }
 
 // Keep learnableMoves referenced for advice extensions (and silence TS unused).

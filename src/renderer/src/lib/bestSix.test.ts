@@ -211,6 +211,33 @@ describe('buildBestTeams - scoring signals', () => {
     expect(adv.role).toBe('special');
   });
 
+  it('flags Core + More deficits and suggests external species to acquire', () => {
+    // PC is all hazard-less normals; Corviknight/Tyranitar exist in the dex only.
+    const byId = {
+      ...pokemonById,
+      corviknight: species('corviknight', ['flying', 'steel'], { moves: [{ learn: 'tm', move: 'defog' }] }),
+      tyranitar: species('tyranitar', ['rock', 'dark'], { moves: [{ learn: 'tm', move: 'stealthrock' }] }),
+    };
+    const out = buildBestTeams(tenRecords, byId, MOVES, null);
+    const roles = out.coreDeficits.map((d) => d.role);
+    expect(roles).toContain('hazard-control');
+    expect(roles).toContain('hazard-setter');
+    const hc = out.coreDeficits.find((d) => d.role === 'hazard-control')!;
+    expect(hc.suggestions.some((s) => s.p.id === 'corviknight')).toBe(true);
+    const hs = out.coreDeficits.find((d) => d.role === 'hazard-setter')!;
+    expect(hs.suggestions.some((s) => s.p.id === 'tyranitar')).toBe(true);
+  });
+
+  it('reports no hazard-control deficit when a PC mon already provides it', () => {
+    const byId = {
+      ...pokemonById,
+      corviknight: species('corviknight', ['flying', 'steel'], { moves: [{ learn: 'tm', move: 'defog' }] }),
+    };
+    const records = [...tenRecords, rec('corv', 'corviknight', 55, { moves: ['Defog'] })];
+    const out = buildBestTeams(records, byId, MOVES, null);
+    expect(out.coreDeficits.map((d) => d.role)).not.toContain('hazard-control');
+  });
+
   it('produces non-identical candidates (diversity guard)', () => {
     const out = buildBestTeams(tenRecords, pokemonById, MOVES, null);
     const keys = out.candidates.map((c) =>
