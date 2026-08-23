@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { CP_SPRITE, CP_SPRITE_HD, type HudActiveCreature, type HudType } from '../../lib/hudFixtures';
+import { type HudActiveCreature, type HudType } from '../../lib/hudFixtures';
+import { spriteChain, useSpriteFallback } from '../../lib/sprites';
 import { TypeChip, StatBar, KVCard } from './HudPrimitives';
 
 function MoveCard({ m }: { m: HudActiveCreature['moves'][number] }) {
@@ -72,6 +73,7 @@ export function StatusModule({ creature }: { creature: HudActiveCreature }) {
   const tColor = `var(--t-${creature.types[0] as HudType})`;
   const tColor2 = `var(--t-${(creature.types[1] || creature.types[0]) as HudType})`;
   const bst = Object.values(creature.stats).reduce((a, b) => a + b, 0);
+  const sprite = useSpriteFallback(spriteChain(creature.sprite, 'artwork', creature.name));
 
   return (
     <ModuleFrame
@@ -90,15 +92,19 @@ export function StatusModule({ creature }: { creature: HudActiveCreature }) {
         <div className="sprite-frame relative rounded-[16px] aspect-square overflow-hidden">
           <div className="scanline" />
           <div className="absolute inset-0 flex items-center justify-center float-y">
-            <img
-              src={CP_SPRITE_HD(creature.sprite)}
-              alt={creature.name}
-              className="sprite-img"
-              style={{ width: '78%', height: '78%', objectFit: 'contain' }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = CP_SPRITE(creature.sprite);
-              }}
-            />
+            {sprite.exhausted ? (
+              <span className="font-display font-bold" style={{ fontSize: 56, color: 'var(--ink-2)' }}>
+                {(creature.name.trim()[0] ?? '?').toUpperCase()}
+              </span>
+            ) : (
+              <img
+                src={sprite.src}
+                alt={creature.name}
+                className="sprite-img"
+                style={{ width: '78%', height: '78%', objectFit: 'contain' }}
+                onError={sprite.onError}
+              />
+            )}
           </div>
           <div className="absolute top-2 left-3 font-mono-hud text-[14px] text-[var(--hud-accent-2)]/80">
             {creature.dex}

@@ -4,9 +4,9 @@
  * renders inside a ModuleFrame: kicker/title/subtitle header with an optional
  * `side` slot, above a slanted glass panel.
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import type { Move } from '../../lib/types';
-import { pokemonSpriteUrl } from '../../lib/pokemonSprite';
+import { spriteChain, useSpriteFallback } from '../../lib/sprites';
 import { TypeChip } from './HudPrimitives';
 
 export function ModuleFrame({
@@ -64,21 +64,19 @@ export function SpriteFrame({
   cornerColor?: string;
   className?: string;
 }) {
-  const [stage, setStage] = useState<'artwork' | 'pixel' | 'glyph'>('artwork');
-  useEffect(() => setStage('artwork'), [dex, name]);
-  const url = stage === 'glyph' ? null : pokemonSpriteUrl(dex, stage === 'artwork' ? 'artwork' : 'default', name);
+  const sprite = useSpriteFallback(spriteChain(dex, 'artwork', name));
   return (
     <div className={`sprite-frame relative rounded-[14px] aspect-square overflow-hidden ${className}`}>
       <div className="scanline" />
       <div className="absolute inset-0 flex items-center justify-center float-y">
-        {url ? (
+        {!sprite.exhausted ? (
           <img
-            src={url}
+            src={sprite.src}
             alt={name}
             className="sprite-img"
             style={{ width: '78%', height: '78%', objectFit: 'contain' }}
             draggable={false}
-            onError={() => setStage((s) => (s === 'artwork' ? 'pixel' : 'glyph'))}
+            onError={sprite.onError}
           />
         ) : (
           <span className="font-display text-[42px] font-bold text-[var(--ink-2)]">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CP_SPRITE, type HudTeamMon } from '../../lib/hudFixtures';
+import { type HudTeamMon } from '../../lib/hudFixtures';
+import { spriteChain, useSpriteFallback } from '../../lib/sprites';
 import { TypeChip } from './HudPrimitives';
 
 function hpColor(hp: number): string {
@@ -26,6 +27,7 @@ function TeamSlot({
   const hasHp = typeof mon.hp === 'number';
   const hpFrac = mon.hp ?? 1;
   const hp = hpColor(hpFrac);
+  const sprite = useSpriteFallback(spriteChain(mon.sprite, 'pixel', mon.name));
 
   // Note: hex stays put; only the info card moves. Sliding the hex caused
   // the cursor to leave the hover region, looping hover state and jittering.
@@ -99,15 +101,19 @@ function TeamSlot({
           />
           <div className="absolute inset-[3px] hex" style={{ background: 'rgba(8,18,26,.9)' }} />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src={CP_SPRITE(mon.sprite)}
-              alt={mon.name}
-              className="sprite-img"
-              style={{ width: 40, height: 40 }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
+            {sprite.exhausted ? (
+              <span className="font-display font-bold text-[var(--ink-2)]" style={{ fontSize: 18 }}>
+                {(mon.name.trim()[0] ?? '?').toUpperCase()}
+              </span>
+            ) : (
+              <img
+                src={sprite.src}
+                alt={mon.name}
+                className="sprite-img"
+                style={{ width: 40, height: 40 }}
+                onError={sprite.onError}
+              />
+            )}
           </div>
           {typeof mon.lv === 'number' && (
             <div className="absolute top-0.5 right-0.5 px-1 py-0.5 rounded-full font-mono-hud text-[10px] leading-none font-bold bg-black/80 border border-white/20 pointer-events-none">

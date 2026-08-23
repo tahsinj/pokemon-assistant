@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import { CP_SPRITE, CP_SPRITE_HD, type HudTeamMon } from '../../lib/hudFixtures';
+import { type HudTeamMon } from '../../lib/hudFixtures';
+import { spriteChain, useSpriteFallback } from '../../lib/sprites';
 import { NATURES } from '../../lib/stats';
 import type { StatKey } from '../../lib/types';
 import { TypeChip } from './HudPrimitives';
@@ -16,6 +17,7 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
 
   const nat = NATURES[mon.nature] || {};
   const evTotal = mon.evs ? Object.values(mon.evs).reduce((a, b) => a + b, 0) : 0;
+  const sprite = useSpriteFallback(spriteChain(mon.sprite, 'artwork', mon.name));
 
   return (
     <div className="focus-lens-v" style={{ ['--lens-tint' as string]: tint } as CSSProperties}>
@@ -39,13 +41,13 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
         <span className="corner-tag r" style={{ color: tint2 }}>
           LV {statLevel}
         </span>
-        <img
-          src={CP_SPRITE_HD(mon.sprite)}
-          alt={mon.name}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = CP_SPRITE(mon.sprite);
-          }}
-        />
+        {sprite.exhausted ? (
+          <span className="font-display font-bold" style={{ fontSize: 64, color: 'var(--ink-2)' }}>
+            {(mon.name.trim()[0] ?? '?').toUpperCase()}
+          </span>
+        ) : (
+          <img src={sprite.src} alt={mon.name} onError={sprite.onError} />
+        )}
       </div>
 
       <div className="lens-v-body">

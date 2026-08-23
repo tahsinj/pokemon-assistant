@@ -160,11 +160,8 @@ export const HUD_TOOLS: HudTool[] = [
   { id: 'draft',    label: 'Draft',   glyph: 'D', angle: 237.27 },
 ];
 
-export const CP_SPRITE = (n: number): string =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${n}.png`;
-
-export const CP_SPRITE_HD = (n: number): string =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${n}.png`;
+// Sprite URLs now resolve through src/renderer/src/lib/sprites.ts (offline-first
+// local sprites + remote fallback). Don't reintroduce hardcoded PokeAPI URLs here.
 
 export type BiomeName = 'Verdant Dusk' | 'Ember Caldera' | 'Tidal Reef' | 'Voltaic Storm' | 'Frostspire';
 
