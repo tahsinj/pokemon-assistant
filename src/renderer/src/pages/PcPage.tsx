@@ -39,6 +39,7 @@ import {
   exportBoxTxt,
 } from '../lib/pc/export';
 import { reviewStoredMon, reviewReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
+import { computeTrPriorities, type TrPriorityEntry } from '../lib/pc/trPriority';
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import type { StatKey } from '../lib/types';
 
@@ -152,6 +153,8 @@ export function PcPage({
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
   const [tabRenameDraft, setTabRenameDraft] = useState('');
   const [boxCounts, setBoxCounts] = useState<Record<string, number>>({});
+  // Species that sit on a saved team - they weight TR priorities up.
+  const [teamSpeciesIds, setTeamSpeciesIds] = useState<Set<string>>(() => new Set());
   const [hasLastExport, setHasLastExport] = useState(false);
   const [dragOver, setDragOver] = useState<{ boxId: string; slot?: number } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -199,6 +202,37 @@ export function PcPage({
     }
     return m;
   }, [occupants, pokemonById, smogon, dismissedTips]);
+
+  // Load the species sitting on saved teams so TR priorities can weight them up.
+  useEffect(() => {
+    if (!bridge?.teamsList || !bridge.teamsLoad) return;
+    let cancelled = false;
+    (async () => {
+      const list = await bridge.teamsList!();
+      const ids = new Set<string>();
+      for (const t of list) {
+        const full = await bridge.teamsLoad!(t.id);
+        for (const mb of full?.members ?? []) if (mb.speciesId) ids.add(mb.speciesId);
+      }
+      if (!cancelled) setTeamSpeciesIds(ids);
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [bridge]);
+
+  // Ranked taught-moves (TRs) worth acquiring for the mons in this box.
+  const trPriorities = useMemo(
+    () =>
+      computeTrPriorities(
+        occupants.map((o) => ({ speciesId: o.speciesId, moves: o.moves })),
+        pokemonById,
+        moves,
+        smogon,
+        teamSpeciesIds,
+      ),
+    [occupants, pokemonById, moves, smogon, teamSpeciesIds],
+  );
 
   const refreshBoxes = useCallback(async () => {
     if (!bridge?.pcBoxesList) return;
@@ -826,6 +860,8 @@ export function PcPage({
               );
             })}
           </div>
+
+          {smogon && <TrPriorityPanel entries={trPriorities} hasMons={occupants.length > 0} />}
 
           <div style={{ marginTop: 14 }}>
             <div className="section-head">Showdown round-trip</div>
@@ -1508,6 +1544,111 @@ function StatGridText({
           />
         </label>
       ))}
+    </div>
+  );
+}
+
+const TR_TIER_STYLE: Record<TrPriorityEntry['tier'], { color: string; label: string }> = {
+  high: { color: '#f2c14e', label: 'High' },
+  medium: { color: '#7aa2d8', label: 'Med' },
+  low: { color: 'var(--fg-dim)', label: 'Low' },
+};
+
+/**
+ * Ranked list of taught moves (TM/tutor "TRs") the mons in this box want but
+ * don't run - prioritized by meta usage and saved-team membership.
+ */
+function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; hasMons: boolean }) {
+  const [open, setOpen] = useState(true);
+  const shown = entries.slice(0, 12);
+  return (
+    <div style={{ marginTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="section-head"
+        title="Taught moves (TM / tutor) your box mons want but don't run, ranked by ladder usage and team membership. ★ = the mon is on a saved team."
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          background: 'none',
+          border: 0,
+          padding: 0,
+          cursor: 'pointer',
+        }}
+      >
+        TR Priorities
+        <span style={{ color: 'var(--fg-dim)', fontWeight: 400 }}>({entries.length})</span>
+        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
+          {open ? '▾' : '▸'}
+        </span>
+      </button>
+      {open &&
+        (entries.length === 0 ? (
+          <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '4px 0 0' }}>
+            {hasMons
+              ? 'Every mon here already runs its standard taught moves.'
+              : 'Add Pokémon to this box to see which TRs to chase.'}
+          </p>
+        ) : (
+          <ol
+            style={{
+              listStyle: 'none',
+              margin: '8px 0 0',
+              padding: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
+            {shown.map((e, i) => {
+              const ts = TR_TIER_STYLE[e.tier];
+              return (
+                <li
+                  key={e.moveId}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
+                    padding: '6px 8px',
+                    borderLeft: `3px solid ${ts.color}`,
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: 4,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 11, minWidth: 16 }}>
+                      {i + 1}
+                    </span>
+                    <strong style={{ fontSize: 13, color: 'var(--ink-0)' }}>{e.moveName}</strong>
+                    <TypeChip t={e.type} />
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>
+                      {e.category}
+                    </span>
+                    <span className="mono" style={{ marginLeft: 'auto', fontSize: 11, color: ts.color }}>
+                      {ts.label} · {Math.round(e.score)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+                    {e.wantedBy.map((w, j) => (
+                      <span key={w.speciesId + j}>
+                        {j > 0 && ' · '}
+                        {w.speciesName} {w.moveUsagePct.toFixed(0)}%{w.onTeam ? ' ★' : ''}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+            {entries.length > shown.length && (
+              <li style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+                +{entries.length - shown.length} more…
+              </li>
+            )}
+          </ol>
+        ))}
     </div>
   );
 }
