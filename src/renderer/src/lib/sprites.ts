@@ -1,17 +1,21 @@
 /**
  * Single source of truth for Pokémon sprite URLs, with graceful fallback.
  *
- * Sprites stream from the PokeAPI GitHub mirror (we don't vendor the images -
- * they're not ours to redistribute). Each chain is ordered most-preferred first
- * (e.g. official artwork -> pixel sprite) and ends naturally; when it's exhausted
- * the consumer shows a glyph/placeholder instead of a blank box (the bug that
- * left squad hexes empty when a sprite couldn't load). Offline, the whole chain
- * fails and the placeholder shows - never a blank.
+ * We don't vendor sprite images (not ours to redistribute). Each chain tries
+ * the Electron offline cache first (`cpsprite://`, served by
+ * src/main/spriteCache.ts - a per-user cache that downloads from PokeAPI on
+ * first view and then works offline), then the PokeAPI mirror directly (the
+ * path used outside Electron, e.g. a browser dev tab). Chains are ordered
+ * most-preferred first (e.g. artwork -> pixel) and end naturally; when exhausted
+ * the consumer shows a glyph placeholder instead of a blank box - the bug that
+ * left squad hexes empty when a sprite couldn't load.
  */
 import { useEffect, useState } from 'react';
 import FORM_SPRITES from './formSprites.json';
 
 const REMOTE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
+// Custom scheme handled by the main process; host segment is ignored there.
+const CACHE = 'cpsprite://sprites';
 
 const formSprites: Record<string, number> = FORM_SPRITES;
 
@@ -45,16 +49,20 @@ export function spriteId(dex: number, name?: string): number | null {
 export function spriteChain(dex: number, kind: SpriteKind = 'pixel', name?: string): string[] {
   const id = spriteId(dex, name);
   if (id == null) return [];
+  // Each entry resolves through the offline cache first, then the mirror; for a
+  // given variant we prefer artwork, then fall back to the smaller pixel sprite.
+  const sources = (sub: string) => [`${CACHE}/${sub}`, `${REMOTE}/${sub}`];
+  const artwork = `other/official-artwork/${id}.png`;
+  const pixel = `${id}.png`;
   switch (kind) {
     case 'artwork':
-      // Big "holo" artwork, falling back to the smaller pixel sprite.
-      return [`${REMOTE}/other/official-artwork/${id}.png`, `${REMOTE}/${id}.png`];
+      return [...sources(artwork), ...sources(pixel)];
     case 'shiny':
       // A missing shiny drops back to the normal sprite for the species.
-      return [`${REMOTE}/shiny/${id}.png`, `${REMOTE}/${id}.png`];
+      return [...sources(`shiny/${id}.png`), ...sources(pixel)];
     case 'pixel':
     default:
-      return [`${REMOTE}/${id}.png`];
+      return sources(pixel);
   }
 }
 

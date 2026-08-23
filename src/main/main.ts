@@ -17,8 +17,12 @@ import {
   saveTeam,
 } from './rivalsDb';
 import { createCobblemonBridge, registerBridgeIpc } from './cobblemonBridge';
+import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
 
 const isDev = !app.isPackaged;
+
+// Privileged-scheme registration must happen before the app `ready` event.
+registerSpriteSchemePrivileged();
 
 // Dev runs inside the stock Electron binary, which carries the default
 // Electron icon - set ours at runtime. Packaged builds get the icon baked
@@ -56,6 +60,9 @@ function createWindow() {
 }
 
 async function bootstrap() {
+  // Serve cpsprite:// from the per-user sprite cache (offline-capable).
+  registerSpriteProtocol();
+
   await initRivalsDb();
 
   ipcMain.handle('teams:list', () => listTeams());
