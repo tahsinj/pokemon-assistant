@@ -196,6 +196,51 @@ describe('buildBestTeams - scoring signals', () => {
     }
   });
 
+  it('benches a high-BST official low-tier mon for a viable OU-tier teammate', () => {
+    // Regirock: huge BST but RU-tier (a known competitive failure). Dragonite:
+    // lower-tier-table win but OU. The taper must not float the RU wall above it.
+    const byId = {
+      regirock: species('regirock', ['rock'], {
+        baseStats: { hp: 80, atk: 100, def: 200, spa: 50, spd: 100, spe: 50 },
+        natDexTier: 'RU',
+        moves: [{ learn: 'tm', move: 'earthquake' }],
+      }),
+      dragonite: species('dragonite', ['dragon', 'flying'], {
+        baseStats: { hp: 91, atk: 134, def: 95, spa: 100, spd: 100, spe: 80 },
+        natDexTier: 'OU',
+        moves: [{ learn: 'tm', move: 'earthquake' }],
+      }),
+    };
+    // Two records of each so a 6-mon team can't take everything; quality decides.
+    const records = [
+      rec('reg1', 'regirock', 60, { moves: ['Earthquake'] }),
+      rec('dra1', 'dragonite', 60, { moves: ['Earthquake'] }),
+    ];
+    const out = buildBestTeams(records, byId, MOVES, null);
+    const adv = out.candidates[0].members;
+    const dra = adv.find((m) => m.rec.speciesId === 'dragonite')!;
+    const reg = adv.find((m) => m.rec.speciesId === 'regirock')!;
+    expect(dra.quality).toBeGreaterThan(reg.quality);
+  });
+
+  it('penalizes an anti-synergistic, un-evolved set vs the same mon built well', () => {
+    const byId = { ...pokemonById, golem: species('golem', ['rock', 'ground'], {
+      baseStats: { hp: 80, atk: 120, def: 130, spa: 55, spd: 65, spe: 45 },
+      moves: [{ learn: '1', move: 'tackle' }, { learn: 'tm', move: 'earthquake' }],
+    }) };
+    // Trash: Calm (−Atk) physical attacker stuck on weak Tackle.
+    const trash = buildBestTeams(
+      [rec('t', 'golem', 60, { nature: 'Calm', moves: ['Tackle'] })],
+      byId, MOVES, null,
+    ).candidates[0].members.find((m) => m.rec.id === 't')!;
+    // Optimised: Adamant (+Atk) running its best STAB.
+    const good = buildBestTeams(
+      [rec('g', 'golem', 60, { nature: 'Adamant', moves: ['Earthquake'] })],
+      byId, MOVES, null,
+    ).candidates[0].members.find((m) => m.rec.id === 'g')!;
+    expect(good.quality).toBeGreaterThan(trash.quality);
+  });
+
   it('classifies an aggressively-invested base-bulky mon as an attacker, not bulk', () => {
     const byId = {
       ...pokemonById,

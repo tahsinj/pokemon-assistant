@@ -16,7 +16,7 @@ import type { BaseStats, Move, Pokemon } from './types';
 import type { PcPokemonRecord, MemberDetail } from './bridgeTypes';
 import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 import { TYPES, effectiveness } from './typechart';
-import { bst, calcAllStats } from './stats';
+import { bst, calcAllStats, NATURES } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
 import { isNatDexOULegal } from './legality';
@@ -186,6 +186,73 @@ function ivQuality(rec: PcPokemonRecord, p: Pokemon): number {
   const weighted =
     rec.ivs.spe + rec.ivs.hp + rec.ivs[attackKey] + 0.5 * rec.ivs.def + 0.5 * rec.ivs.spd;
   return weighted / (4 * 31);
+}
+
+// Zero-usage viability by NatDex tier. For an *official* species,
+// ladder usage may be 0 simply because it sits below the OU usage cutoff - but
+// its tier still tells us how viable it actually is, so a 580-BST pure-Rock RU
+// wall (Regirock) ranks as the low-tier mon it is rather than riding the BST
+// taper meant for custom species. Showdown's NatDex bottom bucket is "RU", so
+// everything RU-and-below is treated as a competitive long shot. Range is kept
+// comparable to the old BST taper's 0..0.5 so the rest of the formula is unmoved.
+const TIER_VIABILITY: Record<string, number> = {
+  ag: 0.5, uber: 0.5, ou: 0.45, uubl: 0.4, uu: 0.35, rubl: 0.28,
+  nubl: 0.16, nu: 0.12, publ: 0.1, pu: 0.09, zubl: 0.08, zu: 0.07,
+  ru: 0.12, nfe: 0.06, lc: 0.04,
+};
+function tierViability(tier: string): number {
+  return TIER_VIABILITY[tier.replace(/[()]/g, '').toLowerCase()] ?? 0.12;
+}
+
+const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+
+/**
+ * Individual-set quality multiplier in (0,1]. The pool otherwise
+ * rates a mon by species *potential*, blind to a player actively running a
+ * detrimental build. Two robust, data-driven checks fold execution back in:
+ *   • a nature that drops the very stat the set attacks with (Calm −Atk on a
+ *     physical Regirock), and
+ *   • a moveset much weaker than what the species can learn (Rock Throw where
+ *     Stone Edge is on the table), judged on intrinsic move strength (BP, STAB,
+ *     category fit) via `scoreMove` - deliberately ladder-usage-agnostic so it
+ *     measures raw build quality, not conformity, and doesn't favour mons that
+ *     happen to have Smogon coverage.
+ * ~1.0 for an optimised set, ~0.35 for trash - so a flawless Dragonite outranks
+ * a high-BST mon stuck on an un-evolved, anti-synergistic build.
+ */
+function setQuality(rec: PcPokemonRecord, p: Pokemon, moves: Record<string, Move>): number {
+  const damaging = rec.moves
+    .map((n) => moves[norm(n)])
+    .filter((m): m is Move => !!m && m.category !== 'Status');
+  if (damaging.length === 0) return 1; // pure status/utility set - nothing to judge
+
+  const phys = damaging.filter((m) => m.category === 'Physical').length;
+  const spec = damaging.filter((m) => m.category === 'Special').length;
+  const leansPhysical = phys !== spec ? phys > spec : p.baseStats.atk >= p.baseStats.spa;
+  const attackStat: keyof BaseStats = leansPhysical ? 'atk' : 'spa';
+
+  let mult = 1;
+
+  // Nature actively reduces the stat this set attacks with - a real anti-synergy.
+  if (NATURES[rec.nature]?.minus === attackStat) mult *= 0.55;
+
+  // Actual moveset power vs the species' best learnable damaging moves. A ratio
+  // below 1 means power left on the table; scale smoothly with a floor so one
+  // sub-par slot only nicks the score while a fully un-evolved set tanks it.
+  const score = (m: Move) => scoreMove(p, m, null, leansPhysical).score;
+  const bestAvg = avg(
+    learnableMoves(p, moves)
+      .filter((m) => m.category !== 'Status')
+      .map(score)
+      .sort((a, b) => b - a)
+      .slice(0, damaging.length),
+  );
+  if (bestAvg > 0) {
+    const ratio = Math.max(0, Math.min(1, avg(damaging.map(score)) / bestAvg));
+    mult *= 0.45 + 0.55 * ratio;
+  }
+
+  return mult;
 }
 
 function percentile90(levels: number[]): number {
@@ -668,15 +735,24 @@ export function buildBestTeams(
     const intel = smogon?.species[rec.speciesId] ?? null;
     const matched = intel ? bestMatchingSet(rec, p, intel) : null;
     const usage = intel?.usage ?? 0;
-    // BST is tapered by usage: for meta mons, ladder usage already reflects stat
-    // quality (counting both double-counts it), but for the many off-ladder
-    // Cobblemon species (usage 0) BST is the only power signal we have.
-    const bstWeight = 0.5 * (1 - Math.min(1, Math.sqrt(usage)));
+    // Zero-usage power fallback, split by provenance. For meta mons,
+    // ladder usage already reflects stat quality and this term fades to 0. For
+    // usage-0 mons it's the only signal - but it must differ by origin:
+    //   • official species (have a NatDex tier) are ranked by that tier, so a
+    //     0%-usage RU wall can't ride the taper meant for custom mons;
+    //   • true custom Cobblemon species are absent from Showdown (no tier, no
+    //     usage), so their BST is all we have - keep the original taper for them.
+    const fade = 1 - Math.min(1, Math.sqrt(usage));
+    const fallback = p.natDexTier
+      ? tierViability(p.natDexTier) * fade
+      : 0.5 * (bst(p.baseStats) / 600) * fade;
+    // Fold in individual-set execution so a trash build can't coast on potential.
     const quality =
-      Math.sqrt(usage) +
-      bstWeight * (bst(p.baseStats) / 600) +
-      0.5 * Math.min(1, rec.level / Math.max(1, refLevel)) +
-      0.5 * ivQuality(rec, p);
+      (Math.sqrt(usage) +
+        fallback +
+        0.5 * Math.min(1, rec.level / Math.max(1, refLevel)) +
+        0.5 * ivQuality(rec, p)) *
+      setQuality(rec, p, moves);
 
     const weakTo = new Set<string>();
     const resists = new Set<string>();
