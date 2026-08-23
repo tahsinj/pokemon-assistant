@@ -40,6 +40,7 @@ import {
 } from '../lib/pc/export';
 import { reviewStoredMon, reviewReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
 import { computeTrPriorities, type TrPriorityEntry } from '../lib/pc/trPriority';
+import { assignTr, type TrAssignResult, type TrAssignCandidate } from '../lib/pc/trAssign';
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import type { StatKey } from '../lib/types';
 
@@ -233,6 +234,40 @@ export function PcPage({
       ),
     [occupants, pokemonById, moves, smogon, teamSpeciesIds],
   );
+
+  // "Who should I give this TR to?" - the inverse query. Pick a move; rank the
+  // box mons that can learn it and want it. The picker is scoped to the moves at
+  // least one mon here can actually be taught (the records that matter for box).
+  const [trAssignMove, setTrAssignMove] = useState('');
+  const boxTeachableMoves = useMemo(() => {
+    const seen = new Map<string, string>(); // moveId -> display name
+    for (const o of occupants) {
+      const sp = pokemonById[o.speciesId];
+      if (!sp) continue;
+      for (const lm of sp.moves) {
+        if (lm.learn !== 'tm' && lm.learn !== 'tutor') continue;
+        const id = lm.move.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const m = moves[id];
+        if (m && !seen.has(id)) seen.set(id, m.name);
+      }
+    }
+    return [...seen.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [occupants, pokemonById, moves]);
+
+  const trAssignResult = useMemo(() => {
+    const id = trAssignMove.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!id) return null;
+    return assignTr(
+      id,
+      occupants.map((o) => ({ slot: o.slot, speciesId: o.speciesId, nickname: o.nickname, moves: o.moves })),
+      pokemonById,
+      moves,
+      smogon,
+      teamSpeciesIds,
+    );
+  }, [trAssignMove, occupants, pokemonById, moves, smogon, teamSpeciesIds]);
 
   const refreshBoxes = useCallback(async () => {
     if (!bridge?.pcBoxesList) return;
@@ -862,6 +897,14 @@ export function PcPage({
           </div>
 
           {smogon && <TrPriorityPanel entries={trPriorities} hasMons={occupants.length > 0} />}
+
+          <TrAssignPanel
+            value={trAssignMove}
+            onChange={setTrAssignMove}
+            options={boxTeachableMoves}
+            result={trAssignResult}
+            hasMons={occupants.length > 0}
+          />
 
           <div style={{ marginTop: 14 }}>
             <div className="section-head">Showdown round-trip</div>
@@ -1650,6 +1693,173 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
           </ol>
         ))}
     </div>
+  );
+}
+
+const TR_ASSIGN_TIER_STYLE: Record<TrAssignCandidate['tier'], { color: string; label: string }> = {
+  high: { color: '#6fcf97', label: 'Best fit' },
+  medium: { color: '#7aa2d8', label: 'Good fit' },
+  low: { color: 'var(--fg-dim)', label: 'Coverage' },
+};
+
+/**
+ * "I have this TR - who should I give it to?" Pick a move from the box's
+ * teachable set and see the mons that can learn it, ranked by how much they want
+ * it. The inverse of {@link TrPriorityPanel}.
+ */
+function TrAssignPanel({
+  value,
+  onChange,
+  options,
+  result,
+  hasMons,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; name: string }[];
+  result: TrAssignResult | null;
+  hasMons: boolean;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div style={{ marginTop: 14 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="section-head"
+        title="Have a TR in hand? Pick the move and see which mon in this box should learn it, ranked by ladder usage and saved-team membership."
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          background: 'none',
+          border: 0,
+          padding: 0,
+          cursor: 'pointer',
+        }}
+      >
+        Who gets this TR?
+        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
+          {open ? '▾' : '▸'}
+        </span>
+      </button>
+      {open && (
+        <>
+          <input
+            type="text"
+            list="tr-assign-moves"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={hasMons ? 'Type a move (e.g. Knock Off)…' : 'Add Pokémon to this box first'}
+            disabled={!hasMons}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              marginTop: 8,
+              padding: '6px 8px',
+              fontSize: 13,
+              background: 'var(--bg-2, rgba(255,255,255,0.04))',
+              border: '1px solid var(--border, rgba(255,255,255,0.12))',
+              borderRadius: 4,
+              color: 'var(--ink-0)',
+            }}
+          />
+          <datalist id="tr-assign-moves">
+            {options.map((o) => (
+              <option key={o.id} value={o.name} />
+            ))}
+          </datalist>
+
+          {!value.trim() ? (
+            <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
+              {hasMons
+                ? `Pick from ${options.length} ${options.length === 1 ? 'move' : 'moves'} the mons in this box can be taught.`
+                : 'Add Pokémon to this box to match a TR to a recipient.'}
+            </p>
+          ) : !result ? (
+            <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
+              No move matching “{value.trim()}”. Pick one from the list.
+            </p>
+          ) : (
+            <TrAssignResults result={result} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function TrAssignResults({ result }: { result: TrAssignResult }) {
+  if (result.candidates.length === 0) {
+    return (
+      <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
+        {result.alreadyKnow.length > 0
+          ? `${result.alreadyKnow.map((m) => m.nickname || m.speciesName).join(', ')} already ${
+              result.alreadyKnow.length === 1 ? 'runs' : 'run'
+            } ${result.moveName}. No mon here needs the record.`
+          : `Nothing in this box can be taught ${result.moveName}.`}
+      </p>
+    );
+  }
+  return (
+    <>
+      <ol
+        style={{
+          listStyle: 'none',
+          margin: '8px 0 0',
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
+        {result.candidates.map((c, i) => {
+          const ts = TR_ASSIGN_TIER_STYLE[c.tier];
+          return (
+            <li
+              key={`${c.slot}-${c.speciesId}`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                padding: '6px 8px',
+                borderLeft: `3px solid ${ts.color}`,
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: 4,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 11, minWidth: 16 }}>
+                  {i + 1}
+                </span>
+                <strong style={{ fontSize: 13, color: 'var(--ink-0)' }}>
+                  {c.nickname || c.speciesName}
+                </strong>
+                {c.nickname && (
+                  <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{c.speciesName}</span>
+                )}
+                {c.onTeam && <span title="On a saved team">★</span>}
+                <span className="mono" style={{ marginLeft: 'auto', fontSize: 11, color: ts.color }}>
+                  {ts.label} · {Math.round(c.score)}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+                Box slot {c.slot + 1} · {c.reason}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {(result.alreadyKnow.length > 0 || result.cannotLearnCount > 0) && (
+        <p style={{ fontSize: 11, color: 'var(--fg-dim)', margin: '6px 0 0', paddingLeft: 24 }}>
+          {result.alreadyKnow.length > 0 &&
+            `${result.alreadyKnow.length} already ${result.alreadyKnow.length === 1 ? 'runs' : 'run'} it`}
+          {result.alreadyKnow.length > 0 && result.cannotLearnCount > 0 && ' · '}
+          {result.cannotLearnCount > 0 && `${result.cannotLearnCount} can't learn it`}
+        </p>
+      )}
+    </>
   );
 }
 
