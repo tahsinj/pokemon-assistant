@@ -57,7 +57,7 @@ export function CoverageThreats({
       <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
         ◢ COVERAGE & THREATS ·{' '}
         <span className="text-[var(--ink-2)]">
-          {coverage.hasUsage ? 'from popular movesets' : 'from learnset (no usage data)'}
+          {coverage.hasUsage ? 'from popular movesets' : 'from recommended set (no usage data)'}
         </span>
       </div>
 
@@ -85,7 +85,7 @@ export function CoverageThreats({
           <div className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-snug mt-0.5">
             {coverage.hasUsage
               ? '% = how often its sets carry a move that hits this type for 2×+.'
-              : 'Types it CAN hit super-effectively if you teach the move (no usage data).'}
+              : 'Super-effective coverage from its recommended STAB + coverage set.'}
           </div>
         </div>
 

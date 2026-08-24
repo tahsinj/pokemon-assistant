@@ -3,14 +3,16 @@ import { offensiveCoverage, threatSummary } from './coverageProfile';
 import type { Pokemon, Move } from './types';
 import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 
-const moves = {
-  earthquake: { id: 'earthquake', name: 'Earthquake', type: 'Ground', power: 100 },
-  dragonclaw: { id: 'dragonclaw', name: 'Dragon Claw', type: 'Dragon', power: 80 },
-  stealthrock: { id: 'stealthrock', name: 'Stealth Rock', type: 'Rock', power: 0 },
-  firefang: { id: 'firefang', name: 'Fire Fang', type: 'Fire', power: 65 },
-  icefang: { id: 'icefang', name: 'Ice Fang', type: 'Ice', power: 65 },
-  surf: { id: 'surf', name: 'Surf', type: 'Water', power: 90 },
-} as unknown as Record<string, Move>;
+const mk = (id: string, name: string, type: string, power: number, category = 'Physical'): Move =>
+  ({ id, name, type, power, category, accuracy: 100, pp: 10, priority: 0, flags: [] } as unknown as Move);
+const moves: Record<string, Move> = {
+  earthquake: mk('earthquake', 'Earthquake', 'Ground', 100),
+  dragonclaw: mk('dragonclaw', 'Dragon Claw', 'Dragon', 80),
+  stealthrock: { id: 'stealthrock', name: 'Stealth Rock', type: 'Rock', power: 0, category: 'Status', accuracy: true, pp: 20, priority: 0, flags: [] } as unknown as Move,
+  firefang: mk('firefang', 'Fire Fang', 'Fire', 65),
+  icefang: mk('icefang', 'Ice Fang', 'Ice', 65),
+  surf: mk('surf', 'Surf', 'Water', 90, 'Special'),
+};
 
 const garchomp = {
   id: 'garchomp', name: 'Garchomp', dex: 445, types: ['Dragon', 'Ground'],

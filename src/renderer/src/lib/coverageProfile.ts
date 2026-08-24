@@ -17,6 +17,7 @@ import type { Pokemon, Move } from './types';
 import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 import { TYPES, effectiveness, type Type } from './typechart';
 import { assumedOpponentSpec } from './opponentSet';
+import { suggestMoveset } from './recommender';
 import { evaluateSpecMatchup, type MatchupCell } from './matchup';
 
 // ── Offensive coverage ──────────────────────────────────────────────────────
@@ -68,14 +69,17 @@ function candidateMoves(
     }
     if (out.length) return out;
   }
-  // Learnset fallback - no usage data.
+  // No usage data -> base coverage on the mon's RECOMMENDED set (STAB + the few
+  // coverage moves it would realistically run), not its entire learnset. Most
+  // mons can learn a coverage TM of nearly every type, so the full learnset
+  // lights up all 18 and tells you nothing.
   const seen = new Set<string>();
   const out: CandidateMove[] = [];
-  for (const lm of p.moves) {
-    const mv = moves[lm.move];
-    if (mv && (mv.power ?? 0) > 0 && isType(mv.type.toLowerCase()) && !seen.has(mv.type.toLowerCase())) {
-      seen.add(mv.type.toLowerCase());
-      out.push({ type: mv.type.toLowerCase() as Type, name: mv.name, share: null });
+  for (const { move: mv } of suggestMoveset(p, moves)) {
+    const t = mv.type.toLowerCase();
+    if ((mv.power ?? 0) > 0 && isType(t) && !seen.has(t)) {
+      seen.add(t);
+      out.push({ type: t as Type, name: mv.name, share: null });
     }
   }
   return out;
