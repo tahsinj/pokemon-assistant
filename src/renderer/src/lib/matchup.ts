@@ -106,26 +106,51 @@ export function evaluateMatchup(
   oppSide: { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; dynamax?: boolean; assumedAbility?: string | null },
   moves: Record<string, Move>,
 ): MatchupCell {
-  const myFallback = bestDamagingMoveNames(pcSide.p, moves);
-  const oppFallback = bestDamagingMoveNames(oppSide.p, moves);
+  return evaluateSpecMatchup(
+    { p: pcSide.p, input: fromPcRecord(pcSide.rec) },
+    {
+      p: oppSide.p,
+      input: oppSide.set.input,
+      tera: oppSide.teraType,
+      dynamax: oppSide.dynamax,
+      // Tier-aware (set by the caller per assumption tab); direct callers fall
+      // back to the conservative worst-case ability.
+      ability:
+        oppSide.assumedAbility !== undefined
+          ? oppSide.assumedAbility
+          : defensiveAbility(oppSide.p, oppSide.set.ability),
+    },
+    moves,
+  );
+}
 
-  const me = toBattleSpec(fromPcRecord(pcSide.rec), pcSide.p, myFallback);
-  const opp = toBattleSpec(oppSide.set.input, oppSide.p, oppFallback, {
-    tera: oppSide.teraType,
-    dynamax: oppSide.dynamax,
-    // Tier-aware (set by the caller per assumption tab); direct callers fall
-    // back to the conservative worst-case ability.
-    ability:
-      oppSide.assumedAbility !== undefined
-        ? oppSide.assumedAbility
-        : defensiveAbility(oppSide.p, oppSide.set.ability),
+/**
+ * Lower-level 1v1 evaluator over two already-resolved combat inputs (species +
+ * CombatImportInput), not tied to a PC record. `evaluateMatchup` is the thin
+ * PC-vs-opponent wrapper over this; the Pokédex "should I send this in?" check
+ * uses it directly with two assumed competitive sets. Verdict is from `mine`'s
+ * perspective. Pure.
+ */
+export function evaluateSpecMatchup(
+  mine: { p: Pokemon; input: CombatImportInput; tera?: string | null; ability?: string | null },
+  opp: { p: Pokemon; input: CombatImportInput; tera?: string | null; dynamax?: boolean; ability?: string | null },
+  moves: Record<string, Move>,
+): MatchupCell {
+  const myFallback = bestDamagingMoveNames(mine.p, moves);
+  const oppFallback = bestDamagingMoveNames(opp.p, moves);
+
+  const me = toBattleSpec(mine.input, mine.p, myFallback, { tera: mine.tera, ability: mine.ability });
+  const them = toBattleSpec(opp.input, opp.p, oppFallback, {
+    tera: opp.tera,
+    dynamax: opp.dynamax,
+    ability: opp.ability,
   });
 
-  const myBest = bestDamaging(calcAllMoves(9, me.spec, opp.spec, EMPTY_FIELD));
-  const theirBest = bestDamaging(calcAllMoves(9, opp.spec, me.spec, EMPTY_FIELD));
+  const myBest = bestDamaging(calcAllMoves(9, me.spec, them.spec, EMPTY_FIELD));
+  const theirBest = bestDamaging(calcAllMoves(9, them.spec, me.spec, EMPTY_FIELD));
 
-  const mySpe = speedOf(pcSide.p, me.fields);
-  const theirSpe = speedOf(oppSide.p, opp.fields);
+  const mySpe = speedOf(mine.p, me.fields);
+  const theirSpe = speedOf(opp.p, them.fields);
   const iAmFaster = mySpe > theirSpe;
 
   const myKoChance = myBest?.ko.chance ?? 0;

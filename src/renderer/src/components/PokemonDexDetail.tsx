@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { CompetitiveIntel } from './CompetitiveIntel';
+import { CoverageThreats } from './CoverageThreats';
 import { SpeciesCounters } from './SpeciesCounters';
 import { bst } from '../lib/stats';
 import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recommender';
@@ -191,6 +192,15 @@ export function PokemonDexDetail({
           </div>
         </div>
       </div>
+
+      {/* Coverage & threats - beginner matchup intel from popular movesets */}
+      <CoverageThreats
+        p={p}
+        moves={moves}
+        smogon={smogon}
+        allPokemon={allPokemon}
+        onSelectSpecies={onSelectSpecies}
+      />
 
       {/* Recommended moveset - tabbed: Smogon-blended / level-up only / TM priorities */}
       <div>
