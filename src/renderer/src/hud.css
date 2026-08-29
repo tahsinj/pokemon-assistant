@@ -463,6 +463,17 @@
 .hud-form option {
   background: var(--hud-bg-1);
 }
+/* Numeric inputs in dense grids: native spinners clip the value at small
+   widths (e.g. a 3-digit level in a 48px cell) - hide them. */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 
 /* PC Storage re-skin - keeps the drag/drop class hooks, swaps the look.
    Box pills + square slot grid. */

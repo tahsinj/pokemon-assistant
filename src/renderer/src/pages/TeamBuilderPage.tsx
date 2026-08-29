@@ -23,6 +23,7 @@ import { isSuggestableTeammate } from '../lib/legality';
 import { buildGatedItemIds, gatedItemsByKind, makeItemFilter, normItemId } from '../lib/itemKinds';
 import { loadOwnedItems, toggleOwnedItem } from '../lib/ownedItems';
 import { TeamCompositionPanel } from '../components/team/TeamCompositionPanel';
+import { SetEditorPanel } from '../components/team/SetEditorPanel';
 
 const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -76,6 +77,7 @@ export function TeamBuilderPage({
 }: { pokemon: Pokemon[]; moves: Record<string, Move>; items: HeldItem[]; smogon: SmogonBundle | null }) {
   const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
+  const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<'species' | 'pc' | 'suggested'>('species');
   const [pcQuery, setPcQuery] = useState('');
   const pc = usePcCollection();
@@ -132,6 +134,15 @@ export function TeamBuilderPage({
   const setSlot = (idx: number, p: Pokemon | null, detail: MemberDetail | null = null) => {
     const next = [...team];
     next[idx] = p ? { p, detail } : null;
+    setTeam(next);
+    if (!p && editingSlot === idx) setEditingSlot(null);
+  };
+
+  const setSlotDetail = (idx: number, detail: MemberDetail) => {
+    const next = [...team];
+    const cur = next[idx];
+    if (!cur) return;
+    next[idx] = { p: cur.p, detail };
     setTeam(next);
   };
 
@@ -240,6 +251,7 @@ export function TeamBuilderPage({
           }
         : null,
     );
+    setEditingSlot(pickingSlot);
     setPickingSlot(null);
   };
 
@@ -619,7 +631,10 @@ export function TeamBuilderPage({
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setPickingSlot(i)}
+                  onClick={() => {
+                    setPickingSlot(i);
+                    setEditingSlot(null);
+                  }}
                   className={`rounded-[14px] border border-dashed p-3 min-h-[88px] flex items-center justify-center font-mono-hud text-[14px] uppercase tracking-widest transition ${
                     pickingSlot === i
                       ? 'border-[var(--hud-accent)] text-[var(--hud-accent)]'
@@ -635,9 +650,13 @@ export function TeamBuilderPage({
             return (
               <div
                 key={i}
-                onClick={() => setPickingSlot(i)}
+                onClick={() => {
+                  setEditingSlot(editingSlot === i ? null : i);
+                  setPickingSlot(null);
+                }}
+                title="Click to edit this Pokémon's set"
                 className={`relative overflow-hidden rounded-[14px] border bg-white/[.04] hover:bg-white/[.07] transition group cursor-pointer ${
-                  pickingSlot === i ? 'border-[var(--hud-accent)]' : 'border-white/10'
+                  editingSlot === i ? 'border-[var(--hud-accent)]' : 'border-white/10'
                 }`}
               >
                 <div
@@ -664,8 +683,16 @@ export function TeamBuilderPage({
                         #{String(p.dex).padStart(4, '0')}
                       </span>
                     </div>
-                    <div className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase">
-                      BST {bst(p.baseStats)}
+                    <div className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase truncate">
+                      {slot.detail
+                        ? [
+                            slot.detail.level != null ? `LV ${slot.detail.level}` : null,
+                            slot.detail.nature,
+                            slot.detail.item,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') || `BST ${bst(p.baseStats)}`
+                        : `BST ${bst(p.baseStats)} · no set`}
                     </div>
                     <div className="flex gap-1 mt-1">
                       {p.types.map((t) => (
@@ -689,6 +716,24 @@ export function TeamBuilderPage({
             );
           })}
         </div>
+
+        {/* Inline set editor for the selected slot */}
+        {editingSlot !== null && team[editingSlot] && (
+          <SetEditorPanel
+            species={team[editingSlot]!.p}
+            detail={team[editingSlot]!.detail}
+            onChange={(d) => setSlotDetail(editingSlot, d)}
+            onSwapSpecies={() => {
+              setPickingSlot(editingSlot);
+              setEditingSlot(null);
+            }}
+            onRemove={() => setSlot(editingSlot, null)}
+            onClose={() => setEditingSlot(null)}
+            moves={moves}
+            items={items}
+            intel={team[editingSlot] ? intelBy(team[editingSlot]!.p.id) : null}
+          />
+        )}
 
         {/* Slot picker */}
         {pickingSlot !== null && (
@@ -814,6 +859,7 @@ export function TeamBuilderPage({
                   pokemon={pokemon}
                   onSelect={(p) => {
                     setSlot(pickingSlot, p);
+                    setEditingSlot(pickingSlot);
                     setPickingSlot(null);
                   }}
                 />
