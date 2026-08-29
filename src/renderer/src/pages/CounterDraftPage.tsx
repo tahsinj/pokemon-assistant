@@ -28,7 +28,15 @@ const BULK_TABS: { id: OpponentBulk; label: string }[] = [
   { id: 'competitive', label: 'Competitive' },
 ];
 
-interface OppSlot { p: Pokemon; level: number; teraType?: string | null; }
+interface OppSlot {
+  p: Pokemon;
+  level: number;
+  /** Whether THIS opponent terastallizes (per-mon, not a format-wide switch). */
+  tera?: boolean;
+  teraType?: string | null;
+  /** Whether THIS opponent Dynamaxes (doubles its HP for the matchup math). */
+  dynamax?: boolean;
+}
 
 const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 const TERA_OPTIONS = TYPES.map(cap);
@@ -59,8 +67,6 @@ export function CounterDraftPage({
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
   const [flatLevel, setFlatLevel] = useState<number | null>(null);
   const [mode, setMode] = useState(6); // team size per side (3v3 … 6v6)
-  const [teraOn, setTeraOn] = useState(false); // opponents may Terastallize
-  const [dynamaxOn, setDynamaxOn] = useState(false); // opponents may Dynamax
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
 
@@ -122,17 +128,18 @@ export function CounterDraftPage({
   );
 
   // All current format knobs in one bag so the change handlers can re-run with
-  // the NEW value (React state updates are async within a tick).
-  type Format = { bulk: OpponentBulk; flat: number | null; size: number; tera: boolean; dynamax: boolean };
+  // the NEW value (React state updates are async within a tick). Tera/Dynamax
+  // are per-opponent (see OppSlot), not format-wide.
+  type Format = { bulk: OpponentBulk; flat: number | null; size: number };
   const format = (over?: Partial<Format>): Format =>
-    ({ bulk, flat: flatLevel, size: mode, tera: teraOn, dynamax: dynamaxOn, ...over });
+    ({ bulk, flat: flatLevel, size: mode, ...over });
 
   const toEntries = (opps: OppSlot[], f: Format): OpponentEntry[] =>
     opps.map((o) => ({
       p: o.p,
       level: f.flat ?? o.level,
-      teraType: f.tera ? (o.teraType ?? defaultTera(o.p)) : null,
-      dynamax: f.dynamax,
+      teraType: o.tera ? (o.teraType ?? defaultTera(o.p)) : null,
+      dynamax: !!o.dynamax,
     }));
 
   const runDraftWith = (opps: OppSlot[], f: Format) =>
@@ -195,21 +202,25 @@ export function CounterDraftPage({
     if (result) runDraftWith(trimmed, format({ size: next }));
   };
 
-  // Tera / Dynamax legality changes the matchups, so re-draft (a Tera mon may
-  // need a different answer).
-  const changeTera = (next: boolean) => {
-    setTeraOn(next);
-    if (result) runDraftWith(opponents, format({ tera: next }));
+  // Toggling one opponent's Tera/Dynamax changes the matchups, so re-draft (a
+  // Tera mon may need a different answer; Dynamax doubles its HP).
+  const toggleTeraFor = (i: number) => {
+    const next = opponents.map((o, idx) =>
+      idx === i ? { ...o, tera: !o.tera, teraType: o.teraType ?? defaultTera(o.p) } : o,
+    );
+    setOpponents(next);
+    if (result) runDraftWith(next, format());
   };
-  const changeDynamax = (next: boolean) => {
-    setDynamaxOn(next);
-    if (result) runDraftWith(opponents, format({ dynamax: next }));
+  const toggleDynamaxFor = (i: number) => {
+    const next = opponents.map((o, idx) => (idx === i ? { ...o, dynamax: !o.dynamax } : o));
+    setOpponents(next);
+    if (result) runDraftWith(next, format());
   };
   // Tweaking one opponent's Tera type re-scores the current team.
   const setTeraTypeFor = (i: number, teraType: string) => {
     const next = opponents.map((o, idx) => (idx === i ? { ...o, teraType } : o));
     setOpponents(next);
-    if (result && teraOn) rescore(next, format());
+    if (result && next[i].tera) rescore(next, format());
   };
 
   return (
@@ -258,45 +269,8 @@ export function CounterDraftPage({
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1.5" title="Whether opponents may Terastallize (change type). Set each mon's Tera type below.">
-            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Tera</span>
-            <div className="flex gap-1">
-              {[{ l: 'Off', v: false }, { l: 'On', v: true }].map((o) => (
-                <button
-                  key={o.l}
-                  type="button"
-                  onClick={() => changeTera(o.v)}
-                  aria-pressed={teraOn === o.v}
-                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
-                    teraOn === o.v
-                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
-                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
-                  }`}
-                >
-                  {o.l}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5" title="Whether opponents may Dynamax (doubles their HP for the matchup math)">
-            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Dynamax</span>
-            <div className="flex gap-1">
-              {[{ l: 'Off', v: false }, { l: 'On', v: true }].map((o) => (
-                <button
-                  key={o.l}
-                  type="button"
-                  onClick={() => changeDynamax(o.v)}
-                  aria-pressed={dynamaxOn === o.v}
-                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
-                    dynamaxOn === o.v
-                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
-                      : 'border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)]'
-                  }`}
-                >
-                  {o.l}
-                </button>
-              ))}
-            </div>
+          <div className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-snug max-w-[220px]">
+            ◢ Tera &amp; Dynamax are per-opponent - toggle them on each mon below.
           </div>
         </div>
 
@@ -343,9 +317,37 @@ export function CounterDraftPage({
                   onCommit={(n) => setLevel(i, n)}
                 />
               </div>
-              {teraOn && (
+              <div className="flex items-center justify-center gap-1 mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => toggleTeraFor(i)}
+                  aria-pressed={!!o.tera}
+                  title={`Whether ${o.p.name} terastallizes (change type)`}
+                  className={`font-mono-hud text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
+                    o.tera
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-2)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  Tera
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleDynamaxFor(i)}
+                  aria-pressed={!!o.dynamax}
+                  title={`Whether ${o.p.name} Dynamaxes (doubles its HP for the matchup math)`}
+                  className={`font-mono-hud text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
+                    o.dynamax
+                      ? 'bg-[var(--hud-accent)] border-transparent text-[#100b06]'
+                      : 'border-white/15 text-[var(--ink-2)] hover:border-[var(--hud-accent-2)]'
+                  }`}
+                >
+                  Dmax
+                </button>
+              </div>
+              {o.tera && (
                 <div className="flex items-center justify-center gap-1 mt-1.5" title="Tera type this opponent terastallizes into">
-                  <span className="font-mono-hud text-[12px] text-[var(--hud-accent-2)]">Tera</span>
+                  <span className="font-mono-hud text-[12px] text-[var(--hud-accent-2)]">Type</span>
                   <select
                     value={o.teraType ?? defaultTera(o.p)}
                     onChange={(e) => setTeraTypeFor(i, e.target.value)}
