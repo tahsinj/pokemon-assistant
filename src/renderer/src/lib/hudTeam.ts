@@ -5,22 +5,13 @@
  * mon (a Showdown-style build carries none); live HP is never stored. Unknown
  * fields are left undefined and the HUD hides them.
  */
-import { ABILITIES } from '@smogon/calc';
 import type { HudTeamMon, HudType, HudMove } from './hudFixtures';
 import type { TeamMemberPersist } from './bridgeTypes';
 import type { Pokemon, Move, BaseStats } from './types';
+import { abilityName } from './displayNames';
 import { calcAllStats, bst } from './stats';
 
 const normId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-// Showdown ability id ("roughskin") -> display name ("Rough Skin"), built once
-// from @smogon/calc's latest-gen ability list (our data stores abilities id-form).
-const ABILITY_NAME_BY_ID: Record<string, string> = (() => {
-  const map: Record<string, string> = {};
-  const latest = ABILITIES[ABILITIES.length - 1] ?? [];
-  for (const name of latest) map[normId(name)] = name;
-  return map;
-})();
 
 /** Coerce a (possibly partial / missing) stat record into a full spread. */
 function toSpread(src: Record<string, number> | null | undefined, fallback: number): BaseStats {
@@ -34,10 +25,8 @@ function toSpread(src: Record<string, number> | null | undefined, fallback: numb
  * title-cased version of the raw string for anything unrecognised.
  */
 function prettyAbility(raw: string | null, p: Pokemon): string {
-  const resolve = (s: string) =>
-    ABILITY_NAME_BY_ID[normId(s)] ?? s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  if (raw) return resolve(raw);
-  return p.abilities[0] ? resolve(p.abilities[0]) : '';
+  if (raw) return abilityName(raw);
+  return p.abilities[0] ? abilityName(p.abilities[0]) : '';
 }
 
 function catLetter(category: Move['category']): string {
