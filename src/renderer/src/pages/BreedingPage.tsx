@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { usePersistentState } from '../lib/usePersistentState';
 import type { BaseStats, Pokemon, StatKey } from '../lib/types';
 import { NATURES } from '../lib/stats';
 import {
@@ -82,17 +83,23 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
     return m;
   }, [pokemon]);
 
-  const [female, setFemale] = useState<ParentState>(emptyParent);
-  const [male, setMale] = useState<ParentState>(emptyParent);
-  const [genderRatioIdx, setGenderRatioIdx] = useState(0);
+  // Persisted so a full form of parent/target input survives navigating away
+  // and back (every tab unmounts on switch) - see usePersistentState.
+  const [female, setFemale] = usePersistentState<ParentState>('breeding:female', emptyParent);
+  const [male, setMale] = usePersistentState<ParentState>('breeding:male', emptyParent);
+  const [genderRatioIdx, setGenderRatioIdx] = usePersistentState('breeding:genderRatioIdx', 0);
 
   // Reverse target
-  const [targetStats, setTargetStats] = useState<Record<StatKey, StatTarget>>({
-    hp: '31', atk: '31', def: '31', spa: '31', spd: '31', spe: 'any',
-  });
-  const [targetNature, setTargetNature] = useState('');
-  const [targetAbility, setTargetAbility] = useState('');
-  const [targetGender, setTargetGender] = useState<'' | 'male' | 'female'>('');
+  const [targetStats, setTargetStats] = usePersistentState<Record<StatKey, StatTarget>>(
+    'breeding:targetStats',
+    { hp: '31', atk: '31', def: '31', spa: '31', spd: '31', spe: 'any' },
+  );
+  const [targetNature, setTargetNature] = usePersistentState('breeding:targetNature', '');
+  const [targetAbility, setTargetAbility] = usePersistentState('breeding:targetAbility', '');
+  const [targetGender, setTargetGender] = usePersistentState<'' | 'male' | 'female'>(
+    'breeding:targetGender',
+    '',
+  );
 
   const femaleSpecies = pokemonByName[female.speciesName.toLowerCase()];
   const maleSpecies = pokemonByName[male.speciesName.toLowerCase()];

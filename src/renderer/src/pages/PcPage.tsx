@@ -50,6 +50,7 @@ import { reviewStoredMon, reviewReadiness, type OptSuggestion, type OptSeverity,
 import { computeTrPriorities, type TrPriorityEntry } from '../lib/pc/trPriority';
 import { assignTr, type TrAssignResult, type TrAssignCandidate } from '../lib/pc/trAssign';
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
+import { usePersistentState } from '../lib/usePersistentState';
 import type { StatKey } from '../lib/types';
 
 type EditorMode = 'closed' | 'pick-species' | 'view' | 'edit';
@@ -142,11 +143,16 @@ export function PcPage({
   const [dexSpecies, setDexSpecies] = useState<Pokemon | null>(null);
 
   const [boxes, setBoxes] = useState<PcBoxSummary[]>([]);
-  const [activeBoxId, setActiveBoxId] = useState<string | null>(null);
+  // Persisted so returning to the PC tab reopens the box you were in and, more
+  // importantly, restores an in-progress add/edit draft instead of discarding
+  // it the moment you click a box tab or navigate away. Saved mons live in the
+  // DB; this keeps the *unsaved* editor draft from vanishing. usePersistentState
+  // mirrors these to localStorage.
+  const [activeBoxId, setActiveBoxId] = usePersistentState<string | null>('pc:activeBoxId', null);
   const [occupants, setOccupants] = useState<PcPokemonRecord[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [editor, setEditor] = useState<EditorDraft>(emptyDraft(0));
-  const [editorMode, setEditorMode] = useState<EditorMode>('closed');
+  const [selectedSlot, setSelectedSlot] = usePersistentState<number | null>('pc:selectedSlot', null);
+  const [editor, setEditor] = usePersistentState<EditorDraft>('pc:editorDraft', () => emptyDraft(0));
+  const [editorMode, setEditorMode] = usePersistentState<EditorMode>('pc:editorMode', 'closed');
   // Set-review tips the user has dismissed (species-scoped, persisted).
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => loadDismissed());
   const toggleTip = useCallback(
@@ -1088,7 +1094,20 @@ export function PcPage({
               onViewDex={() => editor.species && setDexSpecies(editor.species)}
               onCommit={setEditor}
               onSave={(committed) => void saveDraft(committed)}
-              onCancel={() => setEditorMode(editor.id ? 'view' : 'closed')}
+              onCancel={() => {
+                // Explicit discard: drop the persisted in-progress edits and
+                // fall back to the saved record (existing mon) or clear the
+                // slot entirely (new mon).
+                if (editor.id) {
+                  const mon = occupants.find((o) => o.id === editor.id);
+                  if (mon) setEditor(draftFromRecord(mon, pokemonById[mon.speciesId] ?? null));
+                  setEditorMode('view');
+                } else {
+                  setEditor(emptyDraft(editor.slot));
+                  setEditorMode('closed');
+                  setSelectedSlot(null);
+                }
+              }}
               onDelete={
                 editor.id
                   ? () => {
@@ -1154,6 +1173,17 @@ function PcEditor({
     setNumeric(numericFormFromSpread(draft.level, draft.ivs, draft.evs));
     setFieldError(null);
   }, [draftKey]);
+
+  // Continuously lift in-progress edits to the parent draft (which is
+  // persisted) so they survive an accidental click-out or navigation instead of
+  // living only in this component's local state until Save. Depends solely on
+  // the editable state so it can't loop against the parent re-render. Explicit
+  // discard is handled by the parent's onCancel.
+  useEffect(() => {
+    const p = previewNumericForm(numeric, { level: draft.level, ivs: draft.ivs, evs: draft.evs });
+    onCommit({ ...local, level: p.level, ivs: p.ivs, evs: p.evs });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [local, numeric]);
 
   const set = <K extends keyof EditorDraft>(key: K, val: EditorDraft[K]) => setLocal((d) => ({ ...d, [key]: val }));
 
