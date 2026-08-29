@@ -2,15 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Move, Pokemon } from '../lib/types';
 import type { SmogonBundle, SmogonSpeciesIntel } from '../lib/smogon';
 import { DexDetailModal } from '../components/DexDetailModal';
-import type { PcBoxSummary, PcPokemonRecord, PcGender, SavePcPokemonPayload } from '../lib/bridgeTypes';
+import type {
+  PcBoxSummary,
+  PcPokemonRecord,
+  PcGender,
+  SavePcPokemonPayload,
+  TeamMemberPersist,
+} from '../lib/bridgeTypes';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
+import { FocusLens } from '../components/hud/FocusLens';
+import { toHudTeam } from '../lib/hudTeam';
 import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { GenderIcon } from '../components/GenderIcon';
 import { ItemSearchInput } from '../components/ItemSearchInput';
 import type { HeldItem } from '../lib/types';
-import { NATURES, calcAllStats, STAT_LABELS as PLANNER_STAT_LABELS } from '../lib/stats';
+import { NATURES, calcAllStats, bst, STAT_LABELS as PLANNER_STAT_LABELS } from '../lib/stats';
 import { buildSpeciesFuse } from '../lib/fuzzySpecies';
 import {
   DEFAULT_IVS,
@@ -44,7 +52,7 @@ import { assignTr, type TrAssignResult, type TrAssignCandidate } from '../lib/pc
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import type { StatKey } from '../lib/types';
 
-type EditorMode = 'closed' | 'pick-species' | 'edit';
+type EditorMode = 'closed' | 'pick-species' | 'view' | 'edit';
 
 interface EditorDraft {
   id?: string;
@@ -171,6 +179,27 @@ export function PcPage({
   }, [pokemon]);
 
   const speciesFuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
+
+  // The selected mon rendered in the home-style read-only FocusLens card. Built
+  // from the live editor draft so the view reflects whatever is on screen.
+  const viewerMon = useMemo(() => {
+    if (!editor.species) return null;
+    const member: TeamMemberPersist = {
+      slot: editor.slot,
+      speciesId: editor.species.id,
+      speciesDisplay: editor.species.name,
+      item: editor.item.trim() || null,
+      ability: editor.ability || null,
+      nature: editor.nature,
+      level: editor.level,
+      ivs: { ...editor.ivs },
+      evs: { ...editor.evs },
+      moves: editor.moves,
+    };
+    const mon = toHudTeam([member], pokemonById, moves)[0] ?? null;
+    if (mon && editor.nickname.trim()) mon.name = editor.nickname.trim();
+    return mon;
+  }, [editor, pokemonById, moves]);
 
   const activeBox = boxes.find((b) => b.id === activeBoxId) ?? null;
 
@@ -361,7 +390,7 @@ export function PcPage({
   const openExisting = (mon: PcPokemonRecord) => {
     setSelectedSlot(mon.slot);
     setEditor(draftFromRecord(mon, pokemonById[mon.speciesId] ?? null));
-    setEditorMode('edit');
+    setEditorMode('view');
     setStatusMsg(null);
   };
 
@@ -440,8 +469,9 @@ export function PcPage({
     await bridge.pcPokemonSave(payload);
     setEditor(draft);
     setStatusMsg(`Saved ${draft.species.name} to slot ${draft.slot + 1}.`);
-    setEditorMode('closed');
-    setSelectedSlot(null);
+    // Drop back to the read-only card so the freshly-saved set is on display.
+    setEditorMode('view');
+    setSelectedSlot(draft.slot);
     await refreshPokemon();
     await refreshBoxes();
   };
@@ -984,6 +1014,68 @@ export function PcPage({
             </>
           )}
 
+          {editorMode === 'view' && editor.species && viewerMon && (
+            <div className="pc-view">
+              <div className="pc-view-actions">
+                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider">
+                  Slot {editor.slot + 1}
+                </span>
+                {editor.shiny && (
+                  <span
+                    className="font-mono-hud text-[12px]"
+                    style={{ color: 'var(--hud-accent)' }}
+                    title="Shiny"
+                  >
+                    ✦ Shiny
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="chunky font-display text-[11px]"
+                  style={{ padding: '4px 12px', marginLeft: 'auto' }}
+                  onClick={() => setEditorMode('edit')}
+                  title="Edit this Pokémon"
+                >
+                  ◢ EDIT
+                </button>
+                <button
+                  type="button"
+                  className="chunky ghost font-display text-[11px]"
+                  style={{ padding: '4px 10px' }}
+                  onClick={() => editor.species && setDexSpecies(editor.species)}
+                  title={`Open the Pokédex entry for ${editor.species.name}`}
+                >
+                  ◢ POKÉDEX
+                </button>
+              </div>
+
+              <FocusLens mon={viewerMon} />
+
+              {editor.notes.trim() && (
+                <div className="pc-view-notes">
+                  <span className="cell-label">Notes</span>
+                  <p>{editor.notes.trim()}</p>
+                </div>
+              )}
+
+              {editor.id && (
+                <div style={{ display: 'flex', marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    style={{ marginLeft: 'auto' }}
+                    onClick={() => {
+                      const mon = occupants.find((o) => o.id === editor.id);
+                      if (mon) void deleteAtSlot(mon);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {editorMode === 'edit' && editor.species && (
             <PcEditor
               draft={editor}
@@ -996,7 +1088,7 @@ export function PcPage({
               onViewDex={() => editor.species && setDexSpecies(editor.species)}
               onCommit={setEditor}
               onSave={(committed) => void saveDraft(committed)}
-              onCancel={() => setEditorMode('closed')}
+              onCancel={() => setEditorMode(editor.id ? 'view' : 'closed')}
               onDelete={
                 editor.id
                   ? () => {
@@ -1165,38 +1257,54 @@ function PcEditor({
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h3 className="font-display text-[17px] font-bold m-0 text-[var(--ink-0)]">{species.name}</h3>
-        {species.types.map((t) => (
-          <TypeChip key={t} t={t.toLowerCase()} />
-        ))}
-        <span className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase tracking-wider">
-          Slot {draft.slot + 1}
-        </span>
-        <button
-          type="button"
-          className="chunky font-display text-[11px]"
-          aria-pressed={local.shiny}
-          style={{
-            padding: '4px 10px',
-            marginLeft: 'auto',
-            background: local.shiny ? 'var(--hud-accent)' : undefined,
-            color: local.shiny ? '#100b06' : undefined,
-          }}
-          onClick={() => set('shiny', !local.shiny)}
-          title="Toggle shiny - uses the shiny sprite (falls back to normal if missing)"
-        >
-          ✦ SHINY {local.shiny ? 'ON' : 'OFF'}
-        </button>
-        <button
-          type="button"
-          className="chunky ghost font-display text-[11px]"
-          style={{ padding: '4px 10px' }}
-          onClick={onViewDex}
-          title={`Open the Pokédex entry for ${species.name}`}
-        >
-          ◢ VIEW IN POKÉDEX
-        </button>
+      <div className="pc-edit-head">
+        <div className="pc-edit-portrait">
+          <PokemonSprite
+            dex={species.dex}
+            name={species.name}
+            size="md"
+            variant={local.shiny ? 'shiny' : 'artwork'}
+          />
+        </div>
+        <div className="pc-edit-head-info">
+          <div className="pc-edit-title">
+            {species.name}
+            <span className="pc-edit-bst">BST {bst(species.baseStats)}</span>
+          </div>
+          <div className="pc-edit-chips">
+            {species.types.map((t) => (
+              <TypeChip key={t} t={t.toLowerCase()} />
+            ))}
+            <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider">
+              Slot {draft.slot + 1}
+            </span>
+          </div>
+          <div className="pc-edit-head-actions">
+            <button
+              type="button"
+              className="chunky font-display text-[11px]"
+              aria-pressed={local.shiny}
+              style={{
+                padding: '4px 10px',
+                background: local.shiny ? 'var(--hud-accent)' : undefined,
+                color: local.shiny ? '#100b06' : undefined,
+              }}
+              onClick={() => set('shiny', !local.shiny)}
+              title="Toggle shiny - uses the shiny sprite (falls back to normal if missing)"
+            >
+              ✦ SHINY {local.shiny ? 'ON' : 'OFF'}
+            </button>
+            <button
+              type="button"
+              className="chunky ghost font-display text-[11px]"
+              style={{ padding: '4px 10px' }}
+              onClick={onViewDex}
+              title={`Open the Pokédex entry for ${species.name}`}
+            >
+              ◢ POKÉDEX
+            </button>
+          </div>
+        </div>
       </div>
 
       <CoachPanel
@@ -1283,14 +1391,33 @@ function PcEditor({
       )}
 
       {computed && (
-        <div style={{ marginTop: 12, fontSize: 12 }}>
+        <div style={{ marginTop: 12 }}>
           <div className="section-head">Stats at Lv.{preview.level}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-            {STAT_ORDER.map((k) => (
-              <span key={k} className="mono">
-                {PLANNER_STAT_LABELS[k]} {computed[k]}
-              </span>
-            ))}
+          <div className="lens-v-stats">
+            {(() => {
+              const nat = NATURES[local.nature] || {};
+              const maxStat = Math.max(1, ...STAT_ORDER.map((k) => computed[k]));
+              return STAT_ORDER.map((k) => {
+                const v = computed[k];
+                const iv = preview.ivs[k] ?? 31;
+                const ev = preview.evs[k] ?? 0;
+                const up = nat.plus === k;
+                const down = nat.minus === k;
+                return (
+                  <div key={k} className={`row${up ? ' up' : ''}${down ? ' down' : ''}`}>
+                    <span className="sk">{k}</span>
+                    <div className="sbar">
+                      <i style={{ width: `${Math.min(100, (v / maxStat) * 100)}%` }} />
+                    </div>
+                    <span className="sv">{v}</span>
+                    <span className="ivev">
+                      <b className={`iv${iv < 31 ? ' imperfect' : ''}`}>{iv}</b>
+                      <b className={`ev${ev > 0 ? ' invested' : ''}`}>{ev}</b>
+                    </span>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       )}

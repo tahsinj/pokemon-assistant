@@ -590,6 +590,98 @@ body {
   min-width: 0;
 }
 
+/* PC read-only viewer (home-style FocusLens card + action bar) */
+.pc-page .pc-view {
+  display: flex;
+  flex-direction: column;
+}
+.pc-page .pc-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.pc-page .pc-view .focus-lens-v {
+  height: auto;
+}
+.pc-page .pc-view-notes {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg-2);
+}
+.pc-page .pc-view-notes p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--fg);
+  white-space: pre-wrap;
+}
+
+/* PC editor header - sprite preview, matches the viewer's top */
+.pc-page .pc-edit-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.pc-page .pc-edit-portrait {
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid var(--hairline, var(--border));
+  background:
+    radial-gradient(60% 50% at 50% 60%, rgba(255, 255, 255, 0.08), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  overflow: hidden;
+}
+.pc-page .pc-edit-portrait .poke-sprite,
+.pc-page .pc-edit-portrait img {
+  width: 78px;
+  height: 78px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.pc-page .pc-edit-head-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pc-page .pc-edit-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink-0, var(--fg));
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pc-page .pc-edit-bst {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--ink-2, var(--fg-dim));
+}
+.pc-page .pc-edit-chips {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pc-page .pc-edit-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .pc-page .pc-box-tabs {
   overflow: visible;
 }
