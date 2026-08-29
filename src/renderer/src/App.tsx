@@ -31,6 +31,9 @@ const BattlePage = lazy(() =>
 const BattleSessionPage = lazy(() =>
   import('./pages/BattleSessionPage').then((m) => ({ default: m.BattleSessionPage })),
 );
+const CalcdexPage = lazy(() =>
+  import('./pages/CalcdexPage').then((m) => ({ default: m.CalcdexPage })),
+);
 const PlannerPage = lazy(() =>
   import('./pages/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
@@ -53,6 +56,7 @@ type ToolId =
   | 'moves'
   | 'team'
   | 'battle'
+  | 'calcdex'
   | 'session'
   | 'planner'
   | 'pc'
@@ -66,6 +70,7 @@ const TOOL_TITLES: Record<ToolId, string> = {
   moves: 'Move Index',
   team: 'Team Builder',
   battle: 'Battle Calculator',
+  calcdex: 'Calcdex',
   session: 'Live Battle Tracker',
   planner: 'EV / IV Planner',
   pc: 'PC Storage',
@@ -324,6 +329,8 @@ export function App() {
         return <TeamBuilderPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
       case 'battle':
         return <BattlePage pokemon={pokemon} moves={moves} items={items} />;
+      case 'calcdex':
+        return <CalcdexPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'planner':

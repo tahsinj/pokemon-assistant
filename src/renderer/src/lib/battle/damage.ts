@@ -172,6 +172,7 @@ export function calcDamage(
   defender: BattlePokemonSpec,
   moveName: string,
   field: FieldSpec,
+  opts?: { isCrit?: boolean },
 ): DamageOutcome {
   try {
     const g = gen(generation);
@@ -182,6 +183,7 @@ export function calcDamage(
       ability: properAbility(attacker.ability),
       item: attacker.item,
       species: attacker.speciesName,
+      isCrit: opts?.isCrit ?? false,
       ...(overrides ? { overrides: overrides as never } : {}),
     });
     const f = buildField(field);
@@ -273,8 +275,9 @@ export function calcAllMoves(
   attacker: BattlePokemonSpec,
   defender: BattlePokemonSpec,
   field: FieldSpec,
+  opts?: { isCrit?: boolean },
 ): DamageOutcome[] {
   return attacker.moves
     .filter((m) => m.name && m.name.trim().length > 0)
-    .map((m) => calcDamage(generation, attacker, defender, m.name, field));
+    .map((m) => calcDamage(generation, attacker, defender, m.name, field, opts));
 }

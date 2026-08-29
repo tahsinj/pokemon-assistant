@@ -148,16 +148,17 @@ export const HUD_ALERTS: HudAlert[] = [
  */
 export const HUD_TOOLS: HudTool[] = [
   { id: 'pokedex',  label: 'Pokédex', glyph: 'P', angle:  -90 },
-  { id: 'moves',    label: 'Moves',   glyph: 'V', angle: -57.27 },
-  { id: 'team',     label: 'Team',    glyph: 'T', angle: -24.55 },
-  { id: 'battle',   label: 'Battle',  glyph: 'X', angle:   8.18 },
-  { id: 'session',  label: 'Live',    glyph: 'L', angle:  40.91 },
-  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle:  73.64 },
-  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle: 106.36 },
-  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle: 139.09 },
-  { id: 'breeding', label: 'Breed',   glyph: 'O', angle: 171.82 },
-  { id: 'smogon',   label: 'Meta',    glyph: 'M', angle: 204.55 },
-  { id: 'draft',    label: 'Draft',   glyph: 'D', angle: 237.27 },
+  { id: 'moves',    label: 'Moves',   glyph: 'V', angle:  -60 },
+  { id: 'team',     label: 'Team',    glyph: 'T', angle:  -30 },
+  { id: 'battle',   label: 'Battle',  glyph: 'X', angle:    0 },
+  { id: 'calcdex',  label: 'Calcdex', glyph: 'C', angle:   30 },
+  { id: 'session',  label: 'Live',    glyph: 'L', angle:   60 },
+  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle:   90 },
+  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle:  120 },
+  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle:  150 },
+  { id: 'breeding', label: 'Breed',   glyph: 'O', angle:  180 },
+  { id: 'smogon',   label: 'Meta',    glyph: 'M', angle:  210 },
+  { id: 'draft',    label: 'Draft',   glyph: 'D', angle:  240 },
 ];
 
 // Sprite URLs now resolve through src/renderer/src/lib/sprites.ts (offline-first

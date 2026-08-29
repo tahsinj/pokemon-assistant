@@ -193,6 +193,20 @@ describe('CobblemonSync', () => {
   });
 });
 
+describe('Damage engine crit flag', () => {
+  beforeEach(() => resetGlobalRegistry());
+
+  it('forced crit deals more damage than a normal hit', () => {
+    const attacker = baseSpec('Garchomp');
+    const defender = baseSpec('Tatsugiri');
+    const normal = calcDamage(9, attacker, defender, 'Earthquake', FIELD);
+    const crit = calcDamage(9, attacker, defender, 'Earthquake', FIELD, { isCrit: true });
+    expect(normal.error).toBeUndefined();
+    expect(crit.error).toBeUndefined();
+    expect(crit.max).toBeGreaterThan(normal.max);
+  });
+});
+
 describe('Damage engine respects Cobblemon overrides', () => {
   beforeEach(() => resetGlobalRegistry());
 
