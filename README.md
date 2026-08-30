@@ -42,8 +42,21 @@ to run them to use the app.
 app over a local WebSocket (`127.0.0.1:8788`). `npm run mod-mock-client`
 replays a scripted battle without Minecraft. See `cobblemon-mod/README.md`.
 
-## Notes
+## Data sources
 
-Pokémon and all related names are trademarks of Nintendo, Game Freak and
-The Pokémon Company. This is an unofficial fan project. Sprites are loaded
-from the PokeAPI sprite mirror at runtime and are not included in the repo.
+- Species, learnsets, held items and spawn data: generated from the
+  [Cobblemon](https://gitlab.com/cable-mc/cobblemon) mod's data files
+- Moves, abilities, items, formes and tiers: [Pokémon Showdown](https://github.com/smogon/pokemon-showdown)
+- Damage calculation: [`@smogon/calc`](https://github.com/smogon/damage-calc)
+- Usage stats and sample sets: [Smogon](https://www.smogon.com/stats/) and
+  [data.pkmn.cc](https://data.pkmn.cc). Only numbers and move lists are
+  bundled, no analysis text.
+- Sprites: fetched at runtime from [PokeAPI](https://github.com/PokeAPI/sprites)
+  and cached locally. No sprite images are included in this repo.
+
+## Disclaimer
+
+This is a free, non-commercial fan project. It is not affiliated with,
+endorsed by, or sponsored by Nintendo, Game Freak, Creatures Inc., The Pokémon
+Company, or the Cobblemon team. Pokémon and Pokémon character names are
+trademarks of Nintendo, Creatures Inc. and Game Freak.
