@@ -378,7 +378,7 @@ function SidebarSection() {
                 <polygon points="20,3 34,11 34,29 20,37 6,29 6,11" fill="url(#hexGrad)" stroke="#1a1003" strokeWidth="1" />
                 <polygon points="20,3 34,11 34,29 20,37 6,29 6,11" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth=".5" />
                 <text x="20" y="25" textAnchor="middle" fontFamily="Space Grotesk, sans-serif" fontWeight="800" fontSize="16" fill="#1a1003">
-                  C
+                  P
                 </text>
               </svg>
             </div>

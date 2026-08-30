@@ -45,14 +45,6 @@ export function SyncCore({
             }}
           />
           <div
-            className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[14px]"
-            style={{
-              background: 'linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.85))',
-              borderTop: '1px solid rgba(255,255,255,.2)',
-              borderBottom: '1px solid rgba(0,0,0,.6)',
-            }}
-          />
-          <div
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[42px] h-[42px] rounded-full pulse-ring"
             style={{
               background: 'radial-gradient(circle at 35% 30%, #fff, #aaa 50%, #222)',
