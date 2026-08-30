@@ -245,7 +245,7 @@ export function CalcdexPage({
   items: HeldItem[];
   smogon: SmogonBundle | null;
 }) {
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
   const fuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
 
   const pokemonById = useMemo(() => {
@@ -514,7 +514,7 @@ function PlayerPanel({
   savedTeams: { id: string; name: string; rivenTag: string }[];
   onSaved: () => Promise<void>;
 }) {
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [paste, setPaste] = useState('');

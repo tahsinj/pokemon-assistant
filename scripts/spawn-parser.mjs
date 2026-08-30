@@ -7,7 +7,7 @@
  *
  * Expects Cobblemon-style spawn definition JSON files (one species / pool per file or merged - adjust `extractEntries`
  * when you point this at real Rivals datapack paths). Writes merged output next to this script for inspection:
- *   cobblemon-assistant/scripts/_spawn-merge-out.json
+ *   pokemon-assistant/scripts/_spawn-merge-out.json
  *
  * Next step: paste a sample Cobblemon spawn JSON path and extend `extractEntries` to map fields to SpawnEntry.
  */

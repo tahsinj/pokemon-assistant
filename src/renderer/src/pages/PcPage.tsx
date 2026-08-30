@@ -138,7 +138,7 @@ export function PcPage({
   moves: Record<string, Move>;
   smogon: SmogonBundle | null;
 }) {
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
   const hasPc = !!bridge?.pcBoxesList;
   const [dexSpecies, setDexSpecies] = useState<Pokemon | null>(null);
 

@@ -79,7 +79,7 @@ export type ModMessage =
 export interface ModHelloMessage {
   type: 'hello';
   protocolVersion: number;
-  /** Mod-side build identifier, e.g. "cobblemon-assistant-mod-0.3.1". */
+  /** Mod-side build identifier, e.g. "pokemon-assistant-mod-0.3.1". */
   modId: string;
   /** Cobblemon version the mod is running against. */
   cobblemonVersion: string;

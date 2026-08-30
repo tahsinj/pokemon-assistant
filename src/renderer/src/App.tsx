@@ -166,7 +166,7 @@ export function App() {
   // shows immediately. There is no demo team - an empty squad prompts a build.
   const loadHudTeam = useMemo(
     () => async () => {
-      const api = window.cobblemon;
+      const api = window.assistant;
       if (!api?.teamsList || !pokemon) return;
       try {
         const list = await api.teamsList();
@@ -193,7 +193,7 @@ export function App() {
   // Battle Tracker.
   const [bridgeStatus, setBridgeStatus] = useState<ModBridgeStatus | null>(null);
   useEffect(() => {
-    const bridge = window.cobblemon?.modBridge;
+    const bridge = window.assistant?.modBridge;
     if (!bridge) return;
     let cancelled = false;
     bridge.getStatus().then((s) => {

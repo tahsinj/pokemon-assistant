@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 type Disposer = () => void;
 
-contextBridge.exposeInMainWorld('cobblemon', {
+contextBridge.exposeInMainWorld('assistant', {
   version: '0.2.0',
   teamsList: () => ipcRenderer.invoke('teams:list') as Promise<
     { id: string; name: string; rivenTag: string; updatedAt: number }[]

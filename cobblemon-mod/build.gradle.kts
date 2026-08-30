@@ -1,5 +1,5 @@
 /*
- * Reference Gradle build for the Cobblemon Assistant companion mod.
+ * Reference Gradle build for the Pokémon Assistant Cobblemon bridge mod.
  *
  * Adjust the version coordinates below to match your modpack's Cobblemon /
  * Minecraft / Fabric Loader / Yarn mappings. The versions here track
@@ -12,7 +12,7 @@ plugins {
     id("fabric-loom") version "1.6-SNAPSHOT"
 }
 
-group = "com.cobblemonassistant"
+group = "com.pokemonassistant"
 version = "0.1.0"
 
 repositories {

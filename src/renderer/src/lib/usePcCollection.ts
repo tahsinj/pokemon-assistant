@@ -18,7 +18,7 @@ export interface PcCollection {
 }
 
 export function usePcCollection(): PcCollection {
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
   const available = !!bridge?.pcBoxesList && !!bridge?.pcPokemonList;
   const [loading, setLoading] = useState(available);
   const [boxes, setBoxes] = useState<PcBoxSummary[]>([]);

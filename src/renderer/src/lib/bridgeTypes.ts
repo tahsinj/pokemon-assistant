@@ -119,7 +119,7 @@ export interface ModBridge {
   onInvalidFrame: (cb: (info: { error: string }) => void) => () => void;
 }
 
-export interface CobblemonBridge {
+export interface AssistantApi {
   version: string;
   teamsList: () => Promise<{ id: string; name: string; rivenTag: string; updatedAt: number }[]>;
   teamsLoad: (id: string) => Promise<LoadedTeamRecord | null>;

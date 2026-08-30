@@ -22,7 +22,7 @@ export function DesignSystemPage() {
         <ImageIntegrationSection />
 
         <footer className="sheet-foot">
-          <div>Cobblemon Assistant · Design System v0.2 · Dark mode · Genre flavor</div>
+          <div>Pokémon Assistant · Design System v0.2 · Dark mode · Genre flavor</div>
           <div className="mono">tokens.css · components.css · 60+ vars · 9 components</div>
         </footer>
     </main>
@@ -38,7 +38,7 @@ function Header() {
     <header className="sheet-header">
       <div className="sheet-eyebrow">v0.1 · Sticker Sheet · Dark Mode</div>
       <h1 className="sheet-title">
-        Cobblemon Assistant<span className="sheet-title-accent">.design</span>
+        Pokémon Assistant<span className="sheet-title-accent">.design</span>
       </h1>
       <p className="sheet-sub">
         A modular dark-mode component sheet for the desktop companion app. Tokens are CSS custom
@@ -383,7 +383,7 @@ function SidebarSection() {
               </svg>
             </div>
             <div>
-              <div className="sb-brand-name">COBBLEMON</div>
+              <div className="sb-brand-name">POKÉMON</div>
               <div className="sb-brand-sub">Assistant · v0.4.1</div>
             </div>
           </div>

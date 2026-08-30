@@ -4,6 +4,6 @@ export {};
 
 declare global {
   interface Window {
-    cobblemon?: import('./lib/bridgeTypes').CobblemonBridge;
+    assistant?: import('./lib/bridgeTypes').AssistantApi;
   }
 }

@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "cobblemon_assistant",
+  "id": "pokemon_assistant",
   "version": "0.1.0",
-  "name": "Cobblemon Assistant Bridge",
-  "description": "Streams Cobblemon battle events to the Cobblemon Assistant desktop app.",
+  "name": "Pokémon Assistant Cobblemon Bridge",
+  "description": "Streams Cobblemon battle events to the Pokémon Assistant desktop app.",
   "authors": ["Tahsin Jawwad"],
   "license": "MIT",
-  "icon": "assets/cobblemon_assistant/icon.png",
+  "icon": "assets/pokemon_assistant/icon.png",
   "environment": "client",
   "entrypoints": {
     "main": [
-      "com.cobblemonassistant.mod.CobblemonAssistantMod"
+      "com.pokemonassistant.mod.CobblemonBridgeMod"
     ]
   },
   "depends": {

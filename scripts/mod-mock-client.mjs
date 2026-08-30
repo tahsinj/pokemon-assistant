@@ -154,7 +154,7 @@ ws.on('open', () => {
     JSON.stringify({
       type: 'hello',
       protocolVersion: PROTOCOL_VERSION,
-      modId: 'cobblemon-assistant-mock-client',
+      modId: 'pokemon-assistant-mock-client',
       cobblemonVersion: '1.6.0',
       minecraftVersion: '1.20.1',
       playerUUID: '00000000-0000-0000-0000-000000000001',

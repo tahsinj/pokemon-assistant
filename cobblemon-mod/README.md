@@ -1,7 +1,7 @@
-# Cobblemon Assistant Companion Mod
+# Cobblemon Bridge Mod
 
-Fabric mod that bridges in-game Cobblemon battle events to the desktop
-Assistant over a local WebSocket connection.
+Fabric mod that bridges in-game Cobblemon battle events to the Pokémon
+Assistant desktop app over a local WebSocket connection.
 
 This directory contains a **reference scaffold**, not a complete build -
 Cobblemon's event API surface evolves across releases, so the hooks here are
@@ -15,7 +15,7 @@ in your modpack.
 [Cobblemon battle event]
         │
         ▼
-[CobblemonAssistantMod (Fabric mod, this folder)]
+[CobblemonBridgeMod (Fabric mod, this folder)]
         │  JSON ModBattleEventMessage (see ../src/shared/cobblemonProtocol.ts)
         ▼
 [Assistant WebSocket bridge :8788]
@@ -28,7 +28,7 @@ in your modpack.
 
 | File                                                       | Purpose                                                                          |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `src/main/kotlin/.../CobblemonAssistantMod.kt`             | Mod entry point. Initializes the WS client and subscribes to Cobblemon events.   |
+| `src/main/kotlin/.../CobblemonBridgeMod.kt`             | Mod entry point. Initializes the WS client and subscribes to Cobblemon events.   |
 | `src/main/kotlin/.../AssistantBridge.kt`                   | Lightweight WebSocket client wrapping Java 11's `HttpClient.newWebSocketBuilder` |
 | `src/main/kotlin/.../EventTranslator.kt`                   | Maps Cobblemon event objects → JSON frames matching the wire protocol.           |
 | `src/main/resources/fabric.mod.json`                       | Fabric manifest.                                                                 |
@@ -36,7 +36,7 @@ in your modpack.
 
 ## Configuring the connection
 
-The mod reads `~/.cobblemon-assistant.json` on startup. Example:
+The mod reads `~/.pokemon-assistant.json` on startup. Example:
 
 ```json
 {

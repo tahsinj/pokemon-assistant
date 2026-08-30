@@ -1,5 +1,5 @@
 /*
- * Cobblemon Assistant - companion Fabric mod entry point.
+ * Pokémon Assistant - Cobblemon companion Fabric mod entry point.
  *
  * This file is a REFERENCE SCAFFOLD. It demonstrates the shape of the
  * integration but does NOT compile cleanly against an arbitrary Cobblemon
@@ -7,7 +7,7 @@
  * `cobblemonsCompiledKtCompiled` package layout. See README.md for setup.
  */
 
-package com.cobblemonassistant.mod
+package com.pokemonassistant.mod
 
 import net.fabricmc.api.ModInitializer
 import org.slf4j.LoggerFactory
@@ -24,7 +24,7 @@ import com.cobblemon.mod.common.api.events.battles.BattleStartedPreEvent
 import com.cobblemon.mod.common.api.events.battles.BattleVictoryEvent
 import com.cobblemon.mod.common.api.events.battles.BattleFaintedEvent
 
-class CobblemonAssistantMod : ModInitializer {
+class CobblemonBridgeMod : ModInitializer {
     private val log = LoggerFactory.getLogger(MOD_ID)
     private lateinit var bridge: AssistantBridge
     private lateinit var translator: EventTranslator
@@ -62,7 +62,7 @@ class CobblemonAssistantMod : ModInitializer {
     }
 
     private fun loadConfig(): Config {
-        val configPath = Paths.get(System.getProperty("user.home"), ".cobblemon-assistant.json")
+        val configPath = Paths.get(System.getProperty("user.home"), ".pokemon-assistant.json")
         if (!Files.exists(configPath)) {
             return Config()
         }
@@ -84,7 +84,7 @@ class CobblemonAssistantMod : ModInitializer {
     )
 
     companion object {
-        const val MOD_ID = "cobblemon_assistant"
+        const val MOD_ID = "pokemon_assistant"
         const val PROTOCOL_VERSION = 1
     }
 }

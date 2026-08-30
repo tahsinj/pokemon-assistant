@@ -44,7 +44,7 @@ export interface UseModBridgeReturn {
 export function useModBridge(opts: UseModBridgeOptions): UseModBridgeReturn {
   const [status, setStatus] = useState<ModBridgeStatus>({ kind: 'idle' });
   const [invalidFrames, setInvalidFrames] = useState<string[]>([]);
-  const bridge = typeof window !== 'undefined' ? window.cobblemon?.modBridge : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant?.modBridge : undefined;
   const available = !!bridge;
 
   // Keep callbacks stable across renders.

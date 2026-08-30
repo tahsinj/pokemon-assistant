@@ -90,7 +90,7 @@ export function TeamBuilderPage({
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; rivenTag: string; updatedAt: number }[]>([]);
   const [lastParsedExport, setLastParsedExport] = useState<string | null>(null);
 
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
 
   const pokemonById = useMemo(() => {
     const m: Record<string, Pokemon> = {};

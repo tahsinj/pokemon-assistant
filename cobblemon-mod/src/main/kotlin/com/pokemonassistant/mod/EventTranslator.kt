@@ -10,10 +10,10 @@
  * adjust the field accesses to match your target release.
  */
 
-package com.cobblemonassistant.mod
+package com.pokemonassistant.mod
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.cobblemonassistant.mod.AssistantBridge.Companion.newPayload
+import com.pokemonassistant.mod.AssistantBridge.Companion.newPayload
 
 // Placeholders - replace with your release's actual types.
 import com.cobblemon.mod.common.api.events.battles.BattleStartedPreEvent

@@ -192,7 +192,7 @@ export function BattleSessionPage({
   }, [pokemon]);
   const pc = usePcCollection();
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string }[]>([]);
-  const bridge2 = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge2 = typeof window !== 'undefined' ? window.assistant : undefined;
   useEffect(() => {
     if (!bridge2?.teamsList) return;
     bridge2

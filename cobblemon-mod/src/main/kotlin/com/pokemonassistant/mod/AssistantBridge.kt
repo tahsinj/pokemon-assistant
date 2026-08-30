@@ -6,7 +6,7 @@
  * jittered reconnect, and per-frame retry logic.
  */
 
-package com.cobblemonassistant.mod
+package com.pokemonassistant.mod
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -31,7 +31,7 @@ class AssistantBridge(
     private val battleId: String = java.util.UUID.randomUUID().toString()
 
     fun start() {
-        Thread({ connectLoop() }, "cobblemon-assistant-ws").apply {
+        Thread({ connectLoop() }, "pokemon-assistant-ws").apply {
             isDaemon = true
             start()
         }
@@ -45,8 +45,8 @@ class AssistantBridge(
     fun sendHello(playerUUID: String) {
         val obj = mapper.createObjectNode()
         obj.put("type", "hello")
-        obj.put("protocolVersion", CobblemonAssistantMod.PROTOCOL_VERSION)
-        obj.put("modId", "cobblemon-assistant-mod-0.1.0")
+        obj.put("protocolVersion", CobblemonBridgeMod.PROTOCOL_VERSION)
+        obj.put("modId", "pokemon-assistant-mod-0.1.0")
         obj.put("cobblemonVersion", "1.6.0")
         obj.put("minecraftVersion", "1.20.1")
         obj.put("playerUUID", playerUUID)
@@ -56,7 +56,7 @@ class AssistantBridge(
     fun sendEvent(payload: ObjectNode) {
         val envelope = mapper.createObjectNode()
         envelope.put("type", "event")
-        envelope.put("protocolVersion", CobblemonAssistantMod.PROTOCOL_VERSION)
+        envelope.put("protocolVersion", CobblemonBridgeMod.PROTOCOL_VERSION)
         envelope.put("seq", seq.incrementAndGet())
         envelope.put("timestamp", System.currentTimeMillis())
         envelope.put("battleId", battleId)

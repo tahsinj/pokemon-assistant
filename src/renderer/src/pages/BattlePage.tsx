@@ -181,7 +181,7 @@ export function BattlePage({
   const pc = usePcCollection();
   const [showPcPicker, setShowPcPicker] = useState(false);
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string }[]>([]);
-  const bridge = typeof window !== 'undefined' ? window.cobblemon : undefined;
+  const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
   useEffect(() => {
     if (!bridge?.teamsList) return;
     bridge

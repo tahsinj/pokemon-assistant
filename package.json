@@ -1,7 +1,7 @@
 {
-  "name": "cobblemon-assistant",
+  "name": "pokemon-assistant",
   "version": "0.1.0",
-  "description": "Cobblemon Rivals assistant - Pokédex, team builder, moveset recommender, EV/IV planner",
+  "description": "Desktop companion for open-world Pokémon games: Pokédex, team builder, battle calculator, EV/IV planner, PC storage",
   "main": "dist-electron/main/main.js",
   "author": "Tahsin",
   "scripts": {
@@ -55,8 +55,8 @@
     "ws": "^8.20.1"
   },
   "build": {
-    "appId": "com.tahsin.cobblemonassistant",
-    "productName": "Cobblemon Assistant",
+    "appId": "com.tahsin.pokemonassistant",
+    "productName": "Pokemon Assistant",
     "files": [
       "dist-electron/**/*",
       "dist/**/*",
@@ -75,7 +75,7 @@
           ]
         }
       ],
-      "artifactName": "CobblemonAssistant-Setup-${version}.${ext}"
+      "artifactName": "PokemonAssistant-Setup-${version}.${ext}"
     },
     "mac": {
       "icon": "build/icon.icns"

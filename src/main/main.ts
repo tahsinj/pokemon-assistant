@@ -18,8 +18,12 @@ import {
 } from './rivalsDb';
 import { createCobblemonBridge, registerBridgeIpc } from './cobblemonBridge';
 import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
+import { migrateLegacyUserData } from './legacyUserData';
 
 const isDev = !app.isPackaged;
+
+// Carry saved PC / teams over from the pre-rename data folder.
+migrateLegacyUserData();
 
 // Privileged-scheme registration must happen before the app `ready` event.
 registerSpriteSchemePrivileged();
@@ -39,7 +43,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: '#0f172a',
-    title: 'Cobblemon Assistant',
+    title: 'Pokémon Assistant',
     ...(appIcon.isEmpty() ? {} : { icon: appIcon }),
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
