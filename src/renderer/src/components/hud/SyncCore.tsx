@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { HudTool } from '../../lib/hudFixtures';
 
+const HEX = 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)';
+
 export function SyncCore({
   tools,
   active,
@@ -45,19 +47,19 @@ export function SyncCore({
             }}
           />
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[42px] h-[42px] rounded-full pulse-ring"
-            style={{
-              background: 'radial-gradient(circle at 35% 30%, #fff, #aaa 50%, #222)',
-              border: '3px solid #08131c',
-              boxShadow: 'inset 0 -4px 8px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.6)',
-              color: 'var(--hud-accent-2)',
-            }}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[64px] h-[64px] rounded-full"
+            style={{ background: 'radial-gradient(circle, var(--hud-accent-2) 0%, transparent 70%)', opacity: 0.7 }}
+          />
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[40px] h-[46px]"
+            style={{ clipPath: HEX, background: 'rgba(8,19,28,.6)' }}
           >
             <div
-              className="absolute inset-[7px] rounded-full"
+              className="absolute inset-[4px]"
               style={{
-                background: 'radial-gradient(circle at 35% 30%, #fff, var(--hud-accent-2) 70%, #074739)',
-                boxShadow: '0 0 12px var(--hud-accent-2)',
+                clipPath: HEX,
+                background:
+                  'linear-gradient(135deg, #e9fff8 0%, var(--hud-accent-2) 45%, #0a6b55 100%)',
               }}
             />
           </div>
