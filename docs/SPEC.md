@@ -1,16 +1,15 @@
-# Pokémon Assistant v2 spec
+# STAB Lab v2 spec
 
-Status: draft, first review decisions applied
+Status: draft, review decisions applied
 Date: 2026-10-03
 Owner: Tahsin
 
 This doc has three parts: an audit of the app as it stands, the plan for what it
-turns into, and the research behind the plan. Decisions made so far, and the one
-still open, are in section 9.
+turns into, and the research behind the plan. Decisions are in section 9.
 
 ## 1. Summary
 
-The app started as a Cobblemon helper. It already does a lot (12 tools, 357
+The app started as a Cobblemon helper called Pokémon Assistant. It already does a lot (12 tools, 357
 passing tests), but most of the "smart" features run on hand-tuned heuristics,
 the battle simulator only models raw damage, and the UI has grown three
 competing style systems.
@@ -214,28 +213,32 @@ bundling ripped assets, or charging money. Not legal advice, but the low-risk
 setup is:
 
 - An original product name and logo.
-- Describe it as "an unofficial companion for Pokémon Showdown singles" in the
-  README and About screen (descriptive use, not branding).
+- Mention Pokémon only in descriptive text such as the tagline below
+  (descriptive use, not branding).
 - Keep fetching sprites at runtime instead of bundling them (already the case).
 - Keep the disclaimer. Stay free.
 
-Name check so far:
+Decision: **STAB Lab**.
 
-- **Sync Core** is the name of the orb on the home screen and matches the
-  icon. Downsides: it says nothing about what the app does, and a quick search
-  turns up a "SYNCORE" US trademark application for unrelated sales software
-  plus Adobe's "Core Sync" service. Not a blocker, but not ideal.
-- **Matchup Lab** describes the app (matchups, counters, simulated battles,
-  models) and a quick search found nothing using it. "Champions Lab" is already
-  taken by another Pokémon tool, so avoid "... Lab" names close to that.
-- The orb can keep the Sync Core name either way.
+- STAB ("same-type attack bonus") is a fan term every competitive Pokémon
+  player knows, and it is not a Nintendo trademark; the official games do
+  not use the term. The name tells players what the app is for without using the
+  brand.
+- "Lab" covers what the app does: test teams, matchups and simulated battles.
+- A search found no app or software using the name. Sync Core ran into a
+  "SYNCORE" trademark filing and says nothing about the app; Matchup Lab
+  collides with several "MatchUp" apps and does not read as Pokémon.
+- The orb on the home screen keeps the Sync Core name.
+- Tagline for the README and About screen: "Unofficial team and battle lab for
+  Pokémon Showdown singles."
 
-Still open, see section 9. Before committing to a name, check GitHub, npm and
-the USPTO search for software uses.
-
-The rename touches `package.json` (`name`, `productName`, `appId`), the window
-title, the user-data folder (needs the existing migration helper again) and the
-README.
+Done: `package.json` (`name`, `productName`, `appId`, installer name), the
+window and page titles, the home screen label, the PC export header and the
+README. Saved data moves to the new user-data folder on first launch; the
+migration now looks for every old name and takes the most recently used one.
+The dead design page and the Cobblemon mod still say Pokémon Assistant and go
+away in M0 and M1. Renaming the GitHub repo to `stab-lab` is optional (GitHub
+redirects the old URL).
 
 ### 3.2 Formats instead of games
 
@@ -723,7 +726,7 @@ Sizes are relative (S, M, L), not dates.
 
 | # | Milestone | Contents | Size | Done when |
 | --- | --- | --- | --- | --- |
-| M0 | Foundations | Lockfile, CI, ESLint, `lint:prose`, dead code removal, prose cleanup, calc input fixes, rename | S | `npm ci` and CI are green, `lint:prose` passes |
+| M0 | Foundations | Lockfile, CI, ESLint, `lint:prose`, dead code removal, prose cleanup, calc input fixes | S | `npm ci` and CI are green, `lint:prose` passes |
 | M1 | Formats and data | Switch dex data to `@pkmn/dex`, `FormatProfile` for Gen 9 OU and National Dex OU, `TeamValidator` legality, box and team id migration, remove Cobblemon code and data | M | Format switch changes every tool; no Cobblemon references left |
 | M2 | UI shell | Token file, component set, `PageShell`, five areas, fixes for 2.6, screenshot tests | M | All 2.6 issues covered by passing screenshot tests |
 | M3 | Engine | `@pkmn/sim` worker, `@pkmn/client` state, practice battles with bots 0 to 2, merged calc, replay review | L | Acceptance in 5.2 and 5.3 |
@@ -756,7 +759,7 @@ Spawns never needs fixing.
 | Cobblemon mod | Dropped from the plan; folder removed in M1 |
 | Platforms | Windows first, macOS and Linux later |
 | Branches | Work on `main`, task-named branches only for big changes |
-| Name | **Open.** Sync Core (approved if it is clear of conflicts and describes the app) vs a more descriptive name such as Matchup Lab. See 3.1 |
+| Name | STAB Lab, can change later. See 3.1 |
 
 ## 10. References
 

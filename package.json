@@ -1,7 +1,7 @@
 {
-  "name": "pokemon-assistant",
+  "name": "stab-lab",
   "version": "0.1.0",
-  "description": "Desktop companion for open-world Pokémon games: Pokédex, team builder, battle calculator, EV/IV planner, PC storage",
+  "description": "Unofficial team and battle lab for Pokémon Showdown singles: dex, team builder, damage calc, counters, usage stats",
   "main": "dist-electron/main/main.js",
   "author": "Tahsin",
   "scripts": {
@@ -55,8 +55,8 @@
     "ws": "^8.20.1"
   },
   "build": {
-    "appId": "com.tahsin.pokemonassistant",
-    "productName": "Pokemon Assistant",
+    "appId": "com.tahsin.stablab",
+    "productName": "STAB Lab",
     "files": [
       "dist-electron/**/*",
       "dist/**/*",
@@ -75,7 +75,7 @@
           ]
         }
       ],
-      "artifactName": "PokemonAssistant-Setup-${version}.${ext}"
+      "artifactName": "STABLab-Setup-${version}.${ext}"
     },
     "mac": {
       "icon": "build/icon.icns"

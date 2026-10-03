@@ -43,7 +43,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: '#0f172a',
-    title: 'Pokémon Assistant',
+    title: 'STAB Lab',
     ...(appIcon.isEmpty() ? {} : { icon: appIcon }),
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),

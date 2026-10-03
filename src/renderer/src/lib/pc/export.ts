@@ -127,7 +127,7 @@ export function exportAllBoxesMarkdown(
   pokemonById: Record<string, Pokemon>,
 ): string {
   const parts = [
-    '# Pokémon Assistant - PC Export',
+    '# STAB Lab - PC Export',
     '',
     `Exported: ${new Date().toLocaleString()}`,
     `Boxes: ${boxes.length}`,

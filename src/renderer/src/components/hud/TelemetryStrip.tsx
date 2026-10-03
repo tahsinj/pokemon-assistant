@@ -26,7 +26,7 @@ export function TelemetryStrip({ bridgeStatus }: { bridgeStatus: ModBridgeStatus
   return (
     <div className="telemetry-strip">
       <span className="tlm">
-        <span className="acc2">POKÉMON+</span>
+        <span className="acc2">STAB LAB</span>
         <span style={{ opacity: 0.55 }}>v0.2.0</span>
       </span>
       <span className="sep" />

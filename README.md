@@ -1,8 +1,8 @@
-# Pokémon Assistant
+# STAB Lab
 
-Desktop companion for open-world Pokémon games where you catch Pokémon and
-build a team. It started as a helper for the Cobblemon Minecraft mod, which is
-still the best-supported game.
+Unofficial desktop team and battle lab for Pokémon Showdown singles. It started
+as a helper for the Cobblemon Minecraft mod and is moving to Gen 9 OU and
+National Dex OU. The plan is in [docs/SPEC.md](docs/SPEC.md).
 
 Built with Electron, React and TypeScript.
 
@@ -56,7 +56,7 @@ replays a scripted battle without Minecraft. See `cobblemon-mod/README.md`.
 
 ## Disclaimer
 
-This is a free, non-commercial fan project. It is not affiliated with,
+STAB Lab is a free, non-commercial fan project. It is not affiliated with,
 endorsed by, or sponsored by Nintendo, Game Freak, Creatures Inc., The Pokémon
 Company, or the Cobblemon team. Pokémon and Pokémon character names are
 trademarks of Nintendo, Creatures Inc. and Game Freak.
