@@ -5,7 +5,7 @@ type Disposer = () => void;
 contextBridge.exposeInMainWorld('assistant', {
   version: '0.2.0',
   teamsList: () => ipcRenderer.invoke('teams:list') as Promise<
-    { id: string; name: string; rivenTag: string; updatedAt: number }[]
+    { id: string; name: string; tag: string; updatedAt: number }[]
   >,
   teamsLoad: (id: string) => ipcRenderer.invoke('teams:load', id),
   teamsSave: (payload: unknown) => ipcRenderer.invoke('teams:save', payload) as Promise<{ id: string }>,

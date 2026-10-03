@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Move, Pokemon, HeldItem } from '../lib/types';
 import { buildBestTeams, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
-import type { LoadedTeamRecord, MemberDetail, RivalsTeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
+import type { LoadedTeamRecord, MemberDetail, TeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
 import { setTeamDraft } from '../lib/teamDraft';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
@@ -25,7 +25,7 @@ import { loadOwnedItems, toggleOwnedItem } from '../lib/ownedItems';
 import { TeamCompositionPanel } from '../components/team/TeamCompositionPanel';
 import { SetEditorPanel } from '../components/team/SetEditorPanel';
 
-const RIVALS_TAGS: { id: RivalsTeamTag; label: string }[] = [
+const TEAM_TAGS: { id: TeamTag; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'raid', label: 'Raid team' },
   { id: 'gym', label: 'Gym challenger' },
@@ -81,13 +81,13 @@ export function TeamBuilderPage({
   const [pickSource, setPickSource] = useState<'species' | 'pc' | 'suggested'>('species');
   const [pcQuery, setPcQuery] = useState('');
   const pc = usePcCollection();
-  const [teamTag, setTeamTag] = useState<RivalsTeamTag>('general');
+  const [teamTag, setTeamTag] = useState<TeamTag>('general');
   const [teamName, setTeamName] = useState('My team');
   const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(undefined);
   const [paste, setPaste] = useState('');
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
-  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; rivenTag: string; updatedAt: number }[]>([]);
+  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; tag: string; updatedAt: number }[]>([]);
   const [lastParsedExport, setLastParsedExport] = useState<string | null>(null);
 
   const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
@@ -321,7 +321,7 @@ export function TeamBuilderPage({
     return {
       id: currentTeamId,
       name: teamName.trim() || 'Untitled',
-      rivenTag: teamTag,
+      tag: teamTag,
       showdownExport,
       members,
     };
@@ -386,7 +386,7 @@ export function TeamBuilderPage({
     if (!rec) return;
     setCurrentTeamId(rec.id);
     setTeamName(rec.name);
-    setTeamTag((RIVALS_TAGS.some((t) => t.id === rec.rivenTag) ? rec.rivenTag : 'general') as RivalsTeamTag);
+    setTeamTag((TEAM_TAGS.some((t) => t.id === rec.tag) ? rec.tag : 'general') as TeamTag);
     setPaste(rec.showdownExport || '');
     const next: (TeamSlot | null)[] = [null, null, null, null, null, null];
     for (const m of rec.members) {
@@ -486,7 +486,7 @@ export function TeamBuilderPage({
     await bridge.teamsSave({
       id: rec.id,
       name: next,
-      rivenTag: rec.rivenTag,
+      tag: rec.tag,
       showdownExport: rec.showdownExport,
       members: rec.members,
     });
@@ -557,10 +557,10 @@ export function TeamBuilderPage({
                 Tag
                 <select
                   value={teamTag}
-                  onChange={(e) => setTeamTag(e.target.value as RivalsTeamTag)}
+                  onChange={(e) => setTeamTag(e.target.value as TeamTag)}
                   className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
                 >
-                  {RIVALS_TAGS.map((t) => (
+                  {TEAM_TAGS.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.label}
                     </option>
@@ -1266,7 +1266,7 @@ export function TeamBuilderPage({
                     </button>
                   )}
                   <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]">
-                    {t.rivenTag}
+                    {t.tag}
                   </span>
                   <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">
                     {new Date(t.updatedAt).toLocaleString()}

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { app } from 'electron';
 import type { Database, SqlJsStatic } from 'sql.js';
+import { applySchema } from './dbSchema';
 
 // ASM build avoids bundling sql-wasm.wasm into the Electron package.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -31,89 +32,7 @@ export async function initRivalsDb(): Promise<void> {
   } else {
     db = new SQL.Database();
   }
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS teams (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL DEFAULT 'Untitled',
-      riven_tag TEXT NOT NULL DEFAULT 'general',
-      showdown_export TEXT,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS team_members (
-      team_id TEXT NOT NULL,
-      slot INTEGER NOT NULL,
-      species_id TEXT,
-      species_display TEXT NOT NULL DEFAULT '',
-      item TEXT,
-      ability TEXT,
-      nature TEXT,
-      level INTEGER,
-      ivs_json TEXT,
-      evs_json TEXT,
-      moves_json TEXT,
-      PRIMARY KEY (team_id, slot),
-      FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_teams_updated ON teams(updated_at);
-    CREATE TABLE IF NOT EXISTS spawn_index (
-      species_id TEXT NOT NULL,
-      biome_tag TEXT NOT NULL,
-      bucket TEXT,
-      weight REAL,
-      time_bucket TEXT,
-      weather TEXT,
-      context TEXT,
-      raw_json TEXT,
-      PRIMARY KEY (species_id, biome_tag, time_bucket, weather)
-    );
-    CREATE INDEX IF NOT EXISTS idx_spawn_biome ON spawn_index(biome_tag);
-    CREATE TABLE IF NOT EXISTS pc_boxes (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL DEFAULT 'Box 01',
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      updated_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS pc_pokemon (
-      id TEXT PRIMARY KEY NOT NULL,
-      box_id TEXT NOT NULL,
-      slot INTEGER NOT NULL,
-      species_id TEXT NOT NULL,
-      species_display TEXT NOT NULL,
-      nickname TEXT,
-      level INTEGER NOT NULL DEFAULT 50,
-      gender TEXT NOT NULL DEFAULT 'genderless',
-      nature TEXT NOT NULL DEFAULT 'Hardy',
-      ability TEXT NOT NULL DEFAULT '',
-      item TEXT,
-      ivs_json TEXT NOT NULL,
-      evs_json TEXT NOT NULL,
-      moves_json TEXT NOT NULL,
-      notes TEXT,
-      shiny INTEGER NOT NULL DEFAULT 0,
-      updated_at INTEGER NOT NULL,
-      UNIQUE (box_id, slot),
-      FOREIGN KEY (box_id) REFERENCES pc_boxes(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_pc_boxes_sort ON pc_boxes(sort_order);
-    CREATE INDEX IF NOT EXISTS idx_pc_pokemon_box ON pc_pokemon(box_id);
-  `);
-  // Migrations for DBs created before a column existed. ALTER TABLE ADD COLUMN
-  // throws if the column already exists, so each is isolated in try/catch.
-  try {
-    db.run('ALTER TABLE pc_pokemon ADD COLUMN shiny INTEGER NOT NULL DEFAULT 0');
-  } catch {
-    /* column already present */
-  }
-  try {
-    db.run('ALTER TABLE team_members ADD COLUMN level INTEGER');
-  } catch {
-    /* column already present */
-  }
-  try {
-    db.run('ALTER TABLE team_members ADD COLUMN ivs_json TEXT');
-  } catch {
-    /* column already present */
-  }
+  applySchema(db);
   ensureDefaultPcBox();
   persist();
 }
@@ -151,7 +70,7 @@ export interface TeamMemberRow {
 export interface TeamRecord {
   id: string;
   name: string;
-  rivenTag: string;
+  tag: string;
   showdownExport: string | null;
   updatedAt: number;
   members: TeamMemberRow[];
@@ -160,21 +79,21 @@ export interface TeamRecord {
 export interface SaveTeamPayload {
   id?: string;
   name: string;
-  rivenTag: string;
+  tag: string;
   showdownExport?: string | null;
   members: TeamMemberRow[];
 }
 
-export function listTeams(): Pick<TeamRecord, 'id' | 'name' | 'rivenTag' | 'updatedAt'>[] {
+export function listTeams(): Pick<TeamRecord, 'id' | 'name' | 'tag' | 'updatedAt'>[] {
   if (!db) return [];
-  const stmt = db.prepare('SELECT id, name, riven_tag, updated_at FROM teams ORDER BY updated_at DESC');
-  const out: Pick<TeamRecord, 'id' | 'name' | 'rivenTag' | 'updatedAt'>[] = [];
+  const stmt = db.prepare('SELECT id, name, tag, updated_at FROM teams ORDER BY updated_at DESC');
+  const out: Pick<TeamRecord, 'id' | 'name' | 'tag' | 'updatedAt'>[] = [];
   while (stmt.step()) {
     const r = stmt.getAsObject();
     out.push({
       id: String(r.id),
       name: String(r.name),
-      rivenTag: String(r.riven_tag),
+      tag: String(r.tag),
       updatedAt: Number(r.updated_at),
     });
   }
@@ -184,7 +103,7 @@ export function listTeams(): Pick<TeamRecord, 'id' | 'name' | 'rivenTag' | 'upda
 
 export function loadTeam(id: string): TeamRecord | null {
   if (!db) return null;
-  const t = db.prepare('SELECT id, name, riven_tag, showdown_export, updated_at FROM teams WHERE id = ?');
+  const t = db.prepare('SELECT id, name, tag, showdown_export, updated_at FROM teams WHERE id = ?');
   t.bind([id]);
   if (!t.step()) {
     t.free();
@@ -236,7 +155,7 @@ export function loadTeam(id: string): TeamRecord | null {
   return {
     id: String(head.id),
     name: String(head.name),
-    rivenTag: String(head.riven_tag),
+    tag: String(head.tag),
     showdownExport: head.showdown_export != null ? String(head.showdown_export) : null,
     updatedAt: Number(head.updated_at),
     members,
@@ -254,8 +173,8 @@ export function saveTeam(payload: SaveTeamPayload): { id: string } {
     db.run('DELETE FROM team_members WHERE team_id = ?', [id]);
     db.run('DELETE FROM teams WHERE id = ?', [id]);
     db.run(
-      'INSERT INTO teams (id, name, riven_tag, showdown_export, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [id, payload.name, payload.rivenTag, exportText, now],
+      'INSERT INTO teams (id, name, tag, showdown_export, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [id, payload.name, payload.tag, exportText, now],
     );
     const ins = db.prepare(
       `INSERT INTO team_members (team_id, slot, species_id, species_display, item, ability, nature, level, ivs_json, evs_json, moves_json)

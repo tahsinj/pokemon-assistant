@@ -309,13 +309,13 @@ export function CalcdexPage({
     p2: { ...NO_SCREENS },
   });
 
-  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; rivenTag: string }[]>([]);
+  const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; tag: string }[]>([]);
   const refreshSaved = useMemo(
     () => async () => {
       if (!bridge?.teamsList) return;
       try {
         const rows = await bridge.teamsList();
-        setSavedTeams(rows.map((r) => ({ id: r.id, name: r.name, rivenTag: r.rivenTag })));
+        setSavedTeams(rows.map((r) => ({ id: r.id, name: r.name, tag: r.tag })));
       } catch {
         setSavedTeams([]);
       }
@@ -511,7 +511,7 @@ function PlayerPanel({
   freshMon: (species: Pokemon) => CalcMon;
   monFromMember: (m: TeamMemberPersist) => CalcMon | null;
   monFromParsed: (block: ParsedShowdownMon) => CalcMon | null;
-  savedTeams: { id: string; name: string; rivenTag: string }[];
+  savedTeams: { id: string; name: string; tag: string }[];
   onSaved: () => Promise<void>;
 }) {
   const bridge = typeof window !== 'undefined' ? window.assistant : undefined;
@@ -636,7 +636,7 @@ function PlayerPanel({
     if (!filled.length) return;
     const payload: SaveTeamPayload = {
       name: panel.name.trim() || (side === 'p2' ? 'Scouted opponent' : 'Calcdex team'),
-      rivenTag: side === 'p2' ? 'opponent' : 'general',
+      tag: side === 'p2' ? 'opponent' : 'general',
       showdownExport: exportShowdownFromParsed(filled.map(toParsedMon), { includeLevelAlways: true }),
       members: panel.roster.map((m, slot) => toPersistMember(m, slot)),
     };
@@ -791,7 +791,7 @@ function PlayerPanel({
                 {savedTeams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
-                    {t.rivenTag === 'opponent' ? ' · opponent' : ''}
+                    {t.tag === 'opponent' ? ' · opponent' : ''}
                   </option>
                 ))}
               </select>

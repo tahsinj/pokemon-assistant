@@ -1,4 +1,4 @@
-export type RivalsTeamTag = 'general' | 'raid' | 'gym' | 'dungeon';
+export type TeamTag = 'general' | 'raid' | 'gym' | 'dungeon';
 
 export type PcGender = 'male' | 'female' | 'genderless';
 
@@ -80,7 +80,7 @@ export interface TeamMemberPersist {
 export interface SaveTeamPayload {
   id?: string;
   name: string;
-  rivenTag: RivalsTeamTag | string;
+  tag: TeamTag | string;
   showdownExport?: string | null;
   members: TeamMemberPersist[];
 }
@@ -88,7 +88,7 @@ export interface SaveTeamPayload {
 export interface LoadedTeamRecord {
   id: string;
   name: string;
-  rivenTag: string;
+  tag: string;
   showdownExport: string | null;
   updatedAt: number;
   members: TeamMemberPersist[];
@@ -121,7 +121,7 @@ export interface ModBridge {
 
 export interface AssistantApi {
   version: string;
-  teamsList: () => Promise<{ id: string; name: string; rivenTag: string; updatedAt: number }[]>;
+  teamsList: () => Promise<{ id: string; name: string; tag: string; updatedAt: number }[]>;
   teamsLoad: (id: string) => Promise<LoadedTeamRecord | null>;
   teamsSave: (payload: SaveTeamPayload) => Promise<{ id: string }>;
   teamsDelete: (id: string) => Promise<void>;
