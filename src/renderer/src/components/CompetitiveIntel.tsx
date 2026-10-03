@@ -83,8 +83,8 @@ export function CompetitiveIntel({
   const sets = Object.entries(intel.sets ?? {});
   return (
     <div>
-      <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-        ◢ COMPETITIVE INTEL ·{' '}
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+        COMPETITIVE INTEL ·{' '}
         <span className="text-[var(--ink-2)]">
           {meta.label} {meta.month} · {(intel.usage * 100).toFixed(1)}% usage · #{intel.rank}
         </span>

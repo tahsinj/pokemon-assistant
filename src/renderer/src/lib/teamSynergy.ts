@@ -4,12 +4,12 @@
  * analysis so it works for meta staples and Cobblemon-only species alike.
  *
  * Scoring components (weights tuned so real pairings beat raw usage):
- *   - co-usage      ×3 - how often the candidate appears on current members'
+ *   - co-usage      x3 - how often the candidate appears on current members'
  *                         ladder teams (Smogon Teammates stats)
- *   - patch weak    ×2 - candidate resists types ≥2 members are weak to
- *   - new coverage  ×1 - candidate STAB hits types the team can't hit SE
- *   - usage prior   ×1 - sqrt(usage), meta staples break ties
- *   - pile-on       −0.5 per stacked weakness the candidate shares
+ *   - patch weak    x2 - candidate resists types >=2 members are weak to
+ *   - new coverage  x1 - candidate STAB hits types the team can't hit SE
+ *   - usage prior   x1 - sqrt(usage), meta staples break ties
+ *   - pile-on       -0.5 per stacked weakness the candidate shares
  */
 
 import type { Pokemon } from './types';

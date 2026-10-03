@@ -128,7 +128,7 @@ function diffSpecies(
     out.weightkg = { showdown: showdownWeight, cobblemon: cbWeightKg };
     any = true;
   }
-  // Ability comparison is informational only. We deliberately *don't* flag
+  // Ability comparison is informational only. We *don't* flag
   // ability divergences here because:
   //   1. `@smogon/calc`'s SPECIES table only stores slot-0 abilities (Showdown
   //      compresses for size), so naive comparison would flag every species

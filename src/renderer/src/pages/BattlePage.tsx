@@ -341,7 +341,7 @@ export function BattlePage({
 
   return (
     <ModuleFrame
-      kicker="◢ BATTLE ASSISTANT"
+      kicker="BATTLE ASSISTANT"
       title="Damage Calc"
       subtitle={
         opponentReady
@@ -640,7 +640,7 @@ export function BattlePage({
   );
 }
 
-/** Design BattleModule damage row: name+chip · PWR · roll bar · range/KO. */
+/** Design BattleModule damage row: name+chip, PWR, roll bar, range/KO. */
 function DamageRow({ d, moveType, danger }: { d: DamageOutcome; moveType?: string; danger?: boolean }) {
   const pct = Math.min(100, d.pctMax);
   const ohko = !d.isZero && !d.error && d.ko.n === 1 && d.ko.chance >= 1;

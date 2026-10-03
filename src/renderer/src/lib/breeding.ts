@@ -8,7 +8,7 @@
  *  - A Power item guarantees its stat is inherited from the holder and
  *    consumes one inheritance slot. If both parents hold Power items, one of
  *    the two effects is chosen at 50/50.
- *  - Non-inherited stats roll uniform 0–31 (P(31) = 1/32).
+ *  - Non-inherited stats roll uniform 0-31 (P(31) = 1/32).
  *  - Everstone passes the holder's nature (both holders -> 50/50); otherwise
  *    the nature is uniform random.
  *  - Ability comes from the mother (or the non-Ditto parent): hidden-ability

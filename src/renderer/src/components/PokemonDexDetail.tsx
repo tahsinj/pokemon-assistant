@@ -205,8 +205,8 @@ export function PokemonDexDetail({
       {/* Recommended moveset - tabbed: Smogon-blended / level-up only / TM priorities */}
       <div>
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
-            ◢ RECOMMENDED MOVESET ·{' '}
+          <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+            RECOMMENDED MOVESET ·{' '}
             <span className="text-[var(--ink-2)]">
               {moveTab === 'tm'
                 ? 'TMs / tutors worth teaching'
@@ -295,8 +295,8 @@ export function PokemonDexDetail({
 
       {/* Full learnset */}
       <div>
-        <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-          ◢ FULL LEARNSET · <span className="text-[var(--ink-2)]">{learnable.length} MOVES</span>
+        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+          FULL LEARNSET · <span className="text-[var(--ink-2)]">{learnable.length} MOVES</span>
         </div>
         <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto pr-1 no-scrollbar">
           {learnable.map(({ learn, mv }) => (

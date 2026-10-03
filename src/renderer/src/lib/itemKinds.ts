@@ -4,7 +4,7 @@
  * normal/craftable items it can suggest freely.
  *
  * Mega Stones are reliably the `category: 'mega'` items; Z-Crystals are named
- * "… Z" / "…ium Z" and scattered across several data categories, so they're
+ * "... Z" / "...ium Z" and scattered across several data categories, so they're
  * matched by name. (Tera is a set property, not a held item, so it isn't gated
  * here.)
  */

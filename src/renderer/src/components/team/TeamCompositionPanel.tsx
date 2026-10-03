@@ -60,8 +60,8 @@ export function TeamCompositionPanel({
 
   return (
     <div className="mono-panel p-3 rounded-[10px]">
-      <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-        ◢ TEAM COMPOSITION
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+        TEAM COMPOSITION
         <span className="text-[var(--ink-2)]"> · {covered}/{audit.checklist.length} roles covered</span>
       </div>
 

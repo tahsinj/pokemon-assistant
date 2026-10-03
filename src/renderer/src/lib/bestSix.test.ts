@@ -228,7 +228,7 @@ describe('buildBestTeams - scoring signals', () => {
       baseStats: { hp: 80, atk: 120, def: 130, spa: 55, spd: 65, spe: 45 },
       moves: [{ learn: '1', move: 'tackle' }, { learn: 'tm', move: 'earthquake' }],
     }) };
-    // Trash: Calm (−Atk) physical attacker stuck on weak Tackle.
+    // Trash: Calm (-Atk) physical attacker stuck on weak Tackle.
     const trash = buildBestTeams(
       [rec('t', 'golem', 60, { nature: 'Calm', moves: ['Tackle'] })],
       byId, MOVES, null,
@@ -320,7 +320,7 @@ describe('buildBestTeams - member advice', () => {
   });
 
   it('flags underleveled members against the PC reference level', () => {
-    const records = [...tenRecords, rec('low', 'jolt', 40)]; // ref ≈ 58-59
+    const records = [...tenRecords, rec('low', 'jolt', 40)]; // ref ~ 58-59
     // 'low' replaces the dedupe winner only if higher level - give it its own species.
     const byId = { ...pokemonById, lowmon: species('lowmon', ['normal']) };
     const out = buildBestTeams([...tenRecords, rec('low', 'lowmon', 40)], byId, MOVES, null, {

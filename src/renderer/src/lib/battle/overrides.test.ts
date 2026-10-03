@@ -247,7 +247,7 @@ describe('Damage engine respects Cobblemon overrides', () => {
 
   it('honors a type override in the damage calc', () => {
     // Earthquake (Ground) -> Electric: Tatsugiri is Dragon/Water.
-    // Ground vs Dragon/Water = 1× × 2× = 2× ; Electric vs Dragon/Water = 0.5× × 2× = 1×.
+    // Ground vs Dragon/Water = 1x x 2x = 2x ; Electric vs Dragon/Water = 0.5x x 2x = 1x.
     // Damage should drop when we reroute Earthquake to Electric.
     const attacker = baseSpec('Garchomp');
     const defender = baseSpec('Tatsugiri');

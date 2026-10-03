@@ -33,7 +33,7 @@ function rec(speciesId: string, name: string, level: number, mv: string[]): PcPo
   } as unknown as PcPokemonRecord;
 }
 
-// Weavile with only Knock Off in its learnset - ensures the fallback move
+// Weavile with only Knock Off in its learnset, so the fallback move
 // selector cannot supplement the spec with Ice-type moves (which would
 // produce a super-effective hit vs Garchomp and corrupt the "no answer" fixture).
 const weavileKOonly = {
@@ -80,7 +80,7 @@ describe('evaluateMatchup', () => {
     const pc = { rec: rec('weavile', 'Weavile', 100, ['Icicle Crash', 'Ice Shard', 'Knock Off']), p: weavile };
     const base = evaluateMatchup(pc, { p: garchomp, level: 100, set }, moves);
     const dmax = evaluateMatchup(pc, { p: garchomp, level: 100, set, dynamax: true }, moves);
-    // 4× Icicle Crash OHKOs a 357-HP Garchomp but not a 714-HP Dynamaxed one.
+    // 4x Icicle Crash OHKOs a 357-HP Garchomp but not a 714-HP Dynamaxed one.
     expect(base.label).toBe('OHKO');
     expect(dmax.label).not.toBe('OHKO');
   });
@@ -90,7 +90,7 @@ describe('evaluateMatchup', () => {
     const pc = { rec: rec('weavile', 'Weavile', 100, ['Icicle Crash', 'Ice Shard', 'Knock Off']), p: weavile };
     const base = evaluateMatchup(pc, { p: garchomp, level: 100, set }, moves);
     const tera = evaluateMatchup(pc, { p: garchomp, level: 100, set, teraType: 'Fairy' }, moves);
-    // Ice is 4× vs Dragon/Ground but only 1× vs a pure-Fairy Tera form.
+    // Ice is 4x vs Dragon/Ground but only 1x vs a pure-Fairy Tera form.
     expect(tera.myKoChance).toBeLessThan(base.myKoChance);
   });
 
@@ -122,7 +122,7 @@ describe('evaluateMatchup', () => {
     const set = assumedOpponentSpec(sturdyRock, 100, null, moves);
     const pc = { rec: rec('garchomp', 'Garchomp', 100, ['Earthquake']), p: garchomp };
     const cell = evaluateMatchup(pc, { p: sturdyRock, level: 100, set }, moves);
-    expect(cell.label).not.toBe('OHKO'); // Ground is 2× but Sturdy survives from full
+    expect(cell.label).not.toBe('OHKO'); // Ground is 2x but Sturdy survives from full
   });
 
 });
@@ -143,7 +143,7 @@ describe('classifyRace (speed-race verdict)', () => {
   it('faster 2HKO is NOT a win when the opponent OHKOs back', () => {
     const v = r({ myKoN: 2, theirKoN: 1, myPctMax: 60 });
     expect(v.verdict).not.toBe('win'); // I hit once, get OHKO'd before my 2nd
-    expect(v.verdict).toBe('trade');   // …but I chunked them ≥50% → trade
+    expect(v.verdict).toBe('trade');   // ...but I chunked them >=50% -> trade
   });
 
   it('slower must KO strictly sooner; a tie is a trade, not a win', () => {

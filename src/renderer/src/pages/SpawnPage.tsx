@@ -212,7 +212,7 @@ export function SpawnPage({
 
   return (
     <ModuleFrame
-      kicker="◢ SPAWN LOCATIONS"
+      kicker="SPAWN LOCATIONS"
       title="Biome Atlas"
       subtitle={`${totalRules} active spawn rules`}
       side={

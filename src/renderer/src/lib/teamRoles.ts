@@ -1,7 +1,7 @@
 /**
  * Per-Pokémon competitive role classifier for the Team Builder composition
  * audit. Given a slot (species + optional set details + Smogon intel), it tags
- * the mon with the functional roles it fills (lead/hazards, wall, pivot, …).
+ * the mon with the functional roles it fills (lead/hazards, wall, pivot, ...).
  *
  * Pure - no React/IPC. Reuses the move-name sets and physical/special bias from
  * `recommender.ts` so there's one source of truth. When a slot has no concrete

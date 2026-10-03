@@ -35,8 +35,8 @@ export interface NormalizeContext {
  * Translate one wire-frame envelope into 0..N internal events.
  *
  * Returns an array because some wire events fan out:
- *   - `pokemon-revealed` with a `knownSet` produces 1× `PokemonRevealed` +
- *     1× `AbilityRevealed` + 1× `ItemRevealed`.
+ *   - `pokemon-revealed` with a `knownSet` produces 1x `PokemonRevealed` +
+ *     1x `AbilityRevealed` + 1x `ItemRevealed`.
  *   - `hp-updated` produces a `Damaged` (if HP fell) or `Healed` (if HP rose).
  */
 export function normalize(envelope: ModBattleEventMessage, ctx: NormalizeContext): BattleEvent[] {
@@ -141,10 +141,8 @@ export function normalizeEvent(event: ModEvent, ctx: NormalizeContext): BattleEv
       return [{ type: 'Fainted', target: targetId }];
     }
     default: {
-      // The TS exhaustiveness check should make `event` never here. If a new
-      // ModEvent variant is added without updating this switch, leave the line
-      // below to compile-fail in the future. For now we accept the unknown by
-      // emitting nothing.
+      // Exhaustiveness check: a new ModEvent variant without a case here fails
+      // to compile. At runtime an unknown event emits nothing.
       const _exhaustive: never = event;
       void _exhaustive;
       return [];

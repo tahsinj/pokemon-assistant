@@ -30,7 +30,7 @@ in your modpack.
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `src/main/kotlin/.../CobblemonBridgeMod.kt`             | Mod entry point. Initializes the WS client and subscribes to Cobblemon events.   |
 | `src/main/kotlin/.../AssistantBridge.kt`                   | Lightweight WebSocket client wrapping Java 11's `HttpClient.newWebSocketBuilder` |
-| `src/main/kotlin/.../EventTranslator.kt`                   | Maps Cobblemon event objects → JSON frames matching the wire protocol.           |
+| `src/main/kotlin/.../EventTranslator.kt`                   | Maps Cobblemon event objects to JSON frames matching the wire protocol.          |
 | `src/main/resources/fabric.mod.json`                       | Fabric manifest.                                                                 |
 | `build.gradle.kts`                                         | Reference Gradle build.                                                          |
 

@@ -66,7 +66,7 @@ export function CounterDraftPage({
   const [result, setResult] = useState<DraftResult | null>(null);
   const [bulk, setBulk] = useState<OpponentBulk>('maxIv');
   const [flatLevel, setFlatLevel] = useState<number | null>(null);
-  const [mode, setMode] = useState(6); // team size per side (3v3 … 6v6)
+  const [mode, setMode] = useState(6); // team size per side (3v3 ... 6v6)
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
 
@@ -193,7 +193,7 @@ export function CounterDraftPage({
     if (result) runDraftWith(opponents, format({ flat: next }));
   };
 
-  // Switching format (3v3 … 6v6) caps the opponent team and the drafted answer
+  // Switching format (3v3 ... 6v6) caps the opponent team and the drafted answer
   // to that size; trims any extra opponents and re-drafts.
   const changeMode = (next: number) => {
     setMode(next);
@@ -224,7 +224,7 @@ export function CounterDraftPage({
   };
 
   return (
-    <ModuleFrame kicker="◢ MATCHUP DRAFT" title="Counter Draft" subtitle="Build a PC answer to their team">
+    <ModuleFrame kicker="MATCHUP DRAFT" title="Counter Draft" subtitle="Build a PC answer to their team">
       <div className="glass rounded-[14px] p-3.5 mb-4">
         {/* Format bar - team size + battle level */}
         <div className="flex items-center justify-between gap-3 flex-wrap mb-3 pb-3 border-b border-white/8">
@@ -270,7 +270,7 @@ export function CounterDraftPage({
             </div>
           </div>
           <div className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-snug max-w-[220px]">
-            ◢ Tera &amp; Dynamax are per-opponent - toggle them on each mon below.
+            Tera &amp; Dynamax are per-opponent - toggle them on each mon below.
           </div>
         </div>
 
@@ -375,7 +375,7 @@ export function CounterDraftPage({
 
         {flatLevel != null && (
           <div className="font-mono-hud text-[13px] text-[var(--hud-accent-2)] px-1 mt-2.5">
-            ◢ Both sides normalized to Lv {flatLevel} - matchups reflect the format, not a level gap.
+            Both sides normalized to Lv {flatLevel} - matchups reflect the format, not a level gap.
           </div>
         )}
 
@@ -542,7 +542,7 @@ export function CounterDraftPage({
 /**
  * Level field that holds its own editable string so you can fully clear it
  * (an empty box doesn't snap back to 1 mid-edit) and is wide enough not to clip
- * "100". Commits a clamped 1–100 value on blur / Enter.
+ * "100". Commits a clamped 1-100 value on blur / Enter.
  */
 function LevelInput({
   value,

@@ -5,7 +5,7 @@
  *   - Every field can change turn-to-turn; structural sharing is preserved by
  *     using Immer's `produce` in the reducer (see `events.ts`).
  *   - State is what *has* happened (not what *might* happen). Forking is the
- *     responsibility of the search engine in a later phase.
+ *     search engine's job.
  *   - Hidden information (opponent set) is represented as `KNOWN | INFERRED |
  *     DEFAULT` source on each field, with the predictor populating
  *     the inferred values.
@@ -285,7 +285,7 @@ export const EMPTY_FIELD_STATE: FieldState = {
 
 export interface BattleFormat {
   generation: 9;
-  /** e.g. "singles", "cobblemon-trainer", "vgc". Free-form for now. */
+  /** Free-form, e.g. "singles", "cobblemon-trainer", "vgc". */
   tier: string;
   rules: string[];
 }

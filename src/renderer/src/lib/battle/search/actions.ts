@@ -6,8 +6,8 @@
  * - fainted teammates -> drop the switch
  * - non-fainted active -> user cannot switch to itself
  *
- * Heavy pruning (strictly-dominated detection) is left for later phases; the
- * search engine cares more about correctness than micro-branching here.
+ * No pruning of strictly dominated actions: the search cares more about
+ * correctness than about trimming a few branches.
  */
 
 import type { Action } from './types';

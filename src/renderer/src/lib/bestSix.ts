@@ -8,7 +8,7 @@
  * swaps -> attach per-member optimization advice diffed against the closest
  * curated Smogon set (or the usage marginals).
  *
- * Everything is synchronous and cheap: pool ≤ 24, so one preset costs ~10⁵
+ * Everything is synchronous and cheap: pool <= 24, so one preset costs ~10^5
  * primitive ops. No smogon bundle -> quality/coverage only, advice limited.
  */
 
@@ -33,7 +33,7 @@ export interface BestSixOptions {
   presets?: TeamPresetId[];
   /** Top-quality pool kept for the combinatorial search. */
   poolSize?: number;
-  /** Candidates below targetLevel × ratio are excluded (pcCounters convention). */
+  /** Candidates below targetLevel x ratio are excluded (pcCounters convention). */
   minLevelRatio?: number;
   /** Reference level; default = 90th-percentile level across the PC. */
   refLevel?: number;
@@ -58,7 +58,7 @@ export interface MemberAdvice {
   evTarget: { current: BaseStats; target: BaseStats } | null;
   itemSuggestion: { current: string | null; suggested: string } | null;
   moveChanges: { teach: string; replace: string | null; reason: string }[];
-  /** Deliberately-lowered IVs worth setting (e.g. 0 Atk on a special attacker). */
+  /** Lowered IVs worth setting (e.g. 0 Atk on a special attacker). */
   ivChanges: { stat: keyof BaseStats; from: number; to: number; reason: string }[];
   needsLeveling: { current: number; target: number } | null;
 }
@@ -69,7 +69,7 @@ export interface TeamCandidate {
   score: number;
   breakdown: { quality: number; chemistry: number; defense: number; offense: number; roles: number };
   members: MemberAdvice[];
-  /** Types ≥2 members are weak to with no resist on the team. */
+  /** Types >=2 members are weak to with no resist on the team. */
   stackedWeaknesses: string[];
   /** Types no member hits super-effectively with STAB. */
   uncoveredTypes: string[];
@@ -126,7 +126,7 @@ interface PoolMember {
   matched: MatchedSet | null;
   quality: number;
   role: Role;
-  /** Functional roles (hazard-control, win-condition, …) from teamRoles. */
+  /** Functional roles (hazard-control, win-condition, ...) from teamRoles. */
   tags: Set<RoleTag>;
   weakTo: Set<string>;
   resists: Set<string>;
@@ -209,12 +209,12 @@ const avg = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0)
 /**
  * Individual-set quality multiplier in (0,1]. The pool otherwise
  * rates a mon by species *potential*, blind to a player actively running a
- * detrimental build. Two robust, data-driven checks fold execution back in:
- *   • a nature that drops the very stat the set attacks with (Calm −Atk on a
+ * detrimental build. Two data-driven checks fold execution back in:
+ *   - a nature that drops the very stat the set attacks with (Calm -Atk on a
  *     physical Regirock), and
- *   • a moveset much weaker than what the species can learn (Rock Throw where
+ *   - a moveset much weaker than what the species can learn (Rock Throw where
  *     Stone Edge is on the table), judged on intrinsic move strength (BP, STAB,
- *     category fit) via `scoreMove` - deliberately ladder-usage-agnostic so it
+ *     category fit) via `scoreMove`, ignoring ladder usage on purpose so it
  *     measures raw build quality, not conformity, and doesn't favour mons that
  *     happen to have Smogon coverage.
  * ~1.0 for an optimised set, ~0.35 for trash - so a flawless Dragonite outranks
@@ -402,8 +402,8 @@ function searchTeam(
 }
 
 /**
- * Synergy cores to seed the search from. The doc's "build outward from a core"
- * idea, implemented as a cheap multi-start: each seed biases the greedy fill
+ * Synergy cores to seed the search from, so the team is built outward from a
+ * core. A cheap multi-start: each seed biases the greedy fill
  * into a different basin, and `bestSearch` keeps whichever finishes strongest
  * (including the empty/default seed, so a seed can never make the result worse).
  */
@@ -634,8 +634,8 @@ const IV_REASONS: Partial<Record<keyof BaseStats, string>> = {
 };
 
 /**
- * Deliberately-lowered IVs worth setting. Driven first by the matched curated
- * set (which encodes things like 0 Atk), then a couple of robust heuristics:
+ * Lowered IVs worth setting. Driven first by the matched curated set (which
+ * encodes things like 0 Atk), then two heuristics:
  * a purely special attacker wants 0 Atk, and a Trick Room / Gyro Ball user
  * wants 0 Spe.
  */
@@ -738,9 +738,9 @@ export function buildBestTeams(
     // Zero-usage power fallback, split by provenance. For meta mons,
     // ladder usage already reflects stat quality and this term fades to 0. For
     // usage-0 mons it's the only signal - but it must differ by origin:
-    //   • official species (have a NatDex tier) are ranked by that tier, so a
+    //   - official species (have a NatDex tier) are ranked by that tier, so a
     //     0%-usage RU wall can't ride the taper meant for custom mons;
-    //   • true custom Cobblemon species are absent from Showdown (no tier, no
+    //   - true custom Cobblemon species are absent from Showdown (no tier, no
     //     usage), so their BST is all we have - keep the original taper for them.
     const fade = 1 - Math.min(1, Math.sqrt(usage));
     const fallback = p.natDexTier
@@ -815,7 +815,7 @@ export function buildBestTeams(
       if (retry.length === idx.length && overlapWith(retry) < overlapWith(idx)) idx = retry;
     }
     if (idx.length === 0) continue;
-    // Honest duplicate-drop: identical to an earlier candidate -> skip.
+    // Identical to an earlier candidate: skip it.
     const key = new Set(idx);
     if (seenTeams.some((s) => s.size === key.size && idx.every((i) => s.has(i)))) continue;
     seenTeams.push(key);
@@ -845,6 +845,3 @@ export function buildBestTeams(
 
   return { candidates, coreDeficits, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies, poolSize: pool.length, refLevel };
 }
-
-// Keep learnableMoves referenced for advice extensions (and silence TS unused).
-export const __internals__ = { evaluateTeam, inferRole, ivQuality, percentile90, learnableMoves };

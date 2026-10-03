@@ -8,7 +8,7 @@
 // from pokemon.json - it never overwrites an existing record. Re-runnable.
 //
 // Scope: one BASE species per missing national-dex number. Alternate formes
-// (regional, Therian, Mega, Gmax, Urshifu-Rapid-Strike, …) are skipped because
+// (regional, Therian, Mega, Gmax, Urshifu-Rapid-Strike, ...) are skipped because
 // sprites resolve by dex number and the dataset has no forme model - matching
 // how the existing Cobblemon data is shaped.
 //
@@ -33,7 +33,7 @@ async function fetchJson(url) {
   return r.json();
 }
 
-// ── Local datasets ──────────────────────────────────────────────────────────
+// -- Local datasets ----------------------------------------------------------
 const pokemon = JSON.parse(fs.readFileSync(POKEMON_JSON, 'utf8'));
 const moves = JSON.parse(fs.readFileSync(path.join(DATA, 'moves.json'), 'utf8'));
 const knownMoveIds = new Set(Object.keys(moves));
@@ -42,7 +42,7 @@ const haveIds = new Set(pokemon.map((p) => p.id));
 console.log('Fetching Showdown pokedex + learnsets …');
 const [dex, learnsets] = await Promise.all([fetchJson(PS_DEX), fetchJson(PS_LEARN)]);
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------------
 const SKIP_NONSTANDARD = new Set(['CAP', 'Custom']);
 
 function genFromDex(num) {
@@ -130,7 +130,7 @@ function learnsetFor(entry) {
   return out;
 }
 
-// ── Build records ───────────────────────────────────────────────────────────
+// -- Build records -----------------------------------------------------------
 const added = [];
 for (const [speciesId, entry] of Object.entries(dex)) {
   if (!entry.num || entry.num < 1) continue; // CAP / fakemon

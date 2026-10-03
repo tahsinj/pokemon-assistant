@@ -26,8 +26,8 @@ function StatTile({ k, v, hint }: { k: string; v: string; hint?: string }) {
 
 function SectionHead({ label, extra }: { label: string; extra?: string }) {
   return (
-    <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
-      ◢ {label}
+    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+      {label}
       {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
     </div>
   );

@@ -35,7 +35,7 @@ async function fetchJson(url) {
   return r.json();
 }
 
-// ── Local datasets ──────────────────────────────────────────────────────────
+// -- Local datasets ----------------------------------------------------------
 const pokemon = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'pokemon.json'), 'utf8'));
 const movesById = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'moves.json'), 'utf8'));
 const items = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'items.json'), 'utf8'));
@@ -68,7 +68,7 @@ const moveName = (id) => moveNameById.get(id) ?? titleCase(id);
 const itemName = (id) => itemNameById.get(id) ?? titleCase(id);
 const abilityName = (id) => abilityNameById.get(norm(id)) ?? titleCase(id);
 
-// ── Discover latest stats month ─────────────────────────────────────────────
+// -- Discover latest stats month ---------------------------------------------
 async function findChaos() {
   const now = new Date();
   for (let back = 1; back <= 6; back++) {
@@ -87,7 +87,7 @@ const chaos = await fetchJson(chaosUrl);
 console.log(`Fetching curated sets for ${FORMAT} ...`);
 const setsData = await fetchJson(`https://data.pkmn.cc/sets/${FORMAT}.json`);
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------------
 const STAT_ORDER = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
 function topEntries(obj, limit, mapFn) {
@@ -123,7 +123,7 @@ function ivsToArray(ivObj) {
 
 const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
-// ── Build bundle ────────────────────────────────────────────────────────────
+// -- Build bundle ------------------------------------------------------------
 const chaosEntries = Object.entries(chaos.data);
 const ranked = [...chaosEntries].sort((a, b) => b[1].usage - a[1].usage);
 const rankByName = new Map(ranked.map(([name], i) => [name, i + 1]));

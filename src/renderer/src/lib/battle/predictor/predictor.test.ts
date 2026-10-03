@@ -187,7 +187,7 @@ describe('initOpponentModel', () => {
     const total = model.candidates.filter((c) => !c.eliminated).reduce((a, c) => a + c.weight, 0);
     expect(total).toBeCloseTo(1, 5);
     expect(model.confidence).toBeGreaterThanOrEqual(0);
-    expect(model.confidence).toBeLessThan(1); // multiple candidates → not maxed
+    expect(model.confidence).toBeLessThan(1); // multiple candidates -> not maxed
   });
 });
 
@@ -205,7 +205,7 @@ describe('narrowByMove', () => {
     const bogus = narrowByMove(seeded, 'Hyperspace Hole');
     expect(bogus.candidates.every((c) => c.eliminated)).toBe(true);
     const total = bogus.candidates.reduce((a, c) => a + c.weight, 0);
-    expect(total).toBe(0); // all eliminated → live weight sum stays 0
+    expect(total).toBe(0); // all eliminated -> live weight sum stays 0
   });
 
   it('always adds an evidence row, even when nothing changes', () => {

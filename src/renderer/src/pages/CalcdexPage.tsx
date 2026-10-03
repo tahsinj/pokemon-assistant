@@ -366,7 +366,7 @@ export function CalcdexPage({
 
   return (
     <ModuleFrame
-      kicker="◢ CALCDEX"
+      kicker="CALCDEX"
       title="Damage Workbench"
       subtitle={`${matchupLabel}${weather ? ` · ${weather}` : ''}${terrain ? ` · ${terrain} Terrain` : ''}`}
       side={
@@ -541,7 +541,7 @@ function PlayerPanel({
       const roster = [...p.roster];
       const cur = roster[p.active];
       if (!cur) return p;
-      // keepSet: the edit doesn't invalidate the loaded set (hp, boosts, tera…)
+      // keepSet: the edit doesn't invalidate the loaded set (hp, boosts, tera...)
       // - but a patch that names a set (dropdown load) always wins.
       const setLabel = patch.setLabel ?? (keepSet ? cur.setLabel : 'custom');
       roster[p.active] = { ...cur, ...patch, setLabel };
@@ -664,8 +664,8 @@ function PlayerPanel({
       {/* Identity + roster top bar */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex flex-col w-[118px] flex-shrink-0 min-w-0">
-          <span className="font-mono-hud text-[10px] uppercase tracking-[.2em] leading-none" style={{ color: accent }}>
-            {side === 'p1' ? '◢ Your side' : '◢ Their side'}
+          <span className="hud-mark font-mono-hud text-[10px] uppercase tracking-[.2em] leading-none" style={{ color: accent }}>
+            {side === 'p1' ? 'Your side' : 'Their side'}
           </span>
           <input
             value={panel.name}
@@ -1143,8 +1143,8 @@ function ActiveDashboard({
         {/* Move matrix */}
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-baseline justify-between px-0.5">
-            <span className="font-mono-hud text-[11px] uppercase tracking-widest" style={{ color: accent }}>
-              ◢ Moves
+            <span className="hud-mark font-mono-hud text-[11px] uppercase tracking-widest" style={{ color: accent }}>
+              Moves
             </span>
             <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] truncate">
               {opposing ? `vs ${opposing.species.name} · ${opposing.hpPercent}% HP` : 'no target - add an opposing active'}

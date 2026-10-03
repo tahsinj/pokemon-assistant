@@ -97,7 +97,7 @@ export function typeCoverage(attackType: string): TypeCoverage {
 }
 
 /** Player-relevant flags worth surfacing, with short explanations. Engine-only
- *  flags (mirror, metronome, fail*, no*, …) are intentionally omitted. */
+ *  flags (mirror, metronome, fail*, no*, ...) are intentionally omitted. */
 export const FLAG_INFO: Record<string, { label: string; desc: string }> = {
   contact: { label: 'Contact', desc: 'Makes contact - triggers Rough Skin, Static, Rocky Helmet, etc.' },
   protect: { label: 'Blockable', desc: 'Blocked by Protect / Detect.' },

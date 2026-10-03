@@ -56,8 +56,8 @@ const UTILITY_MOVES = new Set([
   'U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot', 'Teleport', 'Protect',
 ]);
 
-const SPEED_TIER_FAST = 95; // baseStats.spe ≥ this → "fast enough" for offensive Spe spread
-const BULK_THRESHOLD = 260; // hp + def + spd ≥ this → can run bulky sets
+const SPEED_TIER_FAST = 95; // baseStats.spe >= this -> "fast enough" for offensive Spe spread
+const BULK_THRESHOLD = 260; // hp + def + spd >= this -> can run bulky sets
 
 // ---------------------------------------------------------------------------
 // Public API

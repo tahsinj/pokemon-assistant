@@ -7,7 +7,7 @@
  *    move-usage % when available (probability), else the learnset ("can hit").
  *  - threatSummary: the danger side - which common meta mons OUTSPEED this mon
  *    AND carry a super-effective move, so you shouldn't lead/switch it in even
- *    when you'd hit them for 2×. Aggregated into "risky into <type>".
+ *    when you'd hit them for 2x. Aggregated into "risky into <type>".
  *  - quickVerdict: a real speed-aware 1v1 verdict (reuses the @smogon/calc
  *    engine in matchup.ts) for "should I send this in vs X?".
  *
@@ -20,10 +20,10 @@ import { assumedOpponentSpec } from './opponentSet';
 import { suggestMoveset } from './recommender';
 import { evaluateSpecMatchup, type MatchupCell } from './matchup';
 
-// ── Offensive coverage ──────────────────────────────────────────────────────
+// -- Offensive coverage ------------------------------------------------------
 
 export interface CoverageEntry {
-  /** Defending type this mon can hit for ≥2× (evaluated vs a mono-type target). */
+  /** Defending type this mon can hit for >=2x (evaluated vs a mono-type target). */
   type: Type;
   /** Best multiplier among the responsible moves (2 vs a single type; >1). */
   mult: number;
@@ -123,7 +123,7 @@ export function offensiveCoverage(
   return { hasUsage, entries };
 }
 
-// ── Threat summary (the "what to avoid" side) ───────────────────────────────
+// -- Threat summary (the "what to avoid" side) -------------------------------
 
 export interface FastThreat {
   id: string;
@@ -235,7 +235,7 @@ export function threatSummary(
   return { riskyTypes, fastThreats };
 }
 
-// ── Quick 1v1 verdict ───────────────────────────────────────────────────────
+// -- Quick 1v1 verdict -------------------------------------------------------
 
 /**
  * "Should I send `mine` in against `opp`?" - a real speed-aware verdict from

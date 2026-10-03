@@ -14,8 +14,7 @@
  * runner-up actions and why they ranked lower.
  *
  * Chance nodes (damage rolls, secondary effects, speed ties) collapse to
- * expected values for now. Possible refinements:
- * damage buckets, MCTS.
+ * expected values.
  */
 
 import { calcAllMoves, calcDamage, type DamageOutcome } from '../damage';
@@ -492,7 +491,7 @@ function determinePlayerFirst(
   if (oppAction.kind === 'switch' && playerAction.kind !== 'switch') return false;
   const view = computeSpeedView(state, simCtx, null);
   if (!view) return true;
-  if (view.usSpe === view.themSpe) return true; // tie → player-first by convention
+  if (view.usSpe === view.themSpe) return true; // tie -> player-first by convention
   return state.field.isTrickRoom ? view.usSpe < view.themSpe : view.usSpe > view.themSpe;
 }
 

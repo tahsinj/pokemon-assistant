@@ -1,7 +1,7 @@
 import type { Pokemon } from './types';
 import { TYPES, effectiveness } from './typechart';
 
-/** Count how many team members take >1× from this attacking type. */
+/** Count how many team members take >1x from this attacking type. */
 export function weaknessCounts(team: Pokemon[]): { attackType: string; weakCount: number }[] {
   const rows: { attackType: string; weakCount: number }[] = [];
   for (const t of TYPES) {

@@ -74,7 +74,7 @@ export const UTILITY_MOVES = new Set(
 
 /**
  * Physical vs special bias. Prefer what the ladder actually runs (top spreads'
- * EV investment) over raw base stats - Lucario has SpA ≥ Atk but is a physical
+ * EV investment) over raw base stats - Lucario has SpA >= Atk but is a physical
  * Swords Dance sweeper. Falls back to base stats without Smogon data.
  */
 export function offensiveBias(p: Pokemon, smogon?: SmogonSpeciesIntel | null): 'physical' | 'special' {
@@ -92,9 +92,9 @@ export function offensiveBias(p: Pokemon, smogon?: SmogonSpeciesIntel | null): '
 }
 
 // Score a move for a given species. Higher = better pick.
-//   - Effective power (soft-capped 100), STAB +50, attacker-category match ±,
+//   - Effective power (soft-capped 100), STAB +50, attacker-category match +/-,
 //     priority +10, drawback penalties.
-//   - Status moves are tiered: setup > recovery ≈ utility > junk.
+//   - Status moves are tiered: setup > recovery ~ utility > junk.
 //   - Smogon usage adds up to +60 (capped) so the ladder informs ranking.
 // `physical` overrides the base-stat guess with the caller's inferred bias.
 export function scoreMove(

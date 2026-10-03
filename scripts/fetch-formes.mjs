@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 // Backfill alternate battle FORMES (regional Alolan/Galarian/Hisuian/Paldean,
-// Mega/Primal, Therian/Origin/Crowned/Urshifu/Ogerpon/Rotom appliances, …) from
+// Mega/Primal, Therian/Origin/Crowned/Urshifu/Ogerpon/Rotom appliances, ...) from
 // Pokémon Showdown's public data, so they exist in the Pokédex / team builder /
 // counter-draft / damage calc like any other species. The base game (Cobblemon)
 // ships only base formes, so without this you can't model an opponent running a
 // Hisuian / Galarian / Mega Pokémon.
 //
 // Companion to fetch-missing-species.mjs (which adds only BASE species and
-// deliberately skips formes). Only ADDS formes whose id is absent; never
+// skips formes on purpose). Only ADDS formes whose id is absent; never
 // overwrites. Re-runnable.
 //
 // Cosmetic formes (same types AND base stats as the base species - Vivillon
-// patterns, Toxtricity-Low-Key, Pikachu costumes, …) are skipped as noise.
+// patterns, Toxtricity-Low-Key, Pikachu costumes, ...) are skipped as noise.
 // Gigantamax / Totem / CAP / Custom are skipped (Dynamax is a battle mechanic,
 // not a species). Sprites resolve by national-dex number, so a forme shows its
 // base species' art - accepted, like the rest of the dataset.

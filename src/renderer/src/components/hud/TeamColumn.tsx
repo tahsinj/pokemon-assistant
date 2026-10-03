@@ -170,7 +170,7 @@ export function TeamColumn({
     setHover(id);
     onHover?.(id);
   };
-  // No header here - the "SQUAD · 6/6" pill in the top row labels this rail.
+  // No header here: the squad count pill in the top row labels this rail.
   return (
     <div className="flex flex-col gap-1.5 items-end">
       {team.map((mon) => (

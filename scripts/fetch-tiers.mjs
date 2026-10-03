@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Patch each species in pokemon.json with its NatDex competitive tier
-// (`natDexTier`: "OU" | "UU" | … | "Uber" | "AG") from Pokémon Showdown's
+// (`natDexTier`: "OU" | "UU" | ... | "Uber" | "AG") from Pokémon Showdown's
 // formats-data. Used to keep banned (Uber/AG) Pokémon off format-legal teams in
 // the Best-6 builder. Re-runnable; run after fetch-data / fetch-missing-species.
 import fs from 'node:fs';

@@ -22,7 +22,7 @@ export function FocusLens({ mon }: { mon: HudTeamMon }) {
   return (
     <div className="focus-lens-v" style={{ ['--lens-tint' as string]: tint } as CSSProperties}>
       <div className="lens-v-head">
-        <span className="kicker">◢ Focus · {mon.role}</span>
+        <span className="kicker hud-mark">Focus · {mon.role}</span>
         {hasHp && (
           <span className="mode">
             <span className="mode-dot" />

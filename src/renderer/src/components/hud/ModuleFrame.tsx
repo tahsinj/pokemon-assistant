@@ -27,7 +27,7 @@ export function ModuleFrame({
       <div className="flex items-end justify-between gap-4 mb-3 px-1">
         <div className="min-w-0">
           {kicker && (
-            <div className="font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--hud-accent-2)] mb-1 whitespace-nowrap">
+            <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--hud-accent-2)] mb-1 whitespace-nowrap">
               {kicker}
             </div>
           )}
@@ -129,11 +129,11 @@ export function MoveCard({ m, hint }: { m: Move; hint?: string }) {
   );
 }
 
-/** Mono section header used inside module panels (design `◢ LABEL` heads). */
+/** Mono section header used inside module panels. */
 export function SectionHead({ label, extra }: { label: ReactNode; extra?: ReactNode }) {
   return (
-    <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-      ◢ {label}
+    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+      {label}
       {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
     </div>
   );

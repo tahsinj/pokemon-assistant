@@ -2,13 +2,11 @@
  * Evaluation Function.
  *
  * Maps a `BattleState` to a scalar utility from the *player's* perspective.
- * Hand-tuned weights for now; these could later be
- * replay-tuned or self-play-trained.
+ * Weights are hand-tuned.
  *
  * The eval is the leaf value of the search tree, so it has to summarize
- * everything below the horizon. We deliberately keep the feature set small
- * and explainable - a too-clever eval is hard to debug when the engine picks
- * a bad move.
+ * everything below the horizon. The feature set stays small and explainable:
+ * a too-clever eval is hard to debug when the engine picks a bad move.
  */
 
 import type { BattleState, BattlePokemon, SideId } from '../state';

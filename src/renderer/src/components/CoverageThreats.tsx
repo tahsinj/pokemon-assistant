@@ -54,15 +54,15 @@ export function CoverageThreats({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
-        ◢ COVERAGE & THREATS ·{' '}
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+        COVERAGE & THREATS ·{' '}
         <span className="text-[var(--ink-2)]">
           {coverage.hasUsage ? 'from popular movesets' : 'from recommended set (no usage data)'}
         </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {/* ── Offensive: what it hits hard ── */}
+        {/* -- Offensive: what it hits hard -- */}
         <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
           <div className="font-mono-hud text-[12px] uppercase tracking-wider" style={{ color: '#7cd87b' }}>
             Strong into
@@ -89,7 +89,7 @@ export function CoverageThreats({
           </div>
         </div>
 
-        {/* ── Defensive / threat: what to avoid ── */}
+        {/* -- Defensive / threat: what to avoid -- */}
         <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
           <div className="font-mono-hud text-[12px] uppercase tracking-wider" style={{ color: 'var(--hud-danger)' }}>
             Risky into
@@ -142,7 +142,7 @@ export function CoverageThreats({
         </div>
       </div>
 
-      {/* ── Quick 1v1 verdict ── */}
+      {/* -- Quick 1v1 verdict -- */}
       <QuickCheck p={p} moves={moves} smogon={smogon} allPokemon={allPokemon} />
     </div>
   );

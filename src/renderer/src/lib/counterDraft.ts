@@ -1,7 +1,7 @@
 /**
  * Draft a counter-team from the user's PC against a known opponent team.
- * Coverage-first greedy selection (option C): guarantee every opponent threat
- * an answer where possible, aggregate matchup score as tiebreak / fill.
+ * Coverage-first greedy selection: give every opponent threat an answer where
+ * possible, with the aggregate matchup score as tiebreak and fill.
  *
  * `evaluateTeam` re-scores a *fixed* team under a given bulk tier - used when
  * the user flips the assumption tabs without re-drafting. Pure - the evaluator

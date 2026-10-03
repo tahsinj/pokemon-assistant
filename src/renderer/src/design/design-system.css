@@ -20,7 +20,7 @@
   --font-terminal: "VT323", "JetBrains Mono", ui-monospace, monospace;
   --font-block:    "Silkscreen", "Press Start 2P", ui-monospace, monospace;
 
-  /* ---------- Surfaces · vertical depth ---------- */
+  /* ---------- Surfaces, vertical depth ---------- */
   --bg-0: #070b14;
   --bg:   #0f172a;
   --bg-1: #161f37;

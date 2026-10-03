@@ -3,7 +3,7 @@
  *
  * Maintains a posterior `P(set | observations)` over a finite candidate pool
  * per opponent Pokémon. Each observation (move used, item revealed, damage
- * dealt, …) filters or reweights the candidate list via Bayes' rule.
+ * dealt, ...) filters or reweights the candidate list via Bayes' rule.
  *
  * The reducer (`events.ts`) stays pure and predictor-agnostic; this module is
  * called on top of it through `runPredictorOnEvent`. Together they form

@@ -19,7 +19,7 @@ export function PokedexPage({
   }, [pokemon]);
   return (
     <ModuleFrame
-      kicker="◢ POKÉDEX"
+      kicker="POKÉDEX"
       title="Field Index"
       subtitle={`${pokemon.length} species · Cobblemon dataset`}
       side={

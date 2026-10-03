@@ -17,7 +17,7 @@ import { calcAllStats } from './stats';
 export interface MatchupCell {
   verdict: 'win' | 'trade' | 'lose';
   label: string;            // OHKO | 2HKO | 3HKO | wall | lose
-  sub: string;              // ↑ faster | slower | takes NN% | no KO
+  sub: string;              // speed or bulk note: faster | slower | takes NN% | no KO
   iAmFaster: boolean;
   myKoChance: number;       // 0..1, best move
   theirPctMax: number;      // % of my HP their best move deals
@@ -157,7 +157,7 @@ export function evaluateSpecMatchup(
   const theirPctMax = theirBest?.pctMax ?? 0;
   const myPctMax = myBest?.pctMax ?? 0;
 
-  // Turns each side needs to KO the other (∞ = can't KO at ≥50% reliability).
+  // Turns each side needs to KO the other (inf = can't KO at >=50% reliability).
   const realKo = (o: DamageOutcome | null) => (o && o.ko.n > 0 && o.ko.chance >= 0.5 ? o.ko.n : Infinity);
   const r = classifyRace({ myKoN: realKo(myBest), theirKoN: realKo(theirBest), iAmFaster, myPctMax, theirPctMax });
 
@@ -199,7 +199,7 @@ export function classifyRace({ myKoN, theirKoN, iAmFaster, myPctMax, theirPctMax
     sub = myKoN >= 3 ? `takes ${Math.round(theirPctMax)}%`
       : iAmFaster ? '↑ faster' : '↓ survives';
   } else if (iCanKo && (myKoN <= theirKoN || myPctMax >= 50)) {
-    // Lose the speed race but KO in comparable turns or chunk them ≥50% before
+    // Lose the speed race but KO in comparable turns or chunk them >=50% before
     // going down - a genuine trade / check, not a clean answer.
     verdict = 'trade';
     label = koLabel(myKoN);

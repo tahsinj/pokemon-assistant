@@ -352,7 +352,7 @@ export interface ModFaintedEvent extends ModEventBase {
  * wrong. The Electron listener uses this to gate every incoming frame
  * before forwarding to the renderer.
  *
- * The check is deliberately shallow - it verifies the discriminator field,
+ * The check is shallow on purpose: it verifies the discriminator field,
  * version, and presence of required keys, but does not enforce every payload
  * subfield. The downstream normalizer is forgiving (returns `[]` for things
  * it can't make sense of) so a strict validation here would just block

@@ -311,7 +311,7 @@ export function reviewStoredMon(
     const targets = matched.set.ivs;
     STAT_ORDER.forEach((stat, i) => {
       const target = targets[i];
-      if (target == null || target >= 31) return; // only deliberately-lowered IVs
+      if (target == null || target >= 31) return; // only IVs the set lowers on purpose
       const current = mon.ivs?.[stat] ?? 31;
       if (current <= target) return; // already at/below the target
       const label = STAT_LABELS[stat];

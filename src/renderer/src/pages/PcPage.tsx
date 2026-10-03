@@ -588,7 +588,7 @@ export function PcPage({
 
   if (!hasPc) {
     return (
-      <ModuleFrame kicker="◢ PC STORAGE" title="PC Storage" subtitle="desktop app required">
+      <ModuleFrame kicker="PC STORAGE" title="PC Storage" subtitle="desktop app required">
         <p className="font-mono-hud text-[15px] text-[var(--ink-2)] m-0">
           PC storage requires the desktop app (Electron). Run with <code>npm run dev</code>.
         </p>
@@ -598,7 +598,7 @@ export function PcPage({
 
   return (
     <ModuleFrame
-      kicker="◢ PC STORAGE"
+      kicker="PC STORAGE"
       title={activeBox?.name ?? 'PC Storage'}
       subtitle={
         activeBox
@@ -1042,7 +1042,7 @@ export function PcPage({
                   onClick={() => setEditorMode('edit')}
                   title="Edit this Pokémon"
                 >
-                  ◢ EDIT
+                  EDIT
                 </button>
                 <button
                   type="button"
@@ -1051,7 +1051,7 @@ export function PcPage({
                   onClick={() => editor.species && setDexSpecies(editor.species)}
                   title={`Open the Pokédex entry for ${editor.species.name}`}
                 >
-                  ◢ POKÉDEX
+                  POKÉDEX
                 </button>
               </div>
 
@@ -1331,7 +1331,7 @@ function PcEditor({
               onClick={onViewDex}
               title={`Open the Pokédex entry for ${species.name}`}
             >
-              ◢ POKÉDEX
+              POKÉDEX
             </button>
           </div>
         </div>
@@ -1606,8 +1606,8 @@ function CoachPanel({
         style={{ marginBottom: open ? 8 : 0 }}
       >
         <span style={{ display: 'inline-block', width: 10 }}>{open ? '▾' : '▸'}</span>
-        <span>
-          ◢ SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
+        <span className="hud-mark">
+          SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
         </span>
         <span
           className="ml-auto font-mono-hud text-[11px] px-1.5 py-0.5 rounded-[4px]"

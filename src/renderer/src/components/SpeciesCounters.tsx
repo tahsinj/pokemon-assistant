@@ -73,8 +73,8 @@ export function SpeciesCounters({
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-3 mb-2">
-        <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
-          ◢ BEST ANSWERS → {target.name.toUpperCase()}
+        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+          BEST ANSWERS → {target.name.toUpperCase()}
         </div>
         {pc.available && (
           <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 ml-auto">

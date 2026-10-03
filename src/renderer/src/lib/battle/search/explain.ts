@@ -24,7 +24,7 @@ import type { BattlePokemon, PredictedSet } from '../state';
 // Damage / KO
 // ---------------------------------------------------------------------------
 
-/** "85–101%" or "85.4–101.2%" depending on precision request. */
+/** "85-101%" or "85.4-101.2%" depending on precision request. */
 export function formatDamageRange(out: DamageOutcome, precision = 1): string {
   if (out.isZero || out.error) return '0%';
   const lo = out.pctMin.toFixed(precision);
@@ -41,12 +41,12 @@ export function formatKOLine(out: DamageOutcome): string {
   return 'no KO';
 }
 
-/** "Earthquake -> Tatsugiri: 102–121% (guaranteed OHKO)" */
+/** "Earthquake -> Tatsugiri: 102-121% (guaranteed OHKO)" */
 export function formatOutgoing(moveName: string, defenderName: string, out: DamageOutcome): string {
   return `${moveName} → ${defenderName}: ${formatDamageRange(out)} (${formatKOLine(out)})`;
 }
 
-/** "Tatsugiri Draco Meteor -> Garchomp: 60–72% (2HKO)" */
+/** "Tatsugiri Draco Meteor -> Garchomp: 60-72% (2HKO)" */
 export function formatIncoming(
   attackerName: string,
   moveName: string,
@@ -174,7 +174,7 @@ export function assumeOpponentBestDamage(): Assumption {
   };
 }
 
-/** "Damage shown is the mean of 16 rolls; high/low rolls within ±15%." */
+/** "Damage shown is the mean of 16 rolls; high/low rolls within +/-15%." */
 export function assumeDamageAverage(): Assumption {
   return {
     kind: 'damage-roll',

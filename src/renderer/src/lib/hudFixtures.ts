@@ -50,9 +50,9 @@ export interface HudTool {
 }
 
 /**
- * Radial nav tools. 11 hexes at 360/11 ≈ 32.73° intervals starting at -90°
- * (Pokédex dead-center top). SyncCore reads each tool's `angle` directly, so the
- * count is arbitrary - just keep the spacing even.
+ * Radial nav tools: 12 hexes 30 deg apart, starting at -90 deg (Pokédex at the
+ * top). SyncCore reads each tool's `angle` directly, so keep the spacing even
+ * when adding or removing one.
  */
 export const HUD_TOOLS: HudTool[] = [
   { id: 'pokedex',  label: 'Pokédex', glyph: 'P', angle:  -90 },

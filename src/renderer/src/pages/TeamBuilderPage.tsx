@@ -495,15 +495,15 @@ export function TeamBuilderPage({
   };
 
   const sectionHead = (label: string, extra?: string) => (
-    <div className="font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-      ◢ {label}
+    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+      {label}
       {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
     </div>
   );
 
   return (
     <ModuleFrame
-      kicker="◢ TEAM BUILDER"
+      kicker="TEAM BUILDER"
       title="Squad Six"
       subtitle={`Shared weakness · ${notableWeak.length} · type coverage ${coverageCount}/18`}
       side={

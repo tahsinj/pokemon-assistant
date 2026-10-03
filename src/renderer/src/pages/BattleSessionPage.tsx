@@ -319,14 +319,14 @@ export function BattleSessionPage({
   const battleStarted = state.turn > 0;
 
   // -------------------------------------------------------------------------
-  // Damage panel - your team × opponent active
+  // Damage panel - your team x opponent active
   // -------------------------------------------------------------------------
   const matrix = useMemo(() => (battleStarted ? teamDamageVsOpponent(state) : []), [state, battleStarted]);
 
   const bridgeKind = modBridge.status.kind;
   return (
     <ModuleFrame
-      kicker="◢ LIVE SESSION"
+      kicker="LIVE SESSION"
       title="Battle Tracker"
       subtitle={
         battleStarted
@@ -1582,7 +1582,7 @@ function DamageRow({ d }: { d: DamageOutcome }) {
 function EventLog({ state }: { state: BattleState }) {
   return (
     <div className="panel" style={{ marginTop: 16 }}>
-      <div className="section-head">◢ Turn log · {state.log.length} events</div>
+      <div className="section-head">Turn log · {state.log.length} events</div>
       <div
         className="font-mono-hud"
         style={{ maxHeight: 240, overflow: 'auto', fontSize: 14, lineHeight: 1.45 }}

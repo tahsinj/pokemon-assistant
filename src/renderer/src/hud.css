@@ -62,7 +62,7 @@
 .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.02em; }
 .font-pixel { font-family: 'Press Start 2P', system-ui, monospace; letter-spacing: 0.02em; }
 
-/* ─── Biome background ──────────────────────────────────────── */
+/* --- Biome background ---------------------------------------- */
 .biome {
   position: fixed; inset: 0; z-index: 0;
   background:
@@ -129,7 +129,7 @@
   50%      { transform: translate(40px, -30px); }
 }
 
-/* ─── Glass / Slant / Hex / Notch ────────────────────────────── */
+/* --- Glass / Slant / Hex / Notch ------------------------------ */
 .glass {
   background: var(--glass);
   backdrop-filter: blur(12px) saturate(160%);
@@ -175,7 +175,7 @@
   );
 }
 
-/* ─── Animations ────────────────────────────────────────────── */
+/* --- Animations ---------------------------------------------- */
 @keyframes hud-breathe {
   0%, 100% { transform: scale(1); filter: brightness(1); }
   50%      { transform: scale(1.015); filter: brightness(1.06); }
@@ -215,7 +215,7 @@
   animation: hud-scanline 4.5s linear infinite;
 }
 
-/* ─── Chunky tactile button ─────────────────────────────────── */
+/* --- Chunky tactile button ----------------------------------- */
 .chunky {
   position: relative;
   display: inline-flex; align-items: center; justify-content: center;
@@ -273,7 +273,7 @@
     0 8px 16px rgba(0,0,0,.35);
 }
 
-/* ─── Type chip ─────────────────────────────────────────────── */
+/* --- Type chip ----------------------------------------------- */
 .tchip {
   display:inline-flex; align-items:center; justify-content:center;
   padding: 3px 9px 4px; border-radius: 999px;
@@ -297,7 +297,7 @@
   overflow: hidden;
 }
 
-/* ─── Stat bar (gamey segmented) ────────────────────────────── */
+/* --- Stat bar (gamey segmented) ------------------------------ */
 .statbar {
   position: relative; height: 10px; border-radius: 3px;
   background: rgba(255,255,255,.06);
@@ -316,7 +316,7 @@
   pointer-events: none;
 }
 
-/* ─── Mono panel ────────────────────────────────────────────── */
+/* --- Mono panel ---------------------------------------------- */
 .mono-panel {
   font-family: 'VT323', monospace;
   background:
@@ -328,7 +328,7 @@
   border-radius: 10px;
 }
 
-/* ─── Sync Core rings + glow ────────────────────────────────── */
+/* --- Sync Core rings + glow ---------------------------------- */
 .core-ring {
   position: absolute; inset: 0; border-radius: 50%;
   border: 1px dashed rgba(255,255,255,.18);
@@ -343,7 +343,7 @@
   animation: hud-breathe 5s ease-in-out infinite;
 }
 
-/* ─── Sprite frame ──────────────────────────────────────────── */
+/* --- Sprite frame -------------------------------------------- */
 .sprite-frame {
   position: relative;
   background:
@@ -363,7 +363,7 @@
   filter: drop-shadow(0 8px 12px rgba(0,0,0,.55));
 }
 
-/* ─── Tooltip ───────────────────────────────────────────────── */
+/* --- Tooltip ------------------------------------------------- */
 .has-tip { position: relative; }
 .has-tip > .tip {
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -376,7 +376,7 @@
 }
 .has-tip:hover > .tip { opacity: 1; }
 
-/* ─── Radial nav hex ────────────────────────────────────────── */
+/* --- Radial nav hex ------------------------------------------ */
 .nav-hex {
   position: absolute;
   width: 78px; height: 90px;
@@ -414,7 +414,7 @@
   text-align:center;
 }
 
-/* ─── Module slide-in ───────────────────────────────────────── */
+/* --- Module slide-in ----------------------------------------- */
 @keyframes hud-mod-in {
   from { opacity: 0; transform: translateY(8px) scale(.985); filter: blur(4px); }
   to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
@@ -631,7 +631,7 @@
   );
 }
 
-/* ─── Z-Axis Dive transition ────────────────────────────────── */
+/* --- Z-Axis Dive transition ---------------------------------- */
 .hud-perspective {
   perspective: 1500px;
   perspective-origin: 50% 40%;
@@ -811,7 +811,7 @@
    v2 home - BridgeChrome, FocusLens, WorldScanner, TelemetryStrip
    ============================================================ */
 
-/* ── BridgeChrome ─────────────────────────────────────────── */
+/* -- BridgeChrome ------------------------------------------- */
 .bridge-chrome { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
 .reticle {
   position: absolute; width: 38px; height: 38px;
@@ -864,7 +864,7 @@
   width: 1px; height: 6px; background: currentColor;
 }
 
-/* ── FocusLens (vertical) - active-creature column ─────── */
+/* -- FocusLens (vertical) - active-creature column ------- */
 .focus-lens-v {
   --lens-tint: var(--hud-accent);
   position: relative;
@@ -1124,7 +1124,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ── FocusLens (legacy horizontal dock variant, unused on home) ── */
+/* -- FocusLens (legacy horizontal dock variant, unused on home) -- */
 .focus-lens {
   --lens-tint: var(--hud-accent);
   position: relative;
@@ -1323,7 +1323,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ── World Scanner ────────────────────────────────────── */
+/* -- World Scanner -------------------------------------- */
 .world-scanner {
   position: relative;
   padding: 14px 14px 12px;
@@ -1414,7 +1414,7 @@
   opacity: .85;
 }
 
-/* ── Telemetry strip ──────────────────────────────────── */
+/* -- Telemetry strip ------------------------------------ */
 .telemetry-strip {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: wrap;
@@ -1606,8 +1606,12 @@
   text-transform: uppercase;
   margin: 18px 0 10px;
 }
+/* Corner mark in front of HUD headings. Drawn here so it stays out of the text. */
+.hud-mark::before,
 .dive-content .section-head::before {
-  content: '◢ ';
+  content: '\25E2\00a0';
+}
+.dive-content .section-head::before {
   color: var(--hud-accent-2);
 }
 .dive-content .section-head:first-child {
@@ -1711,7 +1715,7 @@
   transition-duration: 0.05s !important;
 }
 
-/* ─── Performance ───────────────────────────────────────────── */
+/* --- Performance --------------------------------------------- */
 /* While a dive is open the backdrop is dimmed and blurred anyway - pausing
    the background animations lets backdrop-filter surfaces cache instead of
    re-sampling every frame. */

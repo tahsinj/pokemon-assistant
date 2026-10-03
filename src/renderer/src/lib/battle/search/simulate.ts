@@ -1,8 +1,7 @@
 /**
  * Turn Simulator. Given the current state plus one action per side, produce
- * the post-turn state. This is deterministic - chance nodes (damage rolls,
- * crit, secondary effect procs) collapse to expected values for the MVP.
- * Later phases can branch on damage buckets to refine.
+ * the post-turn state. This is deterministic: chance nodes (damage rolls,
+ * crit, secondary effect procs) collapse to expected values.
  *
  * The simulator runs only on the reducer (no predictor) since search chance
  * branches don't need uncertainty updates - they read frozen opponent sets
@@ -160,7 +159,7 @@ function applyMove(
 /**
  * Project the opponent's active using a hypothesized set. We rebuild the
  * `KnownSet` fields from the candidate but preserve the live `battle` slot
- * (current HP, status, boosts, …) so the simulation reflects in-battle damage.
+ * (current HP, status, boosts, ...) so the simulation reflects in-battle damage.
  */
 function withOpponentSet(state: BattleState, candidate: PredictedSet): BattleState {
   const oppSlot = state.activeSlot.opponent;

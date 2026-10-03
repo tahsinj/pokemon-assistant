@@ -5,12 +5,12 @@
 // (see src/renderer/src/lib/pokemonSprite.ts). Every alternate form shares its
 // base species' dex (all six Rotom appliances are #0479), so without this map
 // they all render the base sprite. PokeAPI gives form-specific sprites their
-// own numeric ids (Heat Rotom = 10008, …); this script discovers those ids by
+// own numeric ids (Heat Rotom = 10008, ...); this script discovers those ids by
 // matching our species names against PokeAPI's pokemon list.
 //
 // Only forms whose resolved id differs from the dex number are written, so base
 // species keep using their plain dex sprite. Forms PokeAPI doesn't distinguish
-// (Arceus plates, Silvally memories, gender-only forms, …) are simply omitted
+// (Arceus plates, Silvally memories, gender-only forms, ...) are simply omitted
 // and fall back to the base sprite - the same behavior as today.
 //
 // Output: src/renderer/src/lib/formSprites.json   (network; re-runnable)

@@ -195,7 +195,7 @@ describe('Speed and priority resolution', () => {
   });
 
   it('Choice Scarf wins the speed comparison without altering priority', () => {
-    // Equip the opp Tatsugiri with Scarf so we test the Speed × 1.5 path.
+    // Equip the opp Tatsugiri with Scarf so we test the Speed x 1.5 path.
     let state = buildSeed();
     state = applyEvent(state, { type: 'ItemRevealed', target: 'o:0', item: 'Choice Scarf' });
     const p = state.sides.player.team[0]!;
@@ -283,7 +283,7 @@ describe('simulateTurn', () => {
     const next = simulateTurn(
       state,
       { kind: 'switch', toSlot: 1 },
-      { kind: 'move', move: 'Surf' }, // neutral on Dragon/Ground (0.5 × 2 = 1)
+      { kind: 'move', move: 'Surf' }, // neutral on Dragon/Ground (0.5 x 2 = 1)
       { moves: MOVES, speciesLookup: (n) => ctx.pokemonByName[n.toLowerCase()] },
     );
     expect(next.activeSlot.player).toBe(1);

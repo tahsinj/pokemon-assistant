@@ -49,7 +49,7 @@ describe('offensiveCoverage - usage data', () => {
   });
 
   it('covers Flying only via the rarer Ice Fang, at its lower share', () => {
-    // Ice hits Flying SE; Ground is 0×, Dragon neutral - so Ice Fang is the sole
+    // Ice hits Flying SE; Ground is 0x, Dragon neutral - so Ice Fang is the sole
     // option and its 0.40 share carries through.
     const flying = cov.entries.find((e) => e.type === 'flying');
     expect(flying).toBeTruthy();
@@ -81,16 +81,16 @@ describe('offensiveCoverage - learnset fallback', () => {
   });
 });
 
-// ── Threat summary ──────────────────────────────────────────────────────────
+// -- Threat summary ----------------------------------------------------------
 
-// A slow Dragon/Ground (Garchomp), threatened by Ice (4×) and Dragon/Fairy.
+// A slow Dragon/Ground (Garchomp), threatened by Ice (4x) and Dragon/Fairy.
 const slowMon = {
   id: 'flygon', name: 'Flygon', dex: 330, types: ['Dragon', 'Ground'],
   baseStats: { hp: 80, atk: 100, def: 80, spa: 80, spd: 80, spe: 100 },
   abilities: ['Levitate'], moves: [],
 } as unknown as Pokemon;
 
-// A fast Ice attacker that outspeeds and carries an Ice move -> fast threat, 4×.
+// A fast Ice attacker that outspeeds and carries an Ice move -> fast threat, 4x.
 const fastIce = {
   id: 'weavile', name: 'Weavile', dex: 461, types: ['Dark', 'Ice'],
   baseStats: { hp: 70, atk: 120, def: 65, spa: 45, spd: 85, spe: 125 },

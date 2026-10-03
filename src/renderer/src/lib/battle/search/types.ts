@@ -71,9 +71,9 @@ export interface Assumption {
  * exchange is degenerate (e.g. switch action has no outgoing-damage line).
  */
 export interface ThreatAnalysis {
-  /** "Earthquake -> Tatsugiri: 102–121% (guaranteed OHKO)" */
+  /** "Earthquake -> Tatsugiri: 102-121% (guaranteed OHKO)" */
   outgoing: string | null;
-  /** "Predicted reply: Tatsugiri Draco Meteor -> 80–95% (2HKO)" */
+  /** "Predicted reply: Tatsugiri Draco Meteor -> 80-95% (2HKO)" */
   incoming: string | null;
   /** "We KO first; opp switches in, we take 70% next turn." */
   netExchange: string;
@@ -93,7 +93,7 @@ export interface PVStep {
   action: Action;
   /** Pokémon performing the action, by display name (e.g. "Garchomp"). */
   actor: string;
-  /** Pre-formatted line for the UI ("Garchomp uses Earthquake -> 102–121% on Tatsugiri"). */
+  /** Pre-formatted line for the UI ("Garchomp uses Earthquake -> 102-121% on Tatsugiri"). */
   text: string;
 }
 

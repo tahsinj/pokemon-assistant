@@ -110,7 +110,7 @@ describe('tmPriorities', () => {
   it('ranks tm/tutor moves and excludes ones also learnable by level', () => {
     const out = tmPriorities(venusaur, MOVES, intel);
     const ids = out.map((o) => o.move.id);
-    expect(ids).not.toContain('vinewhip'); // dual-tagged → comes free by level
+    expect(ids).not.toContain('vinewhip'); // dual-tagged -> comes free by level
     expect(ids).not.toContain('tackle');
     expect(ids).toContain('gigadrain');
     // Usage leads: Giga Drain (79%) above Earth Power (absent from intel)
@@ -168,7 +168,7 @@ describe('tmPriorities - usage leads, redundant attacks pruned', () => {
   it("drops a redundant TM attack a level-up move already beats (Breaking Swipe < Dragon Claw)", () => {
     const ids = tmPriorities(chomp, M, chompIntel).map((o) => o.move.id);
     expect(ids).not.toContain('breakingswipe');
-    // …but a used / non-redundant coverage move survives.
+    // ...but a used / non-redundant coverage move survives.
     expect(ids).toContain('stoneedge');
   });
 
@@ -196,9 +196,9 @@ describe('scoreMove drawback penalties', () => {
   });
 
   it('soft-caps raw base power at 100', () => {
-    // Hyper Beam 150 BP × 90% = 135 raw, but capped to 100 before penalties.
+    // Hyper Beam 150 BP x 90% = 135 raw, but capped to 100 before penalties.
     const r = scoreMove(venusaur, MOVES.hyperbeam);
-    // base 100 (capped) + special 20 − recharge 40 = 80
+    // base 100 (capped) + special 20 - recharge 40 = 80
     expect(r.score).toBe(80);
   });
 });
@@ -221,7 +221,7 @@ describe('suggestMoveset status cap', () => {
 });
 
 describe('offensiveBias', () => {
-  // Lucario-shaped: SpA ≥ Atk by raw stats, but the ladder runs it physical.
+  // Lucario-shaped: SpA >= Atk by raw stats, but the ladder runs it physical.
   const lucario = {
     ...venusaur,
     id: 'lucario',
@@ -229,7 +229,7 @@ describe('offensiveBias', () => {
   } as Pokemon;
 
   it('falls back to base stats without smogon data', () => {
-    expect(offensiveBias(lucario, null)).toBe('special'); // spa 115 ≥ atk 110
+    expect(offensiveBias(lucario, null)).toBe('special'); // spa 115 >= atk 110
   });
 
   it('prefers the ladder spreads over raw base stats', () => {

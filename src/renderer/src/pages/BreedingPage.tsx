@@ -69,7 +69,7 @@ function oneIn(p: number): string {
   return `1 in ${Math.round(1 / p).toLocaleString()}`;
 }
 
-/** Eggs needed for ≥90% chance of at least one hit. */
+/** Eggs needed for >=90% chance of at least one hit. */
 function eggsFor90(p: number): string {
   if (p <= 0) return '-';
   if (p >= 0.9) return '1';
@@ -128,7 +128,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
     [femaleSpecies, female.ability],
   );
 
-  // Offspring gender ratio comes from the ♀ species (offspring = mother's
+  // Offspring gender ratio comes from the female species (offspring = mother's
   // line). pokemon.json carries maleRatio (-1 = genderless) via fetch-gender;
   // the manual selector only kicks in when species data is missing.
   const speciesMaleP: number | null | undefined =
@@ -181,7 +181,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
 
   return (
     <ModuleFrame
-      kicker="◢ BREEDING"
+      kicker="BREEDING"
       title="Inheritance Calc"
       subtitle={`${slots} IVs inherited${natures[0].nature !== 'random' ? ' · nature locked' : ' · nature random'} · exact odds per egg`}
       side={
@@ -436,8 +436,8 @@ function ParentPanel({
   return (
     <div className="mono-panel p-3 rounded-[10px]">
       <div className="flex items-center justify-between mb-2">
-        <span className="font-mono-hud text-[14px] uppercase tracking-widest" style={{ color: tone }}>
-          ◢ {label}
+        <span className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest" style={{ color: tone }}>
+          {label}
         </span>
         <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase">{perfectCount}×31</span>
       </div>

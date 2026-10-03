@@ -87,7 +87,7 @@ const TOOL_TITLES: Record<ToolId, string> = {
  *   - outer padding (24 * 2):       48
  *   - row gaps (16 * 2):            32
  *   Total reserved:                 172
- * (The Focus Lens column spans rows 1–2, so it doesn't constrain row 1.)
+ * (The Focus Lens column spans rows 1-2, so it doesn't constrain row 1.)
  */
 const RESERVED_V = 172;
 const CORE_MIN = 300;
@@ -294,7 +294,7 @@ export function App() {
         setOpenTool(null);
         return;
       }
-      // 1–6 picks the lead on the home HUD (matches the key-hint).
+      // 1-6 picks the lead on the home HUD (matches the key-hint).
       if (!openTool && e.key >= '1' && e.key <= '6') {
         const target = e.target as HTMLElement | null;
         if (target && /^(input|textarea|select)$/i.test(target.tagName)) return;
@@ -373,7 +373,7 @@ export function App() {
           rowGap: '16px',
         }}
       >
-        {/* ROW 1 - (Focus Lens spans up from row 2) · spacer · Squad pill */}
+        {/* ROW 1 - (Focus Lens spans up from row 2), spacer, Squad pill */}
         <div style={{ gridColumn: '2 / 3', gridRow: '1 / 2' }} />
         <div
           style={{ gridColumn: '3 / 4', gridRow: '1 / 2' }}
@@ -393,7 +393,7 @@ export function App() {
           )}
         </div>
 
-        {/* ROW 1–2 - FocusLens · SyncCore · TeamColumn */}
+        {/* ROW 1-2 - FocusLens, SyncCore, TeamColumn */}
         <div
           style={{ gridColumn: '1 / 2', gridRow: '1 / 3', minHeight: 0, minWidth: 0 }}
         >
@@ -414,7 +414,7 @@ export function App() {
                   style={{ padding: '6px 14px' }}
                   onClick={() => setOpenTool('team')}
                 >
-                  ◢ OPEN TEAM BUILDER
+                  OPEN TEAM BUILDER
                 </button>
               </div>
             </div>
@@ -448,7 +448,7 @@ export function App() {
                   </button>
                 </span>
               ) : (
-                <span>◢ SYNCING DATA…</span>
+                <span>SYNCING DATA…</span>
               )}
             </div>
           )}
@@ -552,7 +552,7 @@ export function App() {
               fallback={
                 <div className="flex items-center justify-center h-full">
                   <div className="mono-panel px-4 py-2 rounded-full text-[14px]">
-                    ◢ LOADING MODULE…
+                    LOADING MODULE…
                   </div>
                 </div>
               }

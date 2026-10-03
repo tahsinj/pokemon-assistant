@@ -17,7 +17,7 @@ import { calcAllStats } from './stats';
 export interface PcCounterOptions {
   /** Assumed level of the threat being countered. */
   targetLevel: number;
-  /** Candidates below `targetLevel × minLevelRatio` are excluded (default 0.6). */
+  /** Candidates below `targetLevel x minLevelRatio` are excluded (default 0.6). */
   minLevelRatio?: number;
   limit?: number;
 }

@@ -97,7 +97,7 @@ export interface DamagedEvent extends EventBase {
   target: PokemonId;
   /** Absolute HP damage (positive). Use HealedEvent for healing. */
   amount: number;
-  /** Optional cause label for the log: "Earthquake", "Stealth Rock", "Burn", … */
+  /** Optional cause label for the log: "Earthquake", "Stealth Rock", "Burn", ... */
   cause?: string;
   category?: 'Physical' | 'Special' | 'Status';
 }
@@ -269,7 +269,7 @@ export function applyEvent(state: BattleState, event: BattleEvent): BattleState 
       }
 
       case 'TurnEnded': {
-        // Reserved for end-of-turn residual damage etc; for now a no-op marker.
+        // Marker only: end-of-turn residual damage is not modeled.
         break;
       }
 
@@ -353,8 +353,8 @@ export function applyEvent(state: BattleState, event: BattleEvent): BattleState 
         const p = mutPokemon(draft, event.target);
         if (!p) break;
         p.battle.status = event.status;
-        // Sleep / toxic counters start at 0 and tick up when the engine
-        // simulates moves. For now we just reset to 0 on apply.
+        // Sleep / toxic counters start at 0. Nothing ticks them up yet, so
+        // applying a status just resets the counter.
         p.battle.statusTurns = 0;
         break;
       }
