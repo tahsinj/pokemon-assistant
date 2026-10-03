@@ -30,7 +30,8 @@
     "lint:prose": "node scripts/lint-prose.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json && tsc -p tsconfig.main-tests.json",
     "check": "npm run lint && npm run lint:prose && npm run typecheck && npm test",
-    "build-dex": "node scripts/build-dex.mjs"
+    "build-dex": "node scripts/build-dex.mjs",
+    "fetch-usage": "node scripts/fetch-usage.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
