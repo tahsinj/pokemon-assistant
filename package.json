@@ -29,10 +29,12 @@
     "lint": "eslint .",
     "lint:prose": "node scripts/lint-prose.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json && tsc -p tsconfig.main-tests.json",
-    "check": "npm run lint && npm run lint:prose && npm run typecheck && npm test"
+    "check": "npm run lint && npm run lint:prose && npm run typecheck && npm test",
+    "build-dex": "node scripts/build-dex.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@pkmn/sim": "^0.10.11",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
