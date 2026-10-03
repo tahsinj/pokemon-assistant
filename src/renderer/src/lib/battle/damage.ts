@@ -1,20 +1,20 @@
-import { calculate, Generations, Pokemon as CalcPokemon, Move as CalcMove, Field as CalcField, Result, ABILITIES } from '@smogon/calc';
+import { calculate, Generations, Pokemon as CalcPokemon, Move as CalcMove, Field as CalcField, Result, ABILITIES, ITEMS } from '@smogon/calc';
 import type { BattlePokemonSpec, FieldSpec, Generation } from './types';
 import { getMergedMove, getMergedSpecies } from './dex';
 
-// Our data stores abilities id-form ("levitate", "sturdy"); @smogon/calc matches
-// abilities by exact display name, so an unmapped id is silently ignored (no
-// Levitate immunity, no Sturdy, no Huge Power, …). Normalize id -> display name.
-const ABILITY_BY_ID: Record<string, string> = (() => {
-  const map: Record<string, string> = {};
-  const latest = ABILITIES[ABILITIES.length - 1] ?? [];
-  for (const name of latest) map[name.toLowerCase().replace(/[^a-z0-9]/g, '')] = name;
-  return map;
-})();
-function properAbility(ability?: string): string | undefined {
-  if (!ability) return undefined;
-  return ABILITY_BY_ID[ability.toLowerCase().replace(/[^a-z0-9]/g, '')] ?? ability;
+const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Our data and imports can hold id-form names ("levitate", "choiceband").
+// @smogon/calc matches abilities and items by exact display name and silently
+// ignores anything else: no Levitate immunity, no Choice Band boost. Map ids
+// back to display names; unknown names pass through unchanged.
+function displayNameLookup(tables: readonly (readonly string[])[]): (name?: string) => string | undefined {
+  const byId: Record<string, string> = {};
+  for (const table of tables) for (const name of table) byId[toId(name)] = name;
+  return (name) => (name ? (byId[toId(name)] ?? name) : undefined);
 }
+const properAbility = displayNameLookup(ABILITIES);
+const properItem = displayNameLookup(ITEMS);
 
 // Abilities the calc doesn't model that let a mon survive an otherwise-lethal
 // hit from full HP (handled manually in calcDamage). Proper-name form.
@@ -71,7 +71,7 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
     level: spec.level,
     nature: spec.nature,
     ability: properAbility(spec.ability),
-    item: spec.item,
+    item: properItem(spec.item),
     teraType: teraType as never,
     isDynamaxed: spec.isDynamaxed ?? false,
     ivs: spec.ivs,
@@ -181,7 +181,7 @@ export function calcDamage(
     const overrides = moveOverridePayload(moveName, generation);
     const move = new CalcMove(g, moveName, {
       ability: properAbility(attacker.ability),
-      item: attacker.item,
+      item: properItem(attacker.item),
       species: attacker.speciesName,
       isCrit: opts?.isCrit ?? false,
       ...(overrides ? { overrides: overrides as never } : {}),
@@ -220,7 +220,7 @@ export function calcDamage(
     // single hit can't KO, so it becomes a (guaranteed) 2HKO.
     const atFull = defender.currentHPPercent == null || defender.currentHPPercent >= 100;
     const blockerAbility = FIRST_HIT_SURVIVORS.has(properAbility(defender.ability) ?? '');
-    const focusSash = defender.item === 'Focus Sash';
+    const focusSash = properItem(defender.item) === 'Focus Sash';
     if (atFull && ko.n === 1 && (blockerAbility || focusSash)) {
       const why = blockerAbility ? properAbility(defender.ability) : 'Focus Sash';
       ko = { chance: 1, n: 2, text: `survives one hit (${why})` };
