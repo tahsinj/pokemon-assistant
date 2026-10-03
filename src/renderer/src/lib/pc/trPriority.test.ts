@@ -81,8 +81,8 @@ describe('computeTrPriorities', () => {
   it('only counts taught (tm/tutor) moves, not level-up or egg moves', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [
-        { learn: '15', move: 'crunch' }, // level-up: free, not a TR
-        { learn: 'egg', move: 'knockoff' }, // egg: bred, not a TR
+        { learn: '15', move: 'crunch' }, // level-up: free, not a TM
+        { learn: 'egg', move: 'knockoff' }, // egg: bred, not a TM
       ]),
     };
     const smogon = bundle({
@@ -137,7 +137,7 @@ describe('computeTrPriorities', () => {
     expect(boosted[0].wantedBy[0].onTeam).toBe(true);
   });
 
-  it('aggregates and ranks across multiple mons wanting the same TR', () => {
+  it('aggregates and ranks across multiple mons wanting the same TM', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [
         { learn: 'tm', move: 'knockoff' },

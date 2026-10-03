@@ -34,7 +34,7 @@ import type { CandidateSet, OpponentModel, PredictorContext } from './types';
 
 /**
  * Build an initial OpponentModel for a revealed opponent. Candidates come
- * either from a custom pool (Cobblemon trainer sets) or the generator.
+ * either from a custom pool (usage-based sets) or the generator.
  */
 export function initOpponentModel(
   pokemon: BattlePokemon,

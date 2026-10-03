@@ -227,8 +227,8 @@ export function suggestMoveset(
 
 /**
  * The competitive "best set" when Smogon data exists. Prefers the species'
- * most-used curated set (slash options resolved to what's learnable in
- * Cobblemon), padded to four with the highest-usage learnable moves; falls
+ * most-used curated set (slash options resolved to what's learnable in the
+ * format), padded to four with the highest-usage learnable moves; falls
  * back to the pure usage marginals when there are no curated sets. Returns
  * null when there's no Smogon intel at all - callers then use the heuristic
  * `suggestMoveset`. This avoids the heuristic burying a 91%-used move (e.g.

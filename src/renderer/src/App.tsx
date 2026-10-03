@@ -11,11 +11,11 @@ import {
   type HudTeamMon,
 } from './lib/hudFixtures';
 import { toHudTeam } from './lib/hudTeam';
-import type { ModBridgeStatus } from './lib/bridgeTypes';
 import { SyncCore } from './components/hud/SyncCore';
 import { TeamColumn } from './components/hud/TeamColumn';
 import { FocusLens } from './components/hud/FocusLens';
 import { TelemetryStrip } from './components/hud/TelemetryStrip';
+import { readStorage } from './lib/storage';
 // Tool pages are lazy so the entry chunk stays lean - the battle pages alone
 // pull in the whole battle engine (@smogon/calc data tables included). Each
 // page chunk loads on first dive-in.
@@ -89,8 +89,6 @@ const RESERVED_V = 172;
 
 const FORMAT_KEY = 'stablab:format';
 const FX_KEY = 'stablab:fx';
-// Earlier builds stored the FX choice under this key.
-const LEGACY_FX_KEY = 'cobblemon-fx';
 
 function readStoredFormat(): FormatId {
   try {
@@ -102,11 +100,7 @@ function readStoredFormat(): FormatId {
 }
 
 function readStoredFx(): string | null {
-  try {
-    return localStorage.getItem(FX_KEY) ?? localStorage.getItem(LEGACY_FX_KEY);
-  } catch {
-    return null;
-  }
+  return readStorage(FX_KEY);
 }
 const CORE_MIN = 300;
 const CORE_MAX = 440;
@@ -220,24 +214,6 @@ export function App() {
   useEffect(() => {
     if (!openTool) void loadHudTeam();
   }, [openTool, loadHudTeam]);
-
-  // Real companion-mod link state (the WS server lives in the Electron main
-  // process). Passive: we only listen - the bridge is started from the Live
-  // Battle Tracker.
-  const [bridgeStatus, setBridgeStatus] = useState<ModBridgeStatus | null>(null);
-  useEffect(() => {
-    const bridge = window.assistant?.modBridge;
-    if (!bridge) return;
-    let cancelled = false;
-    bridge.getStatus().then((s) => {
-      if (!cancelled) setBridgeStatus(s);
-    });
-    const off = bridge.onStatus(setBridgeStatus);
-    return () => {
-      cancelled = true;
-      off();
-    };
-  }, []);
 
   useEffect(() => {
     loadDesignFonts();
@@ -492,8 +468,7 @@ export function App() {
               <TeamColumn
                 team={hudTeam}
                 activeId={activeMonId}
-                synced={bridgeStatus?.kind === 'connected'}
-                onPick={(id) => {
+                  onPick={(id) => {
                   setActiveMonId(id);
                   setHoverMonId(null);
                 }}
@@ -519,7 +494,7 @@ export function App() {
             style={{ gridColumn: '1 / 4', gridRow: '3 / 4' }}
             className="flex items-end justify-between gap-4 flex-wrap"
           >
-            <TelemetryStrip bridgeStatus={bridgeStatus} />
+            <TelemetryStrip />
             <div className="flex items-center gap-3">
               <div className="key-hint" role="group" aria-label="Format">
                 {FORMAT_ORDER.map((id, i) => (

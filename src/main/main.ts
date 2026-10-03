@@ -16,7 +16,6 @@ import {
   savePcPokemon,
   saveTeam,
 } from './rivalsDb';
-import { createCobblemonBridge, registerBridgeIpc } from './cobblemonBridge';
 import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
 import { migrateLegacyUserData } from './legacyUserData';
 
@@ -33,8 +32,6 @@ registerSpriteSchemePrivileged();
 // into the executable by electron-builder (build/icon.ico), so this path
 // won't exist there and the empty image is simply skipped.
 const appIcon = nativeImage.createFromPath(path.join(__dirname, '../../build/icon.png'));
-
-const cobblemonBridge = createCobblemonBridge();
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -59,8 +56,6 @@ function createWindow() {
   }
 
   win.setMenuBarVisibility(false);
-
-  cobblemonBridge.attachWindow(win);
 }
 
 async function bootstrap() {
@@ -104,7 +99,6 @@ async function bootstrap() {
     return undefined;
   });
 
-  registerBridgeIpc(cobblemonBridge);
 
   createWindow();
 }
@@ -118,7 +112,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  void cobblemonBridge.stop();
   if (process.platform !== 'darwin') app.quit();
 });
 

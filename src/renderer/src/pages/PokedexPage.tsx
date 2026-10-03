@@ -5,12 +5,14 @@ import { SpeciesList } from '../components/SpeciesList';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { PokemonDexDetail } from '../components/PokemonDexDetail';
+import { useFormat } from '../lib/formats';
 
 export function PokedexPage({
   pokemon,
   moves,
   smogon,
 }: { pokemon: Pokemon[]; moves: Record<string, Move>; smogon: SmogonBundle | null }) {
+  const format = useFormat();
   const [selected, setSelected] = useState<Pokemon | null>(pokemon[0] || null);
   const pokemonById = useMemo(() => {
     const m: Record<string, Pokemon> = {};
@@ -21,7 +23,7 @@ export function PokedexPage({
     <ModuleFrame
       kicker="POKÉDEX"
       title="Field Index"
-      subtitle={`${pokemon.length} species · Cobblemon dataset`}
+      subtitle={`${pokemon.length} species · ${format.label}`}
       side={
         selected && (
           <div className="flex gap-1.5">

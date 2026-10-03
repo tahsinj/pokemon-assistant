@@ -73,7 +73,7 @@ export interface OptSuggestion {
   /**
    * Stable identity for this suggestion within a species, so the UI can let the
    * user permanently dismiss tips that don't apply to their game (e.g. a move
-   * Showdown lists but Cobblemon can't teach). Move tips key on the move name so
+   * the game they play can't teach). Move tips key on the move name so
    * dismissing one move's tip doesn't silence the others.
    */
   key: string;

@@ -10,7 +10,6 @@ export default defineConfig(
       'dist/**',
       'dist-electron/**',
       'release/**',
-      'cobblemon-mod/**',
       'src/renderer/public/**',
     ],
   },

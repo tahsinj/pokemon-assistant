@@ -6,10 +6,6 @@ dist/
 dist-electron/
 release/
 
-# Companion mod (Gradle) build output
-cobblemon-mod/build/
-cobblemon-mod/.gradle/
-
 # OS junk
 .DS_Store
 Thumbs.db

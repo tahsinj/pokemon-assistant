@@ -1,7 +1,7 @@
 /**
  * Resolve stored id-form names ("protean", "watershuriken") to display names
- * ("Protean", "Water Shuriken"). Our Cobblemon data stores abilities and
- * learnset moves as Showdown ids; anything user-facing should go through here.
+ * ("Protean", "Water Shuriken"). The dex stores abilities and learnset moves
+ * as Showdown ids; anything user-facing should go through here.
  */
 import { ABILITIES } from '@smogon/calc';
 import type { Move } from './types';

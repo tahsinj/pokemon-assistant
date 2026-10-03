@@ -1,7 +1,7 @@
 /**
  * Build concrete, calc-ready sets from the Smogon usage bundle: the "Showdown
  * Usage" autofill (most common ability / item / spread / moves) and curated
- * set options resolved against Cobblemon learnsets. Shared by the Team Builder
+ * set options resolved against the format's learnsets. Shared by the Team Builder
  * set editor and the Calcdex.
  */
 
@@ -40,7 +40,7 @@ function learnableSet(species: Pokemon): Set<string> {
 }
 
 /**
- * Top usage moves the species can actually learn in Cobblemon, most-used
+ * Top usage moves the species can actually learn in the format, most-used
  * first. When the learnset is unknown (backfilled species) the filter is
  * skipped rather than dropping everything.
  */

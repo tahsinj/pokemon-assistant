@@ -1,9 +1,10 @@
 // Persistence for set-review tips the user has dismissed. Scoped per species so
-// a dismissal reflects a fact about their game ("Cobblemon can't teach Toxapex
+// a dismissal reflects a fact about their game ("my game can't teach Toxapex
 // Scald") and applies to every copy of that species, surviving restarts.
 import type { OptSuggestion } from './optimize';
+import { readStorage } from '../storage';
 
-const STORAGE_KEY = 'cobblemon-dismissed-tips';
+const STORAGE_KEY = 'stablab:dismissed-tips';
 
 /** Combine a species id and a suggestion key into one stable storage token. */
 export function dismissalId(speciesId: string, suggestionKey: string): string {
@@ -12,7 +13,7 @@ export function dismissalId(speciesId: string, suggestionKey: string): string {
 
 export function loadDismissed(): Set<string> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStorage(STORAGE_KEY);
     if (!raw) return new Set();
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? new Set(arr.filter((x): x is string => typeof x === 'string')) : new Set();

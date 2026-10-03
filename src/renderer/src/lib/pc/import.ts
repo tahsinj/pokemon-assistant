@@ -12,7 +12,7 @@ export interface PcShowdownImportResult {
   skippedFull: number;
 }
 
-export const pcShowdownCacheKey = (boxId: string) => `cobblemon-pc-showdown-${boxId}`;
+export const pcShowdownCacheKey = (boxId: string) => `stablab:pc-showdown-${boxId}`;
 
 function toGender(g?: string): PcGender {
   if (g === 'male' || g === 'female') return g;

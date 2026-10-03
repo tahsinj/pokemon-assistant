@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Move, Pokemon, StatKey } from '../lib/types';
 import {
   emptyBattleState,
@@ -25,8 +25,6 @@ import { parseShowdownTeam } from '../lib/showdownTeam';
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { suggestMoveset } from '../lib/recommender';
 import { TYPES } from '../lib/typechart';
-import { useModBridge } from '../lib/battle/mod/useModBridge';
-import type { ModBridgeStatus } from '../lib/bridgeTypes';
 import { usePcCollection } from '../lib/usePcCollection';
 import { fromPcRecord, fromTeamMember, toSessionSpec, type CombatImportInput } from '../lib/toCombatSpec';
 import { getTeamDraft } from '../lib/teamDraft';
@@ -109,30 +107,6 @@ export function BattleSessionPage({
     },
     [predictorCtx],
   );
-
-  const stateRef = useRef(state);
-  stateRef.current = state;
-
-  const onModEvents = useCallback(
-    (events: BattleEvent[]) => {
-      if (events.length === 0) return;
-      // Apply events as a batch so the predictor sees the whole frame at once
-      // - important when a `pokemon-revealed` is followed by an immediate
-      // `ability-revealed` from the same wire frame.
-      setState((s) => {
-        let next = s;
-        for (const ev of events) next = applyEventAndPredict(next, ev, predictorCtx);
-        return next;
-      });
-    },
-    [predictorCtx],
-  );
-
-  const modBridge = useModBridge({
-    pokemonByName,
-    stateRef,
-    onEvents: onModEvents,
-  });
 
   // -------------------------------------------------------------------------
   // Setup actions
@@ -323,7 +297,6 @@ export function BattleSessionPage({
   // -------------------------------------------------------------------------
   const matrix = useMemo(() => (battleStarted ? teamDamageVsOpponent(state) : []), [state, battleStarted]);
 
-  const bridgeKind = modBridge.status.kind;
   return (
     <ModuleFrame
       kicker="LIVE SESSION"
@@ -335,48 +308,9 @@ export function BattleSessionPage({
             }`
           : 'Load your team, reveal the opponent, record events as the battle unfolds'
       }
-      side={
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={
-              bridgeKind === 'connected'
-                ? {
-                    background: 'var(--hud-danger)',
-                    boxShadow: '0 0 8px var(--hud-danger)',
-                    animation: 'hud-breathe 1s ease-in-out infinite',
-                  }
-                : bridgeKind === 'listening'
-                  ? { background: 'var(--hud-accent)', boxShadow: '0 0 8px var(--hud-accent)' }
-                  : { background: 'var(--ink-2)' }
-            }
-          />
-          <span
-            className="font-mono-hud text-[14px] uppercase tracking-widest"
-            style={{
-              color:
-                bridgeKind === 'connected'
-                  ? 'var(--hud-danger)'
-                  : bridgeKind === 'listening'
-                    ? 'var(--hud-accent)'
-                    : 'var(--ink-2)',
-            }}
-          >
-            {bridgeKind === 'connected' ? 'LIVE' : bridgeKind === 'listening' ? 'LINK READY' : 'OFFLINE'}
-          </span>
-        </div>
-      }
     >
       <div className="mod-page hud-form">
       <TopBar state={state} dispatch={dispatch} battleStarted={battleStarted} onReset={onResetBattle} />
-
-      <ModBridgePanel
-        status={modBridge.status}
-        available={modBridge.available}
-        invalidFrames={modBridge.invalidFrames}
-        start={modBridge.start}
-        stop={modBridge.stop}
-      />
 
       {!battleStarted && (
         <SetupPanel
@@ -2006,122 +1940,3 @@ function prettyAssumptionKind(kind: string): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Mod bridge panel
-//   Lets the user start/stop the local WebSocket listener that the companion
-//   Cobblemon mod connects to. Shows live connection state and any frame
-//   validation errors. Frames are auto-applied to the battle state.
-// ---------------------------------------------------------------------------
-function ModBridgePanel({
-  status,
-  available,
-  invalidFrames,
-  start,
-  stop,
-}: {
-  status: ModBridgeStatus;
-  available: boolean;
-  invalidFrames: string[];
-  start: () => Promise<{ url: string } | { error: string }>;
-  stop: () => Promise<void>;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
-
-  // Auto-collapse when there's nothing interesting to show.
-  const interesting = status.kind !== 'idle' || invalidFrames.length > 0;
-
-  if (!available) {
-    // Browser preview / running outside Electron - silently hide.
-    return null;
-  }
-
-  const onStart = async () => {
-    setBusy(true);
-    setLastError(null);
-    const res = await start();
-    setBusy(false);
-    if ('error' in res) setLastError(res.error);
-  };
-
-  const onStop = async () => {
-    setBusy(true);
-    await stop();
-    setBusy(false);
-  };
-
-  const indicator = (() => {
-    switch (status.kind) {
-      case 'connected':
-        return { label: 'Mod connected', color: 'var(--ok)', dot: '●' };
-      case 'listening':
-        return { label: 'Waiting for mod', color: '#eab308', dot: '◐' };
-      case 'error':
-        return { label: 'Bridge error', color: 'var(--danger)', dot: '●' };
-      default:
-        return { label: 'Mod disconnected', color: 'var(--fg-dim)', dot: '○' };
-    }
-  })();
-
-  return (
-    <div className="panel" style={{ marginBottom: 12, padding: '10px 14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ color: indicator.color, fontSize: 14, fontWeight: 700 }}>
-          {indicator.dot} {indicator.label}
-        </span>
-        {status.kind === 'listening' && (
-          <code style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{status.url}</code>
-        )}
-        {status.kind === 'connected' && status.hello && (
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
-            {status.hello.modId} · Cobblemon {status.hello.cobblemonVersion} · MC{' '}
-            {status.hello.minecraftVersion}
-          </span>
-        )}
-        {status.kind === 'error' && (
-          <span style={{ fontSize: 11, color: 'var(--danger)' }}>{status.message}</span>
-        )}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-          {status.kind === 'idle' || status.kind === 'error' ? (
-            <button type="button" className="btn btn-primary" onClick={onStart} disabled={busy}>
-              Start listener
-            </button>
-          ) : (
-            <button type="button" onClick={onStop} disabled={busy}>
-              Stop listener
-            </button>
-          )}
-          {interesting && (
-            <button type="button" onClick={() => setExpanded((v) => !v)}>
-              {expanded ? 'Hide details' : 'Details'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {lastError && (
-        <div style={{ marginTop: 6, color: 'var(--danger)', fontSize: 12 }}>{lastError}</div>
-      )}
-
-      {expanded && (
-        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--fg-dim)' }}>
-          <div>
-            Mod-to-assistant bridge runs locally on <code>{`ws://127.0.0.1:8788/cobblemon`}</code>.
-            Install the companion Cobblemon mod and point it at this URL.
-          </div>
-          {invalidFrames.length > 0 && (
-            <div style={{ marginTop: 6 }}>
-              <div style={{ fontWeight: 700, color: 'var(--fg)' }}>Recent invalid frames</div>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {invalidFrames.map((e, i) => (
-                  <li key={`${i}-${e}`}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}

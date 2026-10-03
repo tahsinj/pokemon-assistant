@@ -51,7 +51,7 @@ describe('assignTr', () => {
     expect(assignTr('hyperbeam', [], {}, MOVES, null)).toBeNull();
   });
 
-  it('ranks mons that want the TR above those that merely can learn it', () => {
+  it('ranks mons that want the TM above those that merely can learn it', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]),
       pidgey: mon('pidgey', [{ learn: 'tutor', move: 'knockoff' }]),
@@ -97,7 +97,7 @@ describe('assignTr', () => {
   it('counts mons that cannot be taught the move', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]),
-      // only learns it by level-up - not a TR, so not teachable via record
+      // only learns it by level-up - not a TM, so not teachable
       magikarp: mon('magikarp', [{ learn: '15', move: 'knockoff' }]),
     };
     const smogon = bundle({ tyranitar: intel(0.12, [{ name: 'Knock Off', pct: 85 }]) });

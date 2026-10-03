@@ -1,6 +1,5 @@
 /**
- * Breeding outcome probabilities (mainline Gen 6+ mechanics, which Cobblemon
- * breeding addons follow):
+ * Breeding outcome probabilities (mainline Gen 6+ mechanics):
  *
  *  - 3 IVs are inherited from the parents - 5 with a Destiny Knot on either
  *    parent (holding two changes nothing). Inherited stats are picked without

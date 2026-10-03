@@ -4,7 +4,7 @@
  *
  * Converts the format's usage bundle into CandidateSet pools:
  *   - one candidate per curated Smogon dex set (slashed moves resolved to the
- *     first option the species can learn in *Cobblemon* - learnsets diverge),
+ *     first option the species can learn in the active format),
  *     weighted by how much the ladder actually uses the set's item;
  *   - one "usage default" candidate straight from the stats marginals (top
  *     ability/item/spread + top learnable moves), covering ladder-vs-dex drift.

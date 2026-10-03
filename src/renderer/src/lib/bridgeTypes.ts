@@ -94,31 +94,6 @@ export interface LoadedTeamRecord {
   members: TeamMemberPersist[];
 }
 
-export type ModBridgeStatus =
-  | { kind: 'idle' }
-  | { kind: 'listening'; url: string }
-  | {
-      kind: 'connected';
-      peer: string;
-      hello?: {
-        modId: string;
-        cobblemonVersion: string;
-        minecraftVersion: string;
-        playerUUID: string;
-        protocolVersion: number;
-      };
-    }
-  | { kind: 'error'; message: string };
-
-export interface ModBridge {
-  start: (config?: { host?: string; port?: number; path?: string }) => Promise<{ url: string } | { error: string }>;
-  stop: () => Promise<void>;
-  getStatus: () => Promise<ModBridgeStatus>;
-  onFrame: (cb: (payload: unknown) => void) => () => void;
-  onStatus: (cb: (status: ModBridgeStatus) => void) => () => void;
-  onInvalidFrame: (cb: (info: { error: string }) => void) => () => void;
-}
-
 export interface AssistantApi {
   version: string;
   teamsList: () => Promise<{ id: string; name: string; tag: string; updatedAt: number }[]>;
@@ -134,5 +109,4 @@ export interface AssistantApi {
   pcPokemonSave: (payload: SavePcPokemonPayload) => Promise<{ id: string }>;
   pcPokemonDelete: (id: string) => Promise<void>;
   pcPokemonMove: (id: string, boxId: string, slot: number) => Promise<void>;
-  modBridge: ModBridge;
 }

@@ -1,6 +1,6 @@
 /**
  * Pure leaderboard logic for the Smogon usage viewer: join the usage bundle to
- * the Cobblemon dex, filter by name/type, and sort. No React, no DOM - unit
+ * the format's dex, filter by name/type, and sort. No React, no DOM - unit
  * tested in smogonLeaderboard.test.ts.
  */
 import type { Pokemon } from './types';

@@ -24,8 +24,8 @@ export interface TeammateSuggestion {
 
 // Slow-pivot <-> wallbreaker momentum: a slow U-turn / Teleport user that can
 // hand the turn to a frail, hard-hitting partner is a real structural pairing
-// the raw co-usage number doesn't always capture (esp. for Cobblemon-only mons
-// with no ladder stats). Detected off the species' learnset + stat shape.
+// the raw co-usage number doesn't always capture (especially for mons with no
+// ladder stats). Detected off the species' learnset + stat shape.
 const MOMENTUM_PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport']);
 const moveKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 

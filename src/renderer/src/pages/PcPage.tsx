@@ -168,7 +168,7 @@ export function PcPage({
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
   const [tabRenameDraft, setTabRenameDraft] = useState('');
   const [boxCounts, setBoxCounts] = useState<Record<string, number>>({});
-  // Species that sit on a saved team - they weight TR priorities up.
+  // Species that sit on a saved team - they weight TM priorities up.
   const [teamSpeciesIds, setTeamSpeciesIds] = useState<Set<string>>(() => new Set());
   const [hasLastExport, setHasLastExport] = useState(false);
   const [dragOver, setDragOver] = useState<{ boxId: string; slot?: number } | null>(null);
@@ -239,7 +239,7 @@ export function PcPage({
     return m;
   }, [occupants, pokemonById, smogon, dismissedTips]);
 
-  // Load the species sitting on saved teams so TR priorities can weight them up.
+  // Load the species sitting on saved teams so TM priorities can weight them up.
   useEffect(() => {
     if (!bridge?.teamsList || !bridge.teamsLoad) return;
     let cancelled = false;
@@ -257,7 +257,7 @@ export function PcPage({
     };
   }, [bridge]);
 
-  // Ranked taught-moves (TRs) worth acquiring for the mons in this box.
+  // Ranked taught-moves (TMs) worth acquiring for the mons in this box.
   const trPriorities = useMemo(
     () =>
       computeTrPriorities(
@@ -270,7 +270,7 @@ export function PcPage({
     [occupants, pokemonById, moves, smogon, teamSpeciesIds],
   );
 
-  // "Who should I give this TR to?" - the inverse query. Pick a move; rank the
+  // "Who should I give this TM to?" - the inverse query. Pick a move; rank the
   // box mons that can learn it and want it. The picker is scoped to the moves at
   // least one mon here can actually be taught (the records that matter for box).
   const [trAssignMove, setTrAssignMove] = useState('');
@@ -1678,7 +1678,7 @@ function CoachPanel({
                   className="flex-shrink-0 mt-0.5 font-mono-hud text-[14px] leading-none text-[var(--ink-2)] hover:text-[var(--ink-0)] transition-colors"
                   style={{ padding: '2px 4px' }}
                   onClick={() => onDismiss(s.key)}
-                  title="Dismiss - hide this tip for every copy of this species (e.g. a move your Cobblemon can't teach)"
+                  title="Dismiss - hide this tip for every copy of this species (e.g. a move your game can't teach)"
                   aria-label={`Dismiss: ${s.title}`}
                 >
                   ✕
@@ -1758,7 +1758,7 @@ const TR_TIER_STYLE: Record<TrPriorityEntry['tier'], { color: string; label: str
 };
 
 /**
- * Ranked list of taught moves (TM/tutor "TRs") the mons in this box want but
+ * Ranked list of taught moves (TMs and tutor moves) the mons in this box want but
  * don't run - prioritized by meta usage and saved-team membership.
  */
 function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; hasMons: boolean }) {
@@ -1782,7 +1782,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
           cursor: 'pointer',
         }}
       >
-        TR Priorities
+        TM Priorities
         <span style={{ color: 'var(--fg-dim)', fontWeight: 400 }}>({entries.length})</span>
         <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
           {open ? '▾' : '▸'}
@@ -1793,7 +1793,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
           <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '4px 0 0' }}>
             {hasMons
               ? 'Every mon here already runs its standard taught moves.'
-              : 'Add Pokémon to this box to see which TRs to chase.'}
+              : 'Add Pokémon to this box to see which TMs to chase.'}
           </p>
         ) : (
           <ol
@@ -1863,7 +1863,7 @@ const TR_ASSIGN_TIER_STYLE: Record<TrAssignCandidate['tier'], { color: string; l
 };
 
 /**
- * "I have this TR - who should I give it to?" Pick a move from the box's
+ * "I have this TM - who should I give it to?" Pick a move from the box's
  * teachable set and see the mons that can learn it, ranked by how much they want
  * it. The inverse of {@link TrPriorityPanel}.
  */
@@ -1887,7 +1887,7 @@ function TrAssignPanel({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="section-head"
-        title="Have a TR in hand? Pick the move and see which mon in this box should learn it, ranked by ladder usage and saved-team membership."
+        title="Have a TM in hand? Pick the move and see which mon in this box should learn it, ranked by ladder usage and saved-team membership."
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -1899,7 +1899,7 @@ function TrAssignPanel({
           cursor: 'pointer',
         }}
       >
-        Who gets this TR?
+        Who gets this TM?
         <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
           {open ? '▾' : '▸'}
         </span>
@@ -1935,7 +1935,7 @@ function TrAssignPanel({
             <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
               {hasMons
                 ? `Pick from ${options.length} ${options.length === 1 ? 'move' : 'moves'} the mons in this box can be taught.`
-                : 'Add Pokémon to this box to match a TR to a recipient.'}
+                : 'Add Pokémon to this box to match a TM to a recipient.'}
             </p>
           ) : !result ? (
             <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>

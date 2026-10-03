@@ -214,7 +214,7 @@ export function assumeTera(): Assumption {
 export function assumeNoOpponentSwitch(): Assumption {
   return {
     kind: 'switch',
-    text: 'Opponent switches are not modeled in the projection (Cobblemon trainer AI rarely switches).',
+    text: 'Opponent switches are not modeled in the projection.',
   };
 }
 

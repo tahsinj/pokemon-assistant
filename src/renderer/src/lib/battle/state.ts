@@ -285,7 +285,7 @@ export const EMPTY_FIELD_STATE: FieldState = {
 
 export interface BattleFormat {
   generation: 9;
-  /** Free-form, e.g. "singles", "cobblemon-trainer", "vgc". */
+  /** Free-form, e.g. "singles", "vgc". */
   tier: string;
   rules: string[];
 }

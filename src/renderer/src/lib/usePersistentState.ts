@@ -9,13 +9,12 @@
  * unavailable - e.g. the node/vitest environment.
  */
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-
-const PREFIX = 'cobblemon-persist:';
+import { persistKey, readStorage } from './storage';
 
 function readStored<T>(key: string, fallback: T): T {
   if (typeof localStorage === 'undefined') return fallback;
   try {
-    const raw = localStorage.getItem(PREFIX + key);
+    const raw = readStorage(persistKey(key));
     if (raw == null) return fallback;
     return JSON.parse(raw) as T;
   } catch {
@@ -34,7 +33,7 @@ export function usePersistentState<T>(
   useEffect(() => {
     if (typeof localStorage === 'undefined') return;
     try {
-      localStorage.setItem(PREFIX + key, JSON.stringify(state));
+      localStorage.setItem(persistKey(key), JSON.stringify(state));
     } catch {
       /* ignore quota / serialization errors */
     }
@@ -47,7 +46,7 @@ export function usePersistentState<T>(
 export function clearPersistentState(key: string): void {
   if (typeof localStorage === 'undefined') return;
   try {
-    localStorage.removeItem(PREFIX + key);
+    localStorage.removeItem(persistKey(key));
   } catch {
     /* ignore */
   }

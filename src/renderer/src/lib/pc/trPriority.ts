@@ -1,8 +1,8 @@
 /**
- * TR (Technical Record) priority list for a PC box.
+ * TM priority list for a PC box.
  *
- * Cobblemon teaches non-level moves via TM/tutor items ("TRs"). This module
- * scans the mons in a box and answers: "Across everything I'm storing, which
+ * Moves a species doesn't get by level-up or breeding have to be taught. This
+ * module scans the mons in a box and answers: "Across everything I'm storing, which
  * taught moves should I acquire first?" - ranked by how much each mon that wants
  * the move matters (ladder usage = meta impact, plus a boost for mons on a saved
  * team) and how standard the move is for that mon.
@@ -15,12 +15,12 @@ import type { SmogonBundle } from '../smogon';
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// A move only counts as a "TR" if the species must be *taught* it. Level-up moves
+// A move only counts as a "TM" if the species must be *taught* it. Level-up moves
 // come for free as the mon grows; egg/legacy moves are bred, not farmed as records.
 const TAUGHT_TAGS = new Set(['tm', 'tutor']);
 
 // A missing move needs at least this much ladder usage on the species before it's
-// worth flagging as a TR to chase.
+// worth flagging as a TM to chase.
 export const TR_MIN_MOVE_PCT = 20;
 
 // Species usage (fraction) at which meta weight saturates. ~15% usage is already a
@@ -49,10 +49,10 @@ export interface TrPriorityEntry {
   moveName: string;
   type: string;
   category: string;
-  /** Aggregate priority across every box mon that wants this TR. */
+  /** Aggregate priority across every box mon that wants this TM. */
   score: number;
   tier: 'high' | 'medium' | 'low';
-  /** Mons that want this TR, highest contributor first. */
+  /** Mons that want this TM, highest contributor first. */
   wantedBy: TrWanter[];
 }
 
@@ -101,7 +101,7 @@ export function computeTrPriorities(
       if (m.pct < TR_MIN_MOVE_PCT) continue; // not standard enough to chase
       const nm = norm(m.name);
       if (own.has(nm)) continue; // already runs it
-      if (!taught.has(nm)) continue; // not a TR for this species (level/egg/unlearnable)
+      if (!taught.has(nm)) continue; // not a TM for this species (level/egg/unlearnable)
       const move = movesById[nm];
       if (!move) continue; // move missing from our dataset
 

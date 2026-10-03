@@ -1,8 +1,8 @@
 /**
- * TR assignment - the inverse of {@link ./trPriority}.
+ * TM assignment - the inverse of {@link ./trPriority}.
  *
  * trPriority asks "across my box, which taught moves should I chase?". This
- * module answers the other direction: "I have *this* TR in hand - which mon in
+ * module answers the other direction: "I have *this* TM in hand - which mon in
  * the box should I teach it to?" Given a single move, it ranks the box mons that
  * (a) can actually be taught it and (b) don't already run it, by how much that
  * mon wants it - ladder usage of the move on the species, the species' own meta
@@ -16,7 +16,7 @@ import type { SmogonBundle } from '../smogon';
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// Only TM/tutor moves are "TRs" - a record you farm and apply. Level-up moves
+// Only TM/tutor moves count: something you collect and apply. Level-up moves
 // come for free; egg/legacy moves are bred. A species that can't be taught the
 // move via TM/tutor simply isn't a candidate for the record.
 const TAUGHT_TAGS = new Set(['tm', 'tutor']);
@@ -27,7 +27,7 @@ const USAGE_SATURATION = 0.15;
 // A mon already on one of your saved teams matters more than box filler.
 const ON_TEAM_MULTIPLIER = 1.8;
 
-// Learnable-but-never-run mons still surface (you *can* give them the TR), just
+// Learnable-but-never-run mons still surface (you *can* give them the TM), just
 // with a tiny floor so any mon that competitively wants the move outranks them.
 const COVERAGE_FLOOR = 0.04;
 
@@ -42,7 +42,7 @@ export interface TrAssignCandidate {
   speciesUsage: number;
   /** This mon is on a saved team. */
   onTeam: boolean;
-  /** Higher = stronger recommendation to give this mon the TR. */
+  /** Higher = stronger recommendation to give this mon the TM. */
   score: number;
   tier: 'high' | 'medium' | 'low';
   /** Short human-readable justification. */
@@ -90,7 +90,7 @@ function reasonFor(speciesName: string, moveUsagePct: number, onTeam: boolean): 
 }
 
 /**
- * Rank the mons in a box that should receive a given TR.
+ * Rank the mons in a box that should receive a given TM.
  *
  * @param moveId           the move to assign (any id/name form; normalized internally).
  * @param teamSpeciesIds   species ids that appear on saved teams (weighted up).

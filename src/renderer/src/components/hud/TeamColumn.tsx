@@ -156,14 +156,12 @@ export function TeamColumn({
   activeId,
   onPick,
   onHover,
-  synced = false,
 }: {
   team: HudTeamMon[];
   activeId: string;
   onPick: (id: string) => void;
   onHover?: (id: string | null) => void;
   /** True when the mod bridge is connected and this party mirrors the game. */
-  synced?: boolean;
 }) {
   const [hover, setHover] = useState<string | null>(null);
   const handleHover = (id: string | null) => {
@@ -185,13 +183,9 @@ export function TeamColumn({
       ))}
       <div
         className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mt-1"
-        title={
-          synced
-            ? 'Mirroring your in-game party via the mod link'
-            : 'Your saved squad from the Team Builder'
-        }
+        title="Your saved squad from the Team Builder"
       >
-        {synced ? `${team.length}/6 · synced` : `${team.length}/6 · squad`}
+        {team.length}/6 · squad
       </div>
     </div>
   );

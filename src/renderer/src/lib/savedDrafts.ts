@@ -5,6 +5,7 @@
  * the draft against the current PC. Pure list ops are unit-tested; the
  * load/persist helpers no-op when localStorage is unavailable (node tests).
  */
+import { readStorage } from './storage';
 export interface SavedOpponent {
   speciesId: string;
   level: number;
@@ -17,12 +18,12 @@ export interface SavedDraft {
   createdAt: number;
 }
 
-const KEY = 'cobblemon-counter-drafts';
+const KEY = 'stablab:counter-drafts';
 
 export function loadSavedDrafts(): SavedDraft[] {
   if (typeof localStorage === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = readStorage(KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as SavedDraft[]) : [];

@@ -34,7 +34,7 @@ export interface OpponentModel {
 export interface PredictorContext {
   pokemonByName: Record<string, Pokemon>;
   moves: Record<string, Move>;
-  /** Optional custom set pool indexed by species id (e.g. cobblemon trainer JSONs). */
+  /** Optional custom set pool indexed by species id (e.g. usage-based sets). */
   customSetPool?: Record<string, CandidateSet[]>;
 }
 

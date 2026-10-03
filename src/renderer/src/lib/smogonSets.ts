@@ -1,5 +1,5 @@
 /**
- * General-purpose resolution of curated Smogon sets against Cobblemon
+ * General-purpose resolution of curated Smogon sets against the format's
  * learnsets, shared by the team-side features (best-6 advice). The battle
  * predictor keeps its own copy of this pattern in
  * battle/predictor/smogonPriors.ts - that module is engine-internal.
@@ -12,8 +12,8 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /**
  * Resolve a set's slash slots to concrete move names: per slot, the first
- * option the species can actually learn in Cobblemon (learnsets diverge from
- * mainline). Unresolvable slots are dropped; result is deduped.
+ * option the species can actually learn in the format. Unresolvable slots are
+ * dropped; result is deduped.
  */
 export function resolveSetMoves(species: Pokemon, set: SmogonSet): string[] {
   const canLearn = new Set(species.moves.map((m) => m.move));

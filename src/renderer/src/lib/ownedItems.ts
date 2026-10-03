@@ -3,11 +3,13 @@
  * player owns, so the team-builder can recommend them. Stored in localStorage
  * as normalized item ids - see `itemKinds.ts` for what counts as gated.
  */
-const KEY = 'cobblemon-owned-items';
+import { readStorage } from './storage';
+
+const KEY = 'stablab:owned-items';
 
 export function loadOwnedItems(): Set<string> {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = readStorage(KEY);
     if (raw) return new Set(JSON.parse(raw) as string[]);
   } catch {
     /* ignore */

@@ -83,7 +83,7 @@ describe('usageFill', () => {
 });
 
 describe('curatedFills', () => {
-  it('resolves slash options against the Cobblemon learnset', () => {
+  it('resolves slash options against the learnset', () => {
     const fills = curatedFills(species, intel);
     expect(fills).toHaveLength(1);
     const f = fills[0];
