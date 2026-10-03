@@ -1,12 +1,12 @@
 # Pokémon Assistant v2 spec
 
-Status: draft, research only, no code changes yet
+Status: draft, first review decisions applied
 Date: 2026-10-03
 Owner: Tahsin
 
 This doc has three parts: an audit of the app as it stands, the plan for what it
-turns into, and the research behind the plan. Open questions that need a decision
-from me are collected in section 9.
+turns into, and the research behind the plan. Decisions made so far, and the one
+still open, are in section 9.
 
 ## 1. Summary
 
@@ -17,9 +17,9 @@ competing style systems.
 
 v2 changes five things:
 
-1. **Generalize.** Swap Cobblemon-specific assumptions for "game profiles" so
-   the same tools work for Cobblemon, Showdown formats, and the official
-   competitive game, with Cobblemon still first-class.
+1. **Not tied to one game.** Drop the Cobblemon-specific code and data. The
+   base is Showdown singles, Gen 9 OU and National Dex OU, behind a format
+   layer so more formats can be added later.
 2. **Real battle engine.** Replace the homegrown turn simulator with Pokémon
    Showdown's own engine (`@pkmn/sim`) and use it for practice battles against
    bots of increasing strength.
@@ -27,21 +27,22 @@ v2 changes five things:
    planner on simulated battles and a learned matchup model, checked against
    Smogon's published checks and counters.
 4. **Learned team builder.** Train a team strength model on ladder replays and
-   use it to search over the Pokémon actually in your box, plus a "catch list"
-   of species worth hunting.
+   use it to search over the Pokémon actually in your box, plus an "add list"
+   of species that would improve it most.
 5. **Cleanup.** One design system, fewer and clearer tools, a healthy repo
-   (CI, lockfile, no dead code, no AI-sounding comments).
+   (CI, lockfile, no dead code, no leftover process comments).
 
 ### Non-goals
 
 - Non-Pokémon creature games (Temtem, Palworld, Cassette Beasts, Monster
   Sanctuary). Their battle systems, data and formats share nothing with
-  Showdown, so supporting them means writing a second app. The game profile
-  layer should not block a plugin later, but nothing is built for them now.
+  Showdown, so supporting them means writing a second app.
+- Game-specific integrations for now: no Cobblemon mod, no spawn data, no
+  per-game species or move changes. See the appendix for what was found in
+  case this comes back later.
+- Doubles (VGC, Pokémon Champions) for now. The format layer leaves room for it.
 - Online accounts, cloud sync, telemetry. Everything stays local.
-- PvP cheating aids. The live tracker only ever uses information the player can
-  already see on screen (see 5.7).
-- LLM chat features. The ML work here is classic supervised learning and search.
+- LLM chat features. The ML work here is supervised learning and search.
 
 ## 2. Where the app is today
 
@@ -105,13 +106,12 @@ Calc wrapper (`lib/battle/damage.ts`) findings from a quick probe:
   that works (Earthquake into Levitate Rotom-Wash correctly does 0).
 - Items are not normalized. `item: 'choiceband'` is silently ignored: a +Atk
   Choice Band Earthquake from Garchomp into 252 HP Heatran reads 177-209%
-  instead of 265-314%. The UI passes display names so it is fine today, but the
-  mod bridge forwards whatever the game sends, so id-form items from Cobblemon
-  would be dropped.
+  instead of 265-314%. The UI passes display names so it is fine today, but any
+  path that hands the calc an item id (imports, saved data, the mod bridge)
+  silently loses the item.
 - The species override path forwards types and weight to the calc but not base
-  stats, even though the comment says it does. No current Cobblemon species
-  differs from Showdown on base stats, so this is latent, but any custom species
-  with real stat changes would calc with the wrong numbers.
+  stats, even though the comment says it does. This goes away with the
+  Cobblemon override layer (3.2).
 - Generation is hard-coded to 9 in 14 places.
 
 ### 2.4 Team builder and counters
@@ -138,7 +138,9 @@ Calc wrapper (`lib/battle/damage.ts`) findings from a quick probe:
   cutoff, 478 species). `isNatDexOULegal` is the only legality check. The fetch
   script takes `--format` but the app only reads one bundle.
 - Species, learnsets and spawns come from Cobblemon data files (1236 species
-  entries including forms).
+  entries including forms, `pokemon.json` is 5.2 MB), patched against
+  Showdown by an override registry (`battle/overrides.ts`,
+  `battle/cobblemonSync.ts`, `cobblemon-divergences.json`).
 
 ### 2.6 UI problems
 
@@ -191,14 +193,15 @@ stubbed preload:
 - The team tag column is `riven_tag` / `rivenTag` (typo for rival).
 - `cobblemon-mod/` is a placeholder scaffold: event imports are stubs and it
   says so in its own README. Nothing can actually connect to the game yet.
-- AI-sounding writing: there are no em dashes left, but there are other tells.
-  Comments that talk about the process instead of the code ("for the MVP",
-  "Later phases can...", "option C", "the doc's 'build outward' idea",
-  "Honest duplicate-drop", "silence TS unused"), unicode arrows and symbols in
-  comments (about 58 arrows, 60 ellipses, 92 multiplication signs, 18 >= signs
-  across code and UI strings), long narrated JSDoc on simple code
-  (`battle/search/types.ts` is 44% comments), and the "◢" glyph used as a
-  decorative prefix in 47 UI strings. Full cleanup rules in 5.9.
+- Comment and copy style: there are no em dashes left, but there are other
+  habits to clean up. Comments that talk about the process instead of the code
+  ("for the MVP", "Later phases can...", "option C", "the doc's 'build
+  outward' idea", "Honest duplicate-drop", "silence TS unused"), unicode
+  arrows and symbols in comments (about 58 arrows, 60 ellipses, 92
+  multiplication signs, 18 >= signs across code and UI strings), long narrated
+  JSDoc on simple code (`battle/search/types.ts` is 44% comments), and the "◢"
+  glyph used as a decorative prefix in 47 UI strings. Rules in 5.9 and
+  `CONTRIBUTING.md`.
 
 ## 3. Product direction
 
@@ -210,72 +213,94 @@ fan projects in trouble is using the brand as your product name or logo,
 bundling ripped assets, or charging money. Not legal advice, but the low-risk
 setup is:
 
-- An original product name and logo. The app already has one: the Sync Core
-  orb and gem mark. Candidates: **Sync Core** (recommended, matches the
-  existing icon and home screen), Boxwise, Fieldkit. Check the name on GitHub,
-  npm and the stores before committing to it.
-- Describe it as "an unofficial companion for Pokémon games and Showdown" in the
+- An original product name and logo.
+- Describe it as "an unofficial companion for Pokémon Showdown singles" in the
   README and About screen (descriptive use, not branding).
 - Keep fetching sprites at runtime instead of bundling them (already the case).
 - Keep the disclaimer. Stay free.
+
+Name check so far:
+
+- **Sync Core** is the name of the orb on the home screen and matches the
+  icon. Downsides: it says nothing about what the app does, and a quick search
+  turns up a "SYNCORE" US trademark application for unrelated sales software
+  plus Adobe's "Core Sync" service. Not a blocker, but not ideal.
+- **Matchup Lab** describes the app (matchups, counters, simulated battles,
+  models) and a quick search found nothing using it. "Champions Lab" is already
+  taken by another Pokémon tool, so avoid "... Lab" names close to that.
+- The orb can keep the Sync Core name either way.
+
+Still open, see section 9. Before committing to a name, check GitHub, npm and
+the USPTO search for software uses.
 
 The rename touches `package.json` (`name`, `productName`, `appId`), the window
 title, the user-data folder (needs the existing migration helper again) and the
 README.
 
-### 3.2 Game profiles
+### 3.2 Formats instead of games
 
-A game profile bundles everything that differs between games. Every tool reads
-the active profile instead of assuming Cobblemon or NatDex OU.
+A format profile bundles what differs between formats. Every tool reads the
+active format instead of assuming NatDex OU.
 
 ```ts
-interface GameProfile {
-  id: string;                 // 'cobblemon', 'showdown-gen9ou', 'champions-vgc'
-  label: string;
-  engine: {
-    gen: number;              // replaces the 14 hard-coded 9s
-    showdownFormat: string;   // format id for @pkmn/sim, e.g. 'gen9ou'
-    gameType: 'singles' | 'doubles';
-    levelRule: { kind: 'fixed'; level: number } | { kind: 'free'; cap?: number };
-    mods?: string[];          // sim data mods (custom species, move changes)
-  };
-  dex: DataPackRef;           // species, learnsets, items, abilities
-  usage?: DataPackRef[];      // one or more Smogon formats + cutoffs
-  spawns?: DataPackRef;       // only for open-world games
-  legality: LegalityRules;    // bans, clauses, learnable-move rules
-  raids?: RaidRules;          // 5.5.3
-  features: { spawns: boolean; breeding: boolean; pcBox: boolean; liveBridge: boolean };
+interface FormatProfile {
+  id: string;                 // 'gen9ou', 'gen9nationaldex'
+  label: string;              // 'Gen 9 OU', 'National Dex OU'
+  gen: number;                // replaces the 14 hard-coded 9s
+  showdownFormat: string;     // format id for @pkmn/sim and TeamValidator
+  gameType: 'singles';        // 'doubles' later
+  level: number;              // 100 for both v2 formats
+  usage: DataPackRef[];       // Smogon stats months + rating cutoffs
+  models: DataPackRef[];      // matchup, team, set models trained for it
 }
 ```
 
-Profiles for v2, in order:
+Formats for v2:
 
-| Profile | Why | Effort |
-| --- | --- | --- |
-| Cobblemon | Existing users and data. Battles run on an embedded Showdown engine, so sim and calc results transfer directly | S (mostly moving existing code behind the interface) |
-| Showdown Gen 9 OU | Largest replay and usage data, best for training and for showing results | S |
-| Showdown NatDex OU | Current bundle; closest to Cobblemon's Megas and Z-moves | S |
-| Pokémon Champions VGC | Official competitive game since April 2026, doubles | L (doubles changes the sim UI, bots and models). Later |
-| Pixelmon, PokeMMO | Same mainline mechanics, different data sources | M each. Later, only if asked for |
+| Format | Why |
+| --- | --- |
+| Gen 9 OU | Largest replay and usage data, best for training and for showing results |
+| National Dex OU | Current bundle; every species with Megas and Z-moves allowed |
 
-Spawn atlas, breeding and PC box stay Cobblemon features and hide on profiles
-that do not have them.
+Later, only if wanted: other singles tiers (Ubers, UU), then doubles.
+
+Data source switch:
+
+- Species, forms, learnsets, items, abilities and moves come from Showdown's
+  own data (`@pkmn/dex` / `@pkmn/data`, MIT) instead of the Cobblemon files.
+  Learnsets are per format, so National Dex gets the full move pool and
+  Gen 9 OU gets Gen 9 learnsets.
+- Legality comes from Showdown's `TeamValidator` for the active format
+  (exported by `@pkmn/sim`), replacing `isNatDexOULegal`.
+- Species ids switch to Showdown ids. Saved boxes and teams get a one-time
+  migration. 1194 of the 1236 current ids already match Showdown's style; 42
+  need mapping (`great tusk`, `mr. mime`, `nidoran-f`, `tapu koko` and so on).
+
+What goes away:
+
+- Cobblemon species and spawn data (`pokemon.json`, `spawns.json`,
+  `cobblemon-divergences.json`), the override registry and `cobblemonSync`,
+  the Spawn Atlas page, `cobblemon-mod/`, the mod bridge in the main process,
+  `src/shared/cobblemonProtocol.ts`, the mock mod client, and the "moves
+  Cobblemon can't teach" set review tips.
+- The Box stays. It is simply "the Pokémon you own or have built", entered by
+  hand or pasted from Showdown, whatever game they came from.
 
 ### 3.3 Navigation
 
-Twelve hexes is too many to scan and several overlap. Collapse into six areas,
+Twelve hexes is too many to scan and several overlap. Collapse into five areas,
 keep the orb as the home screen:
 
 | Area | Contains (old tools) |
 | --- | --- |
-| Box | PC Box, Team Builder, EV/IV planner |
-| Dex | Pokédex, Moves, Spawns |
-| Battle | Damage calc (Battle and Calcdex merged), Practice, Live tracker |
+| Box | PC Box, Team Builder, EV/IV planner, Breeding |
+| Dex | Pokédex, Moves |
+| Battle | Damage calc (Battle and Calcdex merged), Practice, Replay review |
 | Counters | Counter Draft, Pokédex counters tab, Raid planner (new) |
-| Meta | Usage stats for the active profile's formats |
-| Breed | Breeding |
+| Meta | Usage stats for the active format |
 
-Each area gets one name, used for the hex, the header and the window title.
+Each area gets one name, used for the hex, the header and the window title. A
+format picker sits in the home screen's bottom bar.
 
 ## 4. Architecture
 
@@ -284,12 +309,11 @@ Each area gets one name, used for the hex, the header and the window title.
   +--------------------------------------------------------------+
   |  SQLite (sql.js): boxes, teams, battles, settings            |
   |  Data pack + model cache (userData, checksummed downloads)   |
-  |  Mod bridge WebSocket :8788 (raw Showdown protocol in)       |
   +------------------------------+-------------------------------+
                                  | IPC
   +------------------------------v-------------------------------+
   | Renderer (React)                                             |
-  |   Game profile store -> every tool                           |
+  |   Format store -> every tool                                 |
   |                                                              |
   |   Worker: sim         @pkmn/sim BattleStream, bots,          |
   |                       sim-verified counters                  |
@@ -312,7 +336,9 @@ Key choices:
   mechanics for every move, ability and item without maintaining our own.
 - **`@pkmn/protocol` and `@pkmn/client`** (MIT, v0.7.3) to parse Showdown's
   protocol into a battle state for the UI. The same parser handles practice
-  battles, live battles from the mod, and imported replays.
+  battles and imported replays.
+- **`@pkmn/dex` / `@pkmn/data`** for species, learnsets and the rest of the
+  game data.
 - **`@smogon/calc` stays** for instant single calcs and for features in the ML
   models. Upgrade to 0.12.
 - **ONNX for models.** Train in Python, export to ONNX, run in a worker with
@@ -326,19 +352,19 @@ Key choices:
 
 ### 5.1 Data packs
 
-- One pack per (profile, data kind, version). Kinds: `dex`, `usage`, `sets`,
-  `spawns`, `model`.
+- One pack per (format, data kind, version). Kinds: `usage`, `sets`, `model`.
+  Dex data ships with the `@pkmn` packages, so it does not need a pack.
 - `usage` packs come from Smogon's monthly `chaos` JSON per format and rating
   cutoff, plus sets from data.pkmn.cc. Keep the existing `fetch-smogon.mjs`
-  logic but loop over the formats each profile asks for.
+  logic but loop over the formats.
 - A manifest (`packs.json`) lists packs, versions, sizes and hashes. The app
   checks it at most once a day when online.
 - Replace the single `smogon.json` import with a `UsageSource` that can hold
   several formats and months, so Meta can show trends ("Kingambit up 3% since
   last month").
 
-Acceptance: switching profile in settings changes usage data, legality and
-gen across every tool without a restart.
+Acceptance: switching format changes usage data, legality, learnsets and gen
+across every tool without a restart.
 
 ### 5.2 Battle engine
 
@@ -351,7 +377,7 @@ gen across every tool without a restart.
   retired once parity tests pass. Keep `predictor/` and `search/explain.ts`;
   they get rewired onto the new state.
 - Calc wrapper fixes regardless of the rest: normalize items and moves the same
-  way abilities are, forward base stat overrides, read gen from the profile.
+  way abilities are, and read gen from the active format.
 - Engine numbers from a first spike (Node 22, one core, `gen9randombattle`):
   - 100 full battles between random players: about 65 ms per battle, about
     460 turns per second.
@@ -384,14 +410,10 @@ Bot levels:
 | Level | Name in UI | How it picks | Purpose |
 | --- | --- | --- | --- |
 | 0 | Random | Random legal choice (`@pkmn/sim` ships one) | Smoke tests, baseline |
-| 1 | Greedy | Highest expected damage this turn, switches out of a guaranteed KO | Plays like a typical in-game trainer |
+| 1 | Greedy | Highest expected damage this turn, switches out of a guaranteed KO | Easy opponent |
 | 2 | Search | Expectimax: first ply on the real engine, second ply on a calc-based model, opponent sets from the predictor, chance nodes for damage roll buckets, crits and accuracy | Default practice partner, also powers hints |
 | 3 | MCTS | Information-set MCTS with determinization: sample hidden sets from the predictor, run the search per sample, pick the action that wins most often | Strong offline opponent |
 | 4 | Learned (stretch) | Policy and value network trained on high-rated replays, used as priors inside MCTS | The "this is actually ML" bot |
-
-Optional opponent style: "Plays like Cobblemon NPCs", a port of the decision
-logic in Cobblemon's own `battles/ai` package, so practice matches what you
-meet in the world.
 
 Opponent team sources: random (`@pkmn/randoms`), sampled from the meta for the
 active format, a saved rival team (Counter Draft), or a raid boss (5.5.3).
@@ -406,7 +428,7 @@ In-battle features:
 
 After the battle, **review**: run the Search bot on every decision you made and
 flag turns where your choice was much worse than its best one, the way chess
-apps flag blunders.
+apps flag blunders. The same review runs on imported replays (5.7).
 
 Bot quality is measured, not asserted:
 
@@ -439,13 +461,14 @@ Question it answers: given my set A and their set B in this format, how likely
 is A to beat B one on one, and how much HP does it have left?
 
 - **Data**: generated, not scraped. `tools/simgen` samples set pairs from the
-  usage distribution (moves, items, spreads, Tera types) plus random box-style
-  sets at varied levels for Cobblemon, and plays each pairing several times
-  with level 2 bots on both sides. Output: win rate, remaining HP, turns,
-  whether B was forced out. Millions of games are cheap to generate.
+  usage distribution (moves, items, spreads, Tera types), plus off-meta sets
+  (odd EV spreads, weaker moves, no item) so the Pokémon in a casual box still
+  get sensible scores. Each pairing is played several times with level 2 bots
+  on both sides. Output: win rate, remaining HP, turns, whether B was forced
+  out. Millions of games are cheap to generate.
 - **Features**: per side, base stats, types, the calc's damage range of each
   move both ways, nHKO each way, speed comparison including priority and
-  Choice Scarf, recovery, setup, status and pivot moves, level.
+  Choice Scarf, recovery, setup, status and pivot moves.
 - **Model**: gradient boosted trees (LightGBM) as the main model, logistic
   regression as the baseline. Export to ONNX.
 - **Why a model and not just simulate**: a box of 300 mons against a 6-mon team
@@ -461,7 +484,7 @@ plot, Spearman vs Smogon checks and counters.
 
 #### 5.5.2 Team counters (Counter Draft v2)
 
-- Input: opponent team (species, optional sets and levels), my box.
+- Input: opponent team (species, optional sets), my box.
 - Score every box mon against every opponent with the matchup model.
 - Pick 6 to maximize coverage: every opponent mon should have at least one
   high-probability answer, weighted by how threatening it is, with a penalty
@@ -475,36 +498,32 @@ plot, Spearman vs Smogon checks and counters.
 
 #### 5.5.3 Raid planner (new)
 
-Raids differ by game, so the rules are data:
+A raid here means one strong boss against your box. No game's exact raid rules
+are modeled; the boss is a normal Showdown set with a few generic knobs:
 
 ```ts
 interface RaidRules {
-  bossLevel: number;
-  hpMultiplier: number;          // boss HP pool vs a normal mon
-  partySize: number;             // players fighting at once
-  sharedHp: boolean;             // one HP pool for everyone
-  shields?: { atHpPct: number; damageMultiplier: number }[];
-  bossActionsPerTurn: number;
-  gimmick?: 'tera' | 'dynamax' | 'mega' | null;
+  bossLevel: number;             // defaults to the format level
+  hpMultiplier: number;          // boss HP vs a normal mon
+  statBoosts?: Partial<Record<'atk' | 'def' | 'spa' | 'spd' | 'spe', number>>;
+  bossActionsPerTurn: number;    // 1 or 2
   turnLimit?: number;
 }
 ```
 
-Presets: Cobblemon Raid Dens (per its listing: tiers 1 to 7, one boss HP pool
-shared by all players, Tera, Dynamax and Mega raid types; HP scaling still to
-confirm against the mod's config) and Scarlet/Violet Tera raids. Users can edit
-any preset.
+Difficulty presets (Normal, Tough, Brutal) are just different knob values, and
+every knob is editable.
 
 For each box mon against the boss:
 
 - **Quick estimate**: expected damage per turn dealt and taken from the calc,
   turns survived, and an estimator (boss HP divided by damage it can deal before
-  fainting; under 1 means it can solo). Same idea as Pokebattler's
-  estimator and time-to-win for Pokémon GO raids.
+  fainting; under 1 means it can solo). Same idea as Pokebattler's estimator
+  and time-to-win for Pokémon GO raids.
 - **Simulated**: Monte Carlo through `@pkmn/sim` with a custom format that
-  applies the HP multiplier and shields. Rank by win rate, then turns to win.
-- Output: ranked counters with "best moveset for this raid" and what to change
-  (move to teach, item), plus a party suggestion when party size is above 1.
+  applies the HP multiplier and boosts. Rank by win rate, then turns to win.
+- Output: ranked counters with the best moveset for this boss and what to
+  change (move to teach, item).
 
 ### 5.6 Team builder
 
@@ -525,8 +544,8 @@ ignoring who is piloting it?
   both ratings as inputs and set them equal at inference, so the model scores
   the teams and not the players.
 - **Metrics**: AUC and calibration on a held-out later month (time split, not
-  random). Prior art for reference: FutureSightML reports a pre-game AUC of 0.726
-  on Gen 9 OU for its transformer model.
+  random). Prior art for reference: FutureSightML reports a pre-game AUC of
+  0.726 on Gen 9 OU for its transformer model.
 
 #### Meta score
 
@@ -536,7 +555,7 @@ replays). This replaces the hand-weighted sum in `bestSix.ts`.
 
 #### Search over the box
 
-- Candidates: the user's box filtered by the profile's legality rules (as now).
+- Candidates: the user's box filtered by the format's `TeamValidator`.
 - Search: beam search over adding members (width around 64), then single-swap
   refinement, then pick three diverse results (offense, balance, bulky) by
   clustering the final beam. Exhaustive search is possible for small boxes
@@ -547,12 +566,11 @@ replays). This replaces the hand-weighted sum in `bestSix.ts`.
 - Structural checks stay as explanations and soft constraints: hazard setter,
   hazard removal, speed control, a win condition.
 
-#### Catch list
+#### Add list
 
-The open-world feature nothing else does: which species, not in your box,
-would raise your best team's meta score the most, and where to find it. Join
-the marginal gain with the spawn data ("Corviknight: +4.1% meta score, fills
-hazard removal. Spawns in taiga, night, uncommon").
+Which species, not in your box, would raise your best team's meta score the
+most: "Corviknight: +4.1% meta score, fills hazard removal." Useful whatever
+game you are collecting in.
 
 #### Explanations
 
@@ -566,32 +584,18 @@ hazard removal. Spawns in taiga, night, uncommon").
 model, then have both play 500 simulated games against meta teams with level 2
 bots piloting. Report the win rate difference with a confidence interval.
 
-### 5.7 Live tracker and companion mod
+### 5.7 Replay review (replaces the live tracker)
 
-Cobblemon runs battles on an embedded Showdown engine (`battles/runner/graal`
-and `battles/runner/socket` in its source), and
-`ShowdownInterpreter.interpretMessage(battleId, message)` receives the raw
-Showdown protocol for every battle. So the mod does not need its own event
-translation (the current placeholder `EventTranslator.kt`). It can:
-
-1. Hook `interpretMessage` with a Mixin (or read `battle.showdownMessages`).
-2. Filter to the local player's view: public lines plus the player's own
-   `|request|` data. Never forward the opponent's private side lines. The
-   engine's own `extractChannelMessages` (exported by `@pkmn/sim`) already
-   splits `|split|` blocks per player, so the same logic can run on either
-   end.
-3. Send the lines over the existing WebSocket on `127.0.0.1:8788`.
-
-The app feeds those lines into `@pkmn/client`, which is exactly what the
-practice mode does, so the live tracker becomes a read-only practice screen
-with hints. Manual mode stays as a fallback but writes protocol lines too
-("Garchomp used Earthquake, Rotom took 45%") instead of a separate event model.
-
-Limits to state plainly in the UI: works in singleplayer and on servers that
-install the mod; a client-only setup on someone else's server sees less.
-
-Fairness: in PvP the tracker shows only what the player can already see, and
-the hint button can be disabled per battle type in settings.
+- Paste a Showdown replay link or drop in a saved log. The app fetches that one
+  replay, parses it with `@pkmn/protocol` and `@pkmn/client`, and shows it in
+  the same battle view as practice mode.
+- Run the review from 5.3 on the side you choose: flagged turns, the eval
+  graph, and what the Search bot would have done.
+- Revealed sets from your replays feed the set predictor's priors for players
+  you face often (optional, local only).
+- Manual entry stays for battles played somewhere the app can't read, but it
+  writes Showdown protocol lines ("Garchomp used Earthquake, Rotom took 45%")
+  into the same client state instead of a separate event model.
 
 ### 5.8 UI overhaul
 
@@ -601,7 +605,7 @@ the hint button can be disabled per battle type in settings.
 - **One component set.** `PageShell` (header grid with title left, actions
   right, close button in its own column so they can never overlap), `Panel`,
   `Toolbar`, `Tabs`, `DataTable`, `SpeciesCell`, `TypeChip`, `StatBar`,
-  `Field`. Rebuild the Live tracker on these first since it is furthest off.
+  `Field`. Rebuild the battle pages on these first since they are furthest off.
 - **List rows** never truncate names below about 10 characters: hide BST
   first, then wrap chips under the name. Forms get a label ("Mega", "Galar").
 - **Readable text.** Mono uppercase only for labels and numbers; body copy in
@@ -612,17 +616,22 @@ the hint button can be disabled per battle type in settings.
   and 1920x1080 in CI, plus an automated overflow check (no element wider than
   its container, no text clipped without an ellipsis or tooltip).
 
-Acceptance: all twelve issues in 2.6 are fixed and covered by a screenshot
-test.
+Acceptance: every issue in 2.6 is fixed (the Spawns ones by removing the page)
+and covered by a screenshot test.
 
 ### 5.9 Repo hygiene
 
+The day-to-day rules live in `CONTRIBUTING.md`. Summary:
+
+- **Branches.** Work on `main`; use a short task branch (`ui-shell`,
+  `sim-engine`) only for big changes. Branch names describe the work, never
+  the tool or person doing it.
 - **Commit identity.** This repo is configured with
   `user.name "Tahsin Jawwad"` and
   `user.email 144264787+tahsinj@users.noreply.github.com` (the same identity as
   every existing commit), with no co-author or tool trailers. GitHub attributes
   commits by author email, so they show up under my account.
-- **History.** All 53 existing commits are already under my name. Some older
+- **History.** All existing commits are already under my name. Some older
   messages are long and list-like; rewriting published history is not worth
   breaking clones over, so leave it. New messages: short, imperative, one line
   unless a body is really needed.
@@ -633,22 +642,21 @@ test.
     "option C", "the doc's idea", "for now", "later phases").
   - ASCII only in comments: `->` not arrows, `x` not the multiplication sign,
     `>=` not the symbol, `...` not the ellipsis character, no em or en dashes.
-  - No filler words that read as generated: "robust", "seamless", "leverage",
-    "honest", "deliberately", "comprehensive", "crucial", "ensure".
+  - No filler words: "robust", "seamless", "leverage", "honest",
+    "deliberately", "comprehensive", "crucial", "ensure".
   - UI strings may keep typographic characters where they are a design
     choice, but the decorative "◢" prefix goes.
 - Known spots to fix first: `lib/counterDraft.ts:3`, `lib/bestSix.ts:405`,
   `:818`, `:849` (and the `__internals__` export that only exists to silence
   an unused-import warning), `lib/battle/search/simulate.ts:4-5`,
   `search/evaluate.ts:5`, `search/expectimax.ts:17`, `battle/events.ts:272`,
-  `battle/state.ts:288`, `db/schema.sql:1-2`, the "REFERENCE SCAFFOLD" banners
-  in `cobblemon-mod/`.
+  `battle/state.ts:288`, `db/schema.sql:1-2`.
 - **Build health.** Regenerate and commit `package-lock.json` so `npm ci`
   works, pin TypeScript 5.x until the `baseUrl` migration, add ESLint, and a
   GitHub Actions workflow: `npm ci`, typecheck, tests, build, short bot
   gauntlet, screenshot tests.
-- **Dead code.** Delete everything listed in 2.7. Rename `riven_tag` to `tag`
-  with a migration.
+- **Dead code.** Delete everything listed in 2.7 and the Cobblemon-specific
+  code listed in 3.2. Rename `riven_tag` to `tag` with a migration.
 
 ## 6. ML plan
 
@@ -658,14 +666,13 @@ test.
 | --- | --- | --- | --- |
 | [Smogon stats](https://www.smogon.com/stats/) | Monthly usage per format and rating cutoff: moves, items, spreads, teammates, checks and counters (`chaos` JSON) | Set priors, meta sampling, validation of counters | Already used for NatDex OU |
 | [data.pkmn.cc](https://data.pkmn.cc) | Curated sets and processed stats | Set model, sample sets for simgen | Already used |
+| Showdown data (`@pkmn/dex`, `@pkmn/data`) | Species, learnsets, items, abilities, moves, formats | Everything | MIT, replaces the Cobblemon files |
 | Showdown replays | Public replay search and per-replay logs on `replay.pokemonshowdown.com` | Team model, set model, bot imitation | Respect rate limits, cache, prefer the datasets below |
 | [Metamon](https://arxiv.org/abs/2504.04395) datasets | 3.5M first-person trajectories reconstructed from replays, plus checkpoints | Bot level 4, set model | The paper covers Gens 1 to 4. Check metamon.tech for newer formats |
 | [PokéChamp](https://arxiv.org/abs/2503.04094) dataset | 3M+ games, 500k+ high-Elo | Team model | Check license |
 | 30.5M replay dataset on Hugging Face (HolidayOugi) | Raw replays across formats, used by FutureSightML | Team model | Check license |
-| [VGC-Bench](https://arxiv.org/abs/2506.10326) | 700k+ doubles battle logs and baselines | Champions VGC profile later | Doubles only |
 | [PokéAgent Challenge](https://arxiv.org/abs/2603.15563) | 20M+ battle trajectories and baselines from the NeurIPS 2025 competition | Bot baselines and eval | |
-| Our own simulations | Labeled 1v1, team and raid battles via `@pkmn/sim` | Matchup model, raid planner, bot eval | Unlimited, controllable, covers Cobblemon levels |
-| Cobblemon data | Species, learnsets, spawns (MPL-2.0 code) | Cobblemon profile | Already used |
+| Our own simulations | Labeled 1v1, team and raid battles via `@pkmn/sim` | Matchup model, raid planner, bot eval | Unlimited, controllable, covers off-meta sets |
 
 We ship derived artifacts only (aggregated stats, model weights), never raw
 replay files. Each dataset's license gets checked and recorded in the model card
@@ -679,6 +686,8 @@ before training on it.
 | Matchup | Two sets plus context | P(A beats B), HP left | LightGBM on calc features | Logistic regression | Log loss, Brier, Spearman vs Smogon checks and counters |
 | Team strength | Two teams of up to six partially known sets | P(team A wins) | Set transformer | Logistic regression on species and pairs | AUC and calibration on a later month |
 | Bot policy and value (stretch) | Battle state from one side | Action probabilities, win probability | Small transformer, behavior cloning on high-rated replays | Level 2 bot | Gauntlet Elo |
+
+Each model is trained per format (Gen 9 OU and National Dex OU).
 
 ### 6.3 Training and evaluation setup
 
@@ -697,7 +706,7 @@ before training on it.
 ### 6.4 In the app
 
 - `onnxruntime-web` in the ML worker. Models are loaded lazily per tool.
-- Size budget: under 20 MB per model, under 60 MB total.
+- Size budget: under 20 MB per model, under 60 MB total per format.
 - Every ML feature has a non-ML fallback (today's heuristics), and the UI says
   which one produced a result.
 
@@ -714,53 +723,49 @@ Sizes are relative (S, M, L), not dates.
 
 | # | Milestone | Contents | Size | Done when |
 | --- | --- | --- | --- | --- |
-| M0 | Foundations | Lockfile, CI, ESLint, commit identity, dead code removal, prose cleanup, calc input fixes, rename decision | S | `npm ci` and CI are green, `lint:prose` passes |
-| M1 | UI shell | Token file, component set, `PageShell`, six areas, fixes for 2.6, screenshot tests | M | All 2.6 issues covered by passing screenshot tests |
-| M2 | Engine | `@pkmn/sim` worker, engine spike, `@pkmn/client` state, practice battles with bots 0 to 2, merged calc | L | Acceptance in 5.2 and 5.3 |
-| M3 | Profiles and data packs | `GameProfile`, Cobblemon + Gen 9 OU + NatDex OU, pack manifest and downloads | M | Profile switch changes every tool |
+| M0 | Foundations | Lockfile, CI, ESLint, `lint:prose`, dead code removal, prose cleanup, calc input fixes, rename | S | `npm ci` and CI are green, `lint:prose` passes |
+| M1 | Formats and data | Switch dex data to `@pkmn/dex`, `FormatProfile` for Gen 9 OU and National Dex OU, `TeamValidator` legality, box and team id migration, remove Cobblemon code and data | M | Format switch changes every tool; no Cobblemon references left |
+| M2 | UI shell | Token file, component set, `PageShell`, five areas, fixes for 2.6, screenshot tests | M | All 2.6 issues covered by passing screenshot tests |
+| M3 | Engine | `@pkmn/sim` worker, `@pkmn/client` state, practice battles with bots 0 to 2, merged calc, replay review | L | Acceptance in 5.2 and 5.3 |
 | M4 | Counters v2 | simgen, matchup model, Counter Draft v2 with sim verification, raid planner | L | Metrics in 5.5 published in a model card |
-| M5 | Team builder v2 | Replay ingestion, team model, box search, catch list, Classic vs model comparison | L | Comparison result in README |
-| M6 | Bots v2 | Level 3 MCTS, post-game review, gauntlet in CI, level 4 if time allows | M to L | Elo table in README |
-| M7 | Live bridge | Mod hook on `interpretMessage`, protocol filtering, tracker on `@pkmn/client` | M | A singleplayer Cobblemon battle shows live with hints |
+| M5 | Team builder v2 | Replay ingestion, team model, box search, add list, Classic vs model comparison | L | Comparison result in README |
+| M6 | Bots v2 | Level 3 MCTS, post-game review polish, gauntlet in CI, level 4 if time allows | M to L | Elo table in README |
 
-M0 and M1 come first because every later milestone adds UI and code on top of
-them.
+M1 moves ahead of the UI work so the UI is rebuilt once, on the new data, and
+Spawns never needs fixing.
 
 ## 8. Risks
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | `@pkmn/sim` too slow for in-app search (spike: 2.3 ms per clone plus turn) | Bots 2 and 3 feel sluggish | Real engine for the first ply only, calc-based model below it, worker pool, time-boxed search |
-| Replay data skewed to high-usage mons | Team model is weak on rare species, which Cobblemon boxes are full of | Back off to species-agnostic features (types, stats, roles); fall back to simulation for unseen species |
-| Showdown levels vs Cobblemon levels | Models trained at level 100 misjudge level 37 mons | Matchup model trained on mixed levels from simgen; team model results flagged when levels differ a lot |
+| Replay data skewed to high-usage mons | Team model is weak on low-usage species, which casual boxes are full of | Back off to species-agnostic features (types, stats, roles); fall back to simulation for rare species |
+| Species id switch breaks saved data | Boxes and teams show unknown species after the update | One-time migration with a mapping table and a test over every id in the old `pokemon.json` |
 | Dataset licenses | Cannot ship a model trained on a dataset with restrictive terms | Check before training, record in model cards, ship only derived weights |
-| Cobblemon internals change between versions | Mod breaks on update | Hook one stable entry point (`interpretMessage`), version-check on connect |
 | Trademark | Takedown request | Rename, no bundled assets, stay free, keep disclaimer |
 | Scope | Half-finished features everywhere | Milestones are independent; each ships something usable |
 
-## 9. Open questions
+## 9. Decisions
 
-1. **Name.** Go with Sync Core, pick another, or keep the current name for now?
-2. **Formats.** Is Cobblemon singles plus Showdown Gen 9 OU the right starting
-   pair? Does Champions VGC doubles matter soon?
-3. **Raids.** Which raid rules do you play with (Cobblemon Raid Dens mod,
-   another mod, Scarlet/Violet Tera raids)?
-4. **Python.** OK to have a Python `ml/` folder for training, with only ONNX
-   files used by the app?
-5. **Model hosting.** GitHub Releases on this repo for packs and models?
-6. **Mod.** Worth finishing the Fabric mod (Kotlin, Gradle) in this pass, or
-   park live tracking until the rest is done?
-7. **Platforms.** Windows only, or also macOS and Linux builds?
+| Topic | Decision |
+| --- | --- |
+| Formats | Singles only: Gen 9 OU and National Dex OU. Nothing Cobblemon-specific |
+| Raids | Generic boss with editable knobs, no specific game's raid rules |
+| ML tooling | Python `ml/` folder for training; the app only loads ONNX files |
+| Model and data hosting | GitHub Releases on this repo |
+| Cobblemon mod | Dropped from the plan; folder removed in M1 |
+| Platforms | Windows first, macOS and Linux later |
+| Branches | Work on `main`, task-named branches only for big changes |
+| Name | **Open.** Sync Core (approved if it is clear of conflicts and describes the app) vs a more descriptive name such as Matchup Lab. See 3.1 |
 
 ## 10. References
 
 Engines and libraries
 
-- `@pkmn/sim`, `@pkmn/client`, `@pkmn/protocol`, `@pkmn/randoms`, `@pkmn/stats` (MIT): https://github.com/pkmn
+- `@pkmn/sim`, `@pkmn/client`, `@pkmn/protocol`, `@pkmn/randoms`, `@pkmn/dex`, `@pkmn/data`, `@pkmn/stats` (MIT): https://github.com/pkmn
 - `@smogon/calc` (MIT): https://github.com/smogon/damage-calc
 - poke-engine (Rust, singles search engine): https://github.com/pmariglia/poke-engine
 - onnxruntime-web (MIT): https://onnxruntime.ai
-- Cobblemon source (MPL-2.0), Showdown integration under `common/src/main/kotlin/com/cobblemon/mod/common/battles/`: https://gitlab.com/cable-mc/cobblemon
 
 Research and prior art
 
@@ -773,12 +778,7 @@ Research and prior art
 - Smogon usage stats and the checks and counters metric: https://www.smogon.com/stats/
 - Pokebattler raid methodology (estimator, time to win): https://articles.pokebattler.com/help/raid-advice/
 
-Games
-
-- Cobblemon Raid Dens mod: https://modrinth.com/mod/cobblemonraiddens
-- Pokémon Champions (released April 2026, official VGC game from 2026)
-
-## Appendix: how the audit was done
+## Appendix A: how the audit was done
 
 - Read the source for the team builder, counters, matchup, calc wrapper,
   simulator, search, evaluator, reducer, main process, preload and mod.
@@ -793,3 +793,15 @@ Games
   clone plus one turn.
 - Grepped for dead imports, unused components, comment density and writing
   patterns.
+
+## Appendix B: parked, game companion mods
+
+Not in the plan, kept here so the research is not lost. Cobblemon runs its
+battles on an embedded Showdown engine (`battles/runner/graal` and
+`battles/runner/socket` in its MPL-2.0 source at
+https://gitlab.com/cable-mc/cobblemon), and
+`ShowdownInterpreter.interpretMessage(battleId, message)` receives the raw
+Showdown protocol for every battle. A small mod could forward those lines,
+filtered to the player's own view with `@pkmn/sim`'s `extractChannelMessages`,
+and the app would show them through the same `@pkmn/client` view as replay
+review. Any game that speaks Showdown protocol could plug in the same way.
