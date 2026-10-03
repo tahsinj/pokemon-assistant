@@ -742,6 +742,25 @@ Status:
   mark moved into CSS (which also fixed a doubled mark on the Live tracker's
   turn log). The roughly 240 CSS classes only the deleted files used are left
   for M2, where screenshot tests can catch a wrong deletion.
+- **M1 done.** Species, learnsets, moves, items, tiers and bans now come from
+  Showdown's data (`npm run build-dex`, one `dex.json` with per-format tiers
+  and bans), usage from the pkmn/smogon mirror on GitHub (`npm run
+  fetch-usage`, one file per format), and EV yields and form sprite ids from
+  PokeAPI. A Gen 9 OU / NatDex OU picker on the home screen reloads every tool
+  with that format's data. Saved PC and team species ids are migrated once
+  (SQLite `user_version` 1), and local drafts are normalized on load. The mod
+  bridge, Spawn Atlas, override layer, old data and fetch scripts are gone.
+  Notes:
+  - Data is checked in rather than downloaded as packs; the download manifest
+    from 5.1 is still to do.
+  - The mirror does not record the stats month or rating cutoff, so the UI
+    shows "latest", and NatDex OU lists 451 ladder species instead of 478.
+  - The only places "cobblemon" still appears are the old data-folder and
+    storage-key names the migrations need (`src/main/userDataMigration.ts`,
+    `src/renderer/src/lib/storage.ts`).
+  - Usage stats are public domain, but Smogon's curated sets are copyrighted.
+    The app bundles only their move lists and spreads, as before; fetching
+    sets at runtime instead would remove them from the repo.
 
 ## 8. Risks
 
