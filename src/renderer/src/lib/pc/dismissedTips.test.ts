@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { dismissalId, toggleDismissed, partitionDismissed } from './dismissedTips';
+import { afterEach, describe, expect, it } from 'vitest';
+import { dismissalId, loadDismissed, toggleDismissed, partitionDismissed } from './dismissedTips';
 import type { OptSuggestion } from './optimize';
 
 const tip = (key: string): OptSuggestion => ({
@@ -31,5 +31,18 @@ describe('dismissedTips', () => {
     const other = partitionDismissed(review, 'starmie', dismissed);
     expect(other.hidden).toEqual([]);
     expect(other.active).toHaveLength(2);
+  });
+});
+
+describe('loadDismissed', () => {
+  afterEach(() => {
+    delete (globalThis as { localStorage?: unknown }).localStorage;
+  });
+
+  it('rewrites species ids saved by older builds', () => {
+    (globalThis as { localStorage?: Pick<Storage, 'getItem'> }).localStorage = {
+      getItem: (k: string) => (k === 'cobblemon-dismissed-tips' ? JSON.stringify(['great tusk::move:scald']) : null),
+    };
+    expect([...loadDismissed()]).toEqual(['greattusk::move:scald']);
   });
 });

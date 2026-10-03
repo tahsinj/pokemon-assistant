@@ -5,7 +5,9 @@
  * the draft against the current PC. Pure list ops are unit-tested; the
  * load/persist helpers no-op when localStorage is unavailable (node tests).
  */
+import { toSpeciesId } from '../../../shared/speciesId';
 import { readStorage } from './storage';
+
 export interface SavedOpponent {
   speciesId: string;
   level: number;
@@ -26,7 +28,12 @@ export function loadSavedDrafts(): SavedDraft[] {
     const raw = readStorage(KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as SavedDraft[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    // Drafts saved by older builds use that dataset's species ids.
+    return (parsed as SavedDraft[]).map((d) => ({
+      ...d,
+      opponents: d.opponents.map((o) => ({ ...o, speciesId: toSpeciesId(o.speciesId) })),
+    }));
   } catch {
     return [];
   }

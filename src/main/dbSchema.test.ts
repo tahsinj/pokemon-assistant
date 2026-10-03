@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import type { Database, SqlJsStatic } from 'sql.js';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { applySchema, columnNames } from './dbSchema';
+import { applySchema, columnNames, userVersion } from './dbSchema';
 
 const require = createRequire(import.meta.url);
 let SQL: SqlJsStatic;
@@ -65,6 +65,43 @@ describe('applySchema', () => {
       expect.arrayContaining(['level', 'ivs_json']),
     );
     expect(tableNames(db)).not.toContain('spawn_index');
+  });
+
+  it('rewrites saved species ids to Showdown ids once', () => {
+    const db = new SQL.Database();
+    applySchema(db);
+    db.run('PRAGMA user_version = 0');
+    db.run("INSERT INTO pc_boxes (id, name, sort_order, updated_at) VALUES ('b', 'Box', 0, 1)");
+    const insertMon = (id: string, slot: number, species: string) =>
+      db.run(
+        `INSERT INTO pc_pokemon (id, box_id, slot, species_id, species_display, ivs_json, evs_json, moves_json, updated_at)
+         VALUES (?, 'b', ?, ?, ?, '{}', '{}', '[]', 1)`,
+        [id, slot, species, species],
+      );
+    insertMon('a', 0, 'great tusk');
+    insertMon('b', 1, 'mr. mime');
+    insertMon('c', 2, 'garchomp');
+    db.run("INSERT INTO teams (id, name, updated_at) VALUES ('t', 'Team', 1)");
+    db.run("INSERT INTO team_members (team_id, slot, species_id) VALUES ('t', 0, 'greninjaash')");
+
+    applySchema(db);
+
+    const ids = (sql: string) => {
+      const stmt = db.prepare(sql);
+      const out: string[] = [];
+      while (stmt.step()) out.push(String(stmt.getAsObject().species_id));
+      stmt.free();
+      return out;
+    };
+    expect(ids('SELECT species_id FROM pc_pokemon ORDER BY slot')).toEqual(['greattusk', 'mrmime', 'garchomp']);
+    expect(ids('SELECT species_id FROM team_members')).toEqual(['greninjabond']);
+    expect(userVersion(db)).toBe(1);
+  });
+
+  it('marks a fresh database as current', () => {
+    const db = new SQL.Database();
+    applySchema(db);
+    expect(userVersion(db)).toBe(1);
   });
 
   it('is safe to run twice', () => {

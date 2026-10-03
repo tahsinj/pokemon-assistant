@@ -14,6 +14,7 @@ import { PokemonSprite } from '../components/PokemonSprite';
 import { FocusLens } from '../components/hud/FocusLens';
 import { toHudTeam } from '../lib/hudTeam';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
+import { toSpeciesId } from '../../../shared/speciesId';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { GenderIcon } from '../components/GenderIcon';
 import { ItemSearchInput } from '../components/ItemSearchInput';
@@ -183,6 +184,16 @@ export function PcPage({
     for (const p of pokemon) m[p.id] = p;
     return m;
   }, [pokemon]);
+
+  // The saved draft holds a snapshot of its species; swap in the active format's
+  // entry, or clear it when the format doesn't have that species.
+  useEffect(() => {
+    setEditor((d) => {
+      if (!d.species) return d;
+      const current = pokemonById[toSpeciesId(d.species.id)] ?? null;
+      return current === d.species ? d : { ...d, species: current };
+    });
+  }, [pokemonById, setEditor]);
 
   const speciesFuse = useMemo(() => buildSpeciesFuse(pokemon), [pokemon]);
 

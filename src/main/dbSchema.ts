@@ -1,4 +1,8 @@
 import type { Database } from 'sql.js';
+import { toSpeciesId } from '../shared/speciesId';
+
+// Bump with each data migration below; stored in SQLite's user_version.
+const SCHEMA_VERSION = 1;
 
 const TABLES = `
   CREATE TABLE IF NOT EXISTS teams (
@@ -63,6 +67,28 @@ export function columnNames(db: Database, table: string): string[] {
   return names;
 }
 
+export function userVersion(db: Database): number {
+  const stmt = db.prepare('PRAGMA user_version');
+  stmt.step();
+  const version = Number(stmt.getAsObject().user_version ?? 0);
+  stmt.free();
+  return version;
+}
+
+/** Version 1: saved species ids move from the old dataset's spellings to Showdown ids. */
+function normalizeSpeciesIds(db: Database): void {
+  for (const table of ['pc_pokemon', 'team_members']) {
+    const stmt = db.prepare(`SELECT DISTINCT species_id FROM ${table} WHERE species_id IS NOT NULL`);
+    const ids: string[] = [];
+    while (stmt.step()) ids.push(String(stmt.getAsObject().species_id));
+    stmt.free();
+    for (const id of ids) {
+      const next = toSpeciesId(id);
+      if (next !== id) db.run(`UPDATE ${table} SET species_id = ? WHERE species_id = ?`, [next, id]);
+    }
+  }
+}
+
 function addColumnIfMissing(db: Database, table: string, column: string, definition: string): void {
   if (!columnNames(db, table).includes(column)) {
     db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -85,4 +111,6 @@ export function applySchema(db: Database): void {
   addColumnIfMissing(db, 'team_members', 'ivs_json', 'TEXT');
   // Spawn cache table from older builds; nothing ever read it.
   db.run('DROP TABLE IF EXISTS spawn_index');
+  if (userVersion(db) < 1) normalizeSpeciesIds(db);
+  db.run(`PRAGMA user_version = ${SCHEMA_VERSION}`);
 }

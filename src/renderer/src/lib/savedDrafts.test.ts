@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { addDraft, removeDraft, type SavedDraft } from './savedDrafts';
+import { afterEach, describe, it, expect } from 'vitest';
+import { addDraft, loadSavedDrafts, removeDraft, type SavedDraft } from './savedDrafts';
 
 const base: SavedDraft[] = [
   { id: 'a', label: 'Old', opponents: [{ speciesId: 'garchomp', level: 100 }], createdAt: 1 },
@@ -38,5 +38,19 @@ describe('removeDraft', () => {
 
   it('is a no-op for an unknown id', () => {
     expect(removeDraft(base, 'nope')).toEqual(base);
+  });
+});
+
+describe('loadSavedDrafts', () => {
+  afterEach(() => {
+    delete (globalThis as { localStorage?: unknown }).localStorage;
+  });
+
+  it('rewrites species ids saved by older builds', () => {
+    const saved = [{ id: 'x', label: 'Old', opponents: [{ speciesId: 'great tusk', level: 100 }], createdAt: 1 }];
+    (globalThis as { localStorage?: Pick<Storage, 'getItem'> }).localStorage = {
+      getItem: (k: string) => (k === 'cobblemon-counter-drafts' ? JSON.stringify(saved) : null),
+    };
+    expect(loadSavedDrafts()[0].opponents[0].speciesId).toBe('greattusk');
   });
 });

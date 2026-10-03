@@ -2,6 +2,7 @@
 // a dismissal reflects a fact about their game ("my game can't teach Toxapex
 // Scald") and applies to every copy of that species, surviving restarts.
 import type { OptSuggestion } from './optimize';
+import { toSpeciesId } from '../../../../shared/speciesId';
 import { readStorage } from '../storage';
 
 const STORAGE_KEY = 'stablab:dismissed-tips';
@@ -16,7 +17,16 @@ export function loadDismissed(): Set<string> {
     const raw = readStorage(STORAGE_KEY);
     if (!raw) return new Set();
     const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? new Set(arr.filter((x): x is string => typeof x === 'string')) : new Set();
+    if (!Array.isArray(arr)) return new Set();
+    // Older builds keyed tips by that dataset's species ids.
+    return new Set(
+      arr
+        .filter((x): x is string => typeof x === 'string')
+        .map((token) => {
+          const [species, ...rest] = token.split('::');
+          return [toSpeciesId(species), ...rest].join('::');
+        }),
+    );
   } catch {
     return new Set();
   }
