@@ -1,8 +1,8 @@
 /**
- * NatDex OU competitive intel bundle - produced by `npm run fetch-smogon`
- * (scripts/fetch-smogon.mjs) into public/data/smogon.json. Filtered to species
- * present in the Cobblemon dataset; percentages are rating-weighted shares of
- * the ladder population. Optional: every consumer must work when absent.
+ * Per-format usage bundle - produced by `npm run fetch-usage`
+ * (scripts/fetch-usage.mjs) into public/data/usage/<format>.json. Keyed by
+ * Showdown species id; percentages are rating-weighted shares of the ladder
+ * population. Optional: every consumer must work when absent.
  */
 
 export interface SmogonStatShare {
@@ -60,8 +60,11 @@ export interface SmogonBundle {
   meta: {
     format: string;
     label: string;
-    month: string;
-    cutoff: number;
+    /** Stats month ("2026-05") when the source records it. */
+    month?: string;
+    /** Rating cutoff when the source records it. */
+    cutoff?: number;
+    source?: string;
     battles: number;
     fetchedAt: string;
   };
@@ -73,10 +76,15 @@ export interface SmogonBundle {
  * (absence looks different per environment - 404, file:// TypeError, or the
  * SPA fallback serving index.html - all are silent no-ops).
  */
-export async function loadSmogon(): Promise<SmogonBundle | null> {
+/** "2026-05", or "latest" when the bundle does not record a month. */
+export function usagePeriod(meta: SmogonBundle['meta']): string {
+  return meta.month ?? 'latest';
+}
+
+export async function loadUsage(format: string): Promise<SmogonBundle | null> {
   let text: string;
   try {
-    const r = await fetch('./data/smogon.json');
+    const r = await fetch(`./data/usage/${format}.json`);
     if (!r.ok) return null;
     text = await r.text();
   } catch {

@@ -19,7 +19,7 @@ import { TYPES, effectiveness } from './typechart';
 import { bst, NATURES } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
-import { isNatDexOULegal } from './legality';
+import { isFormatLegal } from './legality';
 import { classifyMember, HAZARD_CONTROL, HAZARD_MOVES, type RoleTag } from './teamRoles';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export interface BestSixOptions {
   minLevelRatio?: number;
   /** Reference level; default = 90th-percentile level across the PC. */
   refLevel?: number;
-  /** Exclude Pokémon banned from NatDex OU (Uber/AG). Default true. */
+  /** Exclude Pokémon the active format bans. Default true. */
   legalOnly?: boolean;
   /**
    * Item recommendation gate. Return false to forbid suggesting an item (e.g.
@@ -78,7 +78,7 @@ export interface TeamCandidate {
 /** A species to acquire that fills a role the PC collection can't. */
 export interface ExternalFiller {
   p: Pokemon;
-  /** NatDex OU usage share (0 when off-ladder), for the "why this one" note. */
+  /** Ladder usage share in the active format (0 when off-ladder), for the "why this one" note. */
   usage: number;
 }
 
@@ -98,7 +98,7 @@ export interface BestSixResult {
   /** Roles the whole PC can't fill, with external species to go catch. */
   coreDeficits: CoreDeficit[];
   excludedUnderleveled: number;
-  /** PC mons dropped for being banned from NatDex OU (when legalOnly). */
+  /** PC mons dropped for being banned in the active format (when legalOnly). */
   excludedBanned: number;
   /** PC mons dropped for a crippling ability (Slow Start / Truant / Defeatist). */
   excludedDetrimental: number;
@@ -188,13 +188,12 @@ function ivQuality(rec: PcPokemonRecord, p: Pokemon): number {
   return weighted / (4 * 31);
 }
 
-// Zero-usage viability by NatDex tier. For an *official* species,
-// ladder usage may be 0 simply because it sits below the OU usage cutoff - but
-// its tier still tells us how viable it actually is, so a 580-BST pure-Rock RU
-// wall (Regirock) ranks as the low-tier mon it is rather than riding the BST
-// taper meant for custom species. Showdown's NatDex bottom bucket is "RU", so
-// everything RU-and-below is treated as a competitive long shot. Range is kept
-// comparable to the old BST taper's 0..0.5 so the rest of the formula is unmoved.
+// Zero-usage viability by tier. Ladder usage may be 0 simply because a species
+// sits below the OU usage cutoff, but its tier still says how viable it is, so a
+// 580-BST pure-Rock wall (Regirock) ranks as the low-tier mon it is rather than
+// riding a BST taper. National Dex's bottom bucket is "RU", so everything
+// RU-and-below is treated as a competitive long shot. Range is 0..0.5 to match
+// the BST taper still used for species without a tier.
 const TIER_VIABILITY: Record<string, number> = {
   ag: 0.5, uber: 0.5, ou: 0.45, uubl: 0.4, uu: 0.35, rubl: 0.28,
   nubl: 0.16, nu: 0.12, publ: 0.1, pu: 0.09, zubl: 0.08, zu: 0.07,
@@ -496,7 +495,7 @@ function externalFillers(
 ): ExternalFiller[] {
   return Object.values(pokemonById)
     .filter((p) => !ownedSpecies.has(p.id))
-    .filter((p) => (legalOnly ? isNatDexOULegal(p) : true))
+    .filter((p) => (legalOnly ? isFormatLegal(p) : true))
     .filter((p) => p.moves.some((m) => moveSet.has(norm(m.move))))
     .map((p) => ({ p, usage: smogon?.species[p.id]?.usage ?? 0 }))
     .sort((a, b) => b.usage - a.usage)
@@ -691,7 +690,7 @@ export function buildBestTeams(
   const legalOnly = opts.legalOnly ?? true;
   const allowItem = opts.allowItem ?? (() => true);
 
-  // Drop banned (Uber/AG) mons first so the team is NatDex OU-legal, and mons
+  // Drop banned mons first so the team is legal in the format, and mons
   // whose ability strictly cripples them (Slow Start / Truant / Defeatist) -
   // their raw stats would otherwise float them into a "best" team.
   let excludedBanned = 0;
@@ -699,7 +698,7 @@ export function buildBestTeams(
   const known = records.filter((r) => {
     const p = pokemonById[r.speciesId];
     if (!p) return false;
-    if (legalOnly && !isNatDexOULegal(p)) {
+    if (legalOnly && !isFormatLegal(p)) {
       excludedBanned++;
       return false;
     }
@@ -735,16 +734,13 @@ export function buildBestTeams(
     const intel = smogon?.species[rec.speciesId] ?? null;
     const matched = intel ? bestMatchingSet(rec, p, intel) : null;
     const usage = intel?.usage ?? 0;
-    // Zero-usage power fallback, split by provenance. For meta mons,
-    // ladder usage already reflects stat quality and this term fades to 0. For
-    // usage-0 mons it's the only signal - but it must differ by origin:
-    //   - official species (have a NatDex tier) are ranked by that tier, so a
-    //     0%-usage RU wall can't ride the taper meant for custom mons;
-    //   - true custom Cobblemon species are absent from Showdown (no tier, no
-    //     usage), so their BST is all we have - keep the original taper for them.
+    // Zero-usage power fallback. For meta mons ladder usage already reflects
+    // stat quality and this term fades to 0. For usage-0 mons the tier is the
+    // signal, so a 0%-usage RU wall can't ride a BST taper; a species without a
+    // tier falls back to its BST.
     const fade = 1 - Math.min(1, Math.sqrt(usage));
-    const fallback = p.natDexTier
-      ? tierViability(p.natDexTier) * fade
+    const fallback = p.tier
+      ? tierViability(p.tier) * fade
       : 0.5 * (bst(p.baseStats) / 600) * fade;
     // Fold in individual-set execution so a trash build can't coast on potential.
     const quality =

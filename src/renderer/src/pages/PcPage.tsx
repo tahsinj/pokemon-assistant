@@ -1576,7 +1576,7 @@ const SEVERITY_STYLE: Record<OptSeverity, { dot: string; label: string }> = {
 };
 
 /**
- * Coaching panel: shows where the stored set diverges from NatDex OU usage and
+ * Coaching panel: shows where the stored set diverges from ladder usage and
  * offers a one-click fix per finding. Silent when there's no usage data; a clean
  * "looks meta-standard" note when the set already matches.
  */

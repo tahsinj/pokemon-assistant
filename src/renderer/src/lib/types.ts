@@ -12,27 +12,31 @@ export interface Pokemon {
   abilities: string[];
   hiddenAbilities: string[];
   baseStats: BaseStats;
-  evYield?: Record<string, number>;
-  catchRate?: number;
-  /** Fraction of males 0..1; -1 = genderless. Absent when source data lacked it. */
+  /** EVs earned for defeating this species. */
+  evYield?: BaseStats;
+  /** Fraction of males 0..1; -1 = genderless. */
   maleRatio?: number;
-  /** Smogon NatDex tier ("OU" | "UU" | ... | "Uber" | "AG"); from fetch-tiers. */
-  natDexTier?: string;
+  /** Tier in the active format ("OU", "UU", "Uber", ...). */
+  tier?: string;
+  /** True when the active format bans this species. */
+  banned?: boolean;
   eggGroups: string[];
+  /** Decimeters. */
   height: number;
+  /** Hectograms. */
   weight: number;
+  /** Showdown species tags: legendary, mythical, paradox, restricted, ultra_beast. */
   labels: string[];
+  /** `learn` is a level, "tm", "tutor", "egg", "event", or "legacy" (only older generations teach it). */
   moves: { learn: string; move: string }[];
 }
 
 export type HeldItemCategory = 'held' | 'berry' | 'mega' | 'plate' | 'other';
-export type HeldItemSource = 'showdown' | 'cobblemon';
 
 export interface HeldItem {
   id: string;
   name: string;
   category: HeldItemCategory;
-  source: HeldItemSource;
 }
 
 export interface Move {
@@ -47,20 +51,4 @@ export interface Move {
   desc: string;
   target: string;
   flags: string[];
-}
-
-export interface SpawnEntry {
-  bucket?: string;
-  level?: string;
-  weight?: number;
-  biomes: string[];
-  moonPhase?: string;
-  canSeeSky?: boolean;
-  minSkyLight?: number;
-  maxSkyLight?: number;
-  timeRange?: string;
-  isRaining?: boolean;
-  isThundering?: boolean;
-  structures?: string[];
-  presets: string[];
 }

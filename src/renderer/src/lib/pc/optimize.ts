@@ -1,9 +1,9 @@
 /**
- * Compares a stored Pokémon against NatDex OU usage data (smogon.json) and
- * surfaces what looks off-meta, with a concrete fix. Pure + data-driven so it
- * can be unit-tested and reused by any "this mon in my PC" surface.
+ * Compares a stored Pokémon against the format's usage data and surfaces what
+ * looks off-meta, with a concrete fix. Pure + data-driven so it can be
+ * unit-tested and reused by any "this mon in my PC" surface.
  *
- * Guiding principle (from the product spec): don't nag about choices that have
+ * Guiding principle: don't nag about choices that have
  * a legitimate competitive use case. Only flag a slot when (a) the mon is
  * missing something the metagame runs heavily, or (b) what the mon runs has
  * essentially no usage and a clearly more common option exists.

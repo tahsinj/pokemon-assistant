@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { FORMAT_ORDER } from './formats';
 
-// The shipped bundle must NOT carry verbatim Smogon analysis prose (set
-// descriptions) - that is the one copyright-risky payload. This guard fails if
-// the pipeline ever re-introduces it. See the 2026-06-13 design spec.
-describe('shipped smogon.json', () => {
-  const path = fileURLToPath(new URL('../../public/data/smogon.json', import.meta.url));
+// Smogon's analysis prose is copyrighted, so the shipped bundles carry move
+// lists and spreads only. This fails if the pipeline ever brings set
+// descriptions back.
+describe.each(FORMAT_ORDER)('shipped usage/%s.json', (format) => {
+  const path = fileURLToPath(new URL(`../../public/data/usage/${format}.json`, import.meta.url));
   const bundle = JSON.parse(readFileSync(path, 'utf8'));
 
   it('contains no set descriptions', () => {

@@ -50,24 +50,27 @@ export interface HudTool {
 }
 
 /**
- * Radial nav tools: 12 hexes 30 deg apart, starting at -90 deg (Pokédex at the
- * top). SyncCore reads each tool's `angle` directly, so keep the spacing even
- * when adding or removing one.
+ * Radial nav tools, evenly spaced around the orb starting at -90 deg (the top).
+ * SyncCore reads each tool's `angle`, derived here from its position.
  */
-export const HUD_TOOLS: HudTool[] = [
-  { id: 'pokedex',  label: 'Pokédex', glyph: 'P', angle:  -90 },
-  { id: 'moves',    label: 'Moves',   glyph: 'V', angle:  -60 },
-  { id: 'team',     label: 'Team',    glyph: 'T', angle:  -30 },
-  { id: 'battle',   label: 'Battle',  glyph: 'X', angle:    0 },
-  { id: 'calcdex',  label: 'Calcdex', glyph: 'C', angle:   30 },
-  { id: 'session',  label: 'Live',    glyph: 'L', angle:   60 },
-  { id: 'planner',  label: 'EV/IV',   glyph: 'E', angle:   90 },
-  { id: 'pc',       label: 'PC Box',  glyph: 'B', angle:  120 },
-  { id: 'spawns',   label: 'Spawns',  glyph: 'S', angle:  150 },
-  { id: 'breeding', label: 'Breed',   glyph: 'O', angle:  180 },
-  { id: 'smogon',   label: 'Meta',    glyph: 'M', angle:  210 },
-  { id: 'draft',    label: 'Draft',   glyph: 'D', angle:  240 },
+const TOOL_ORDER: Omit<HudTool, 'angle'>[] = [
+  { id: 'pokedex',  label: 'Pokédex', glyph: 'P' },
+  { id: 'moves',    label: 'Moves',   glyph: 'V' },
+  { id: 'team',     label: 'Team',    glyph: 'T' },
+  { id: 'battle',   label: 'Battle',  glyph: 'X' },
+  { id: 'calcdex',  label: 'Calcdex', glyph: 'C' },
+  { id: 'session',  label: 'Live',    glyph: 'L' },
+  { id: 'planner',  label: 'EV/IV',   glyph: 'E' },
+  { id: 'pc',       label: 'PC Box',  glyph: 'B' },
+  { id: 'breeding', label: 'Breed',   glyph: 'O' },
+  { id: 'smogon',   label: 'Meta',    glyph: 'M' },
+  { id: 'draft',    label: 'Draft',   glyph: 'D' },
 ];
+
+export const HUD_TOOLS: HudTool[] = TOOL_ORDER.map((tool, i) => ({
+  ...tool,
+  angle: -90 + (i * 360) / TOOL_ORDER.length,
+}));
 
 // Sprite URLs now resolve through src/renderer/src/lib/sprites.ts (offline-first
 // local sprites + remote fallback). Don't reintroduce hardcoded PokeAPI URLs here.

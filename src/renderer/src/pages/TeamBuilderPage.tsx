@@ -14,7 +14,8 @@ import {
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { massiveSharedWeaknesses, weaknessCounts } from '../lib/teamWeaknessSummary';
 import { suggestTeammates } from '../lib/teamSynergy';
-import type { SmogonBundle } from '../lib/smogon';
+import { usagePeriod, type SmogonBundle } from '../lib/smogon';
+import { useFormat } from '../lib/formats';
 import { usePcCollection } from '../lib/usePcCollection';
 import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
@@ -75,6 +76,7 @@ export function TeamBuilderPage({
   items,
   smogon,
 }: { pokemon: Pokemon[]; moves: Record<string, Move>; items: HeldItem[]; smogon: SmogonBundle | null }) {
+  const format = useFormat();
   const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
@@ -185,7 +187,7 @@ export function TeamBuilderPage({
 
   const coverageCount = offensive.filter((o) => o.bestMult >= 2).length;
   const weakTypes = defensive.filter((d) => d.weakCount >= 2).map((d) => d.type);
-  // Recommend only "normal" NatDex OU mons - no legendaries / paradox / Ubers.
+  // Recommend only ordinary mons legal in the format: no legendaries, paradox or banned species.
   const suggestablePool = useMemo(() => pokemon.filter(isSuggestableTeammate), [pokemon]);
   const suggestions = useMemo(() => {
     if (teamMembers.length === 0 || teamMembers.length >= 6) return [];
@@ -942,7 +944,7 @@ export function TeamBuilderPage({
             {sectionHead(
               'SUGGESTED TEAMMATES',
               smogon
-                ? `${smogon.meta.label} ${smogon.meta.month} co-usage + coverage${weakTypes.length ? ` · stacked weak: ${weakTypes.join(', ')}` : ''}`
+                ? `${smogon.meta.label} ${usagePeriod(smogon.meta)} co-usage + coverage${weakTypes.length ? ` · stacked weak: ${weakTypes.join(', ')}` : ''}`
                 : 'type-coverage analysis',
             )}
             <div className="grid grid-cols-3 gap-2">
@@ -991,7 +993,7 @@ export function TeamBuilderPage({
                     checked={legalOnly}
                     onChange={(e) => setLegalOnly(e.target.checked)}
                   />
-                  NatDex OU legal
+                  {format.shortLabel} legal
                 </label>
                 <button
                   type="button"

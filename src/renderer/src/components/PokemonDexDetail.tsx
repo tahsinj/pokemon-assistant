@@ -7,8 +7,6 @@ import { SpeciesCounters } from './SpeciesCounters';
 import { bst } from '../lib/stats';
 import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
-import { getMergedSpecies } from '../lib/battle/dex';
-import { summarizeSpeciesDivergence } from '../lib/battle/overrides';
 import { MoveCard, SpriteFrame } from './hud/ModuleFrame';
 import { StatBar, TypeChip } from './hud/HudPrimitives';
 
@@ -85,7 +83,6 @@ export function PokemonDexDetail({
           <SpriteFrame dex={p.dex} name={p.name} />
           <div className="font-display text-[17px] font-bold leading-tight text-[var(--ink-0)]">
             {p.name}
-            <CobblemonOverrideBadge name={p.name} />
           </div>
           <div className="flex gap-1.5">
             {p.types.map((t) => (
@@ -327,27 +324,3 @@ export function PokemonDexDetail({
   );
 }
 
-/**
- * Renders a "Cobblemon variant" pill when the dex overlay reports a divergence
- * from Showdown for this species. Hover tooltip lists every changed field.
- * No-op when the species matches Showdown exactly.
- */
-function CobblemonOverrideBadge({ name }: { name: string }) {
-  const merged = getMergedSpecies(name);
-  if (!merged?.hasOverride || !merged.divergence) return null;
-  const lines = summarizeSpeciesDivergence(merged.divergence);
-  if (lines.length === 0) return null;
-  return (
-    <span
-      title={`Cobblemon variant\n\n${lines.join('\n')}`}
-      className="ml-2 align-middle font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full cursor-help"
-      style={{
-        background: 'rgba(255, 198, 54, 0.12)',
-        border: '1px solid rgba(255, 198, 54, 0.5)',
-        color: 'var(--hud-accent)',
-      }}
-    >
-      Variant
-    </span>
-  );
-}

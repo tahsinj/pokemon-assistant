@@ -2,7 +2,7 @@
  * Usage-statistics-backed set priors, plugged into the set generator via
  * `PredictorContext.customSetPool`.
  *
- * Converts the NatDex OU bundle (smogon.json) into CandidateSet pools:
+ * Converts the format's usage bundle into CandidateSet pools:
  *   - one candidate per curated Smogon dex set (slashed moves resolved to the
  *     first option the species can learn in *Cobblemon* - learnsets diverge),
  *     weighted by how much the ladder actually uses the set's item;

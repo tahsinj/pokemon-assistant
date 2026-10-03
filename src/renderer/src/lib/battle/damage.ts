@@ -1,6 +1,5 @@
 import { calculate, Generations, Pokemon as CalcPokemon, Move as CalcMove, Field as CalcField, Result, ABILITIES, ITEMS } from '@smogon/calc';
 import type { BattlePokemonSpec, FieldSpec, Generation } from './types';
-import { getMergedMove, getMergedSpecies } from './dex';
 
 const toId = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -56,17 +55,6 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
   // @smogon/calc treats teraType being set as "this mon is terastallized" - there
   // is no separate boolean. Only forward it when the caller explicitly opted in.
   const teraType = spec.isTerastallized && spec.teraType ? spec.teraType : undefined;
-  // Apply Cobblemon overrides (types / base stats / weight) when the species
-  // has a registered divergence. We forward these via the Pokemon constructor's
-  // Partial<State.Pokemon> options so the calc treats them as authoritative
-  // instead of using its built-in Showdown table.
-  const merged = getMergedSpecies(spec.speciesName, generation);
-  const cobblemonOverrides = merged?.hasOverride
-    ? {
-        types: merged.types as never,
-        weightkg: merged.weightkg,
-      }
-    : {};
   const baseOpts = {
     level: spec.level,
     nature: spec.nature,
@@ -78,7 +66,6 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
     evs: spec.evs,
     boosts: spec.boosts,
     status: spec.status,
-    ...cobblemonOverrides,
   } as const;
   // KO chance scales with current HP - when the caller supplied a percentage,
   // probe maxHP first then re-instantiate with the absolute curHP so the calc's
@@ -91,31 +78,6 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
     return new CalcPokemon(g, spec.speciesName, { ...baseOpts, curHP });
   }
   return new CalcPokemon(g, spec.speciesName, baseOpts);
-}
-
-/**
- * Build the `overrides` payload for `new CalcMove(...)` when the move has a
- * Cobblemon-specific divergence. Returns undefined when no override exists.
- *
- * We only emit fields the calc cares about for damage: bp, type, category,
- * priority. Accuracy/PP overrides surface to the UI but don't affect the
- * calc's damage math directly.
- */
-function moveOverridePayload(name: string, generation: Generation):
-  | { basePower?: number; type?: string; category?: string; priority?: number }
-  | undefined {
-  const m = getMergedMove(name, generation);
-  if (!m || !m.hasOverride || !m.divergence) return undefined;
-  // `@smogon/calc`'s Move constructor merges `options.overrides` onto its
-  // internal `MoveData`. The internal field names are: `basePower`, `type`,
-  // `category`, `priority` (see calc's `move.js`). Use those exact names -
-  // `bp` won't be picked up.
-  const out: { basePower?: number; type?: string; category?: string; priority?: number } = {};
-  if (m.divergence.basePower) out.basePower = m.basePower;
-  if (m.divergence.type) out.type = m.type;
-  if (m.divergence.category) out.category = m.category;
-  if (m.divergence.priority) out.priority = m.priority;
-  return Object.keys(out).length ? out : undefined;
 }
 
 function buildField(spec: FieldSpec): CalcField {
@@ -178,13 +140,11 @@ export function calcDamage(
     const g = gen(generation);
     const atk = buildPokemon(generation, attacker);
     const def = buildPokemon(generation, defender);
-    const overrides = moveOverridePayload(moveName, generation);
     const move = new CalcMove(g, moveName, {
       ability: properAbility(attacker.ability),
       item: properItem(attacker.item),
       species: attacker.speciesName,
       isCrit: opts?.isCrit ?? false,
-      ...(overrides ? { overrides: overrides as never } : {}),
     });
     const f = buildField(field);
     const result = calculate(g, atk, def, move, f);

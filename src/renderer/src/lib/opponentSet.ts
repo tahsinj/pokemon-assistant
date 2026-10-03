@@ -9,7 +9,7 @@ import type { Pokemon, Move, BaseStats } from './types';
 import type { SmogonSpeciesIntel } from './smogon';
 import type { CombatImportInput } from './toCombatSpec';
 
-/** Opponent investment assumption. See the 2026-06-14 design spec. */
+/** Opponent investment: zero IVs and EVs, full IVs with no EVs, or the most-used competitive spread. */
 export type OpponentBulk = 'min' | 'maxIv' | 'competitive';
 
 export interface AssumedSet {

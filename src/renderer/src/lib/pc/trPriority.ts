@@ -24,7 +24,7 @@ const TAUGHT_TAGS = new Set(['tm', 'tutor']);
 export const TR_MIN_MOVE_PCT = 20;
 
 // Species usage (fraction) at which meta weight saturates. ~15% usage is already a
-// top-of-ladder staple in NatDex OU.
+// top-of-ladder staple in the format.
 const USAGE_SATURATION = 0.15;
 
 // A mon that's slotted into one of your saved teams matters more than one just

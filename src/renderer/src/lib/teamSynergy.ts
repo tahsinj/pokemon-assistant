@@ -1,7 +1,7 @@
 /**
  * Teammate recommendations for the Team Builder - "given these Pokémon, who
- * completes the squad?" Blends Smogon NatDex OU co-usage with type-synergy
- * analysis so it works for meta staples and Cobblemon-only species alike.
+ * completes the squad?" Blends Smogon co-usage for the active format with
+ * type-synergy analysis so it works for meta staples and off-meta species alike.
  *
  * Scoring components (weights tuned so real pairings beat raw usage):
  *   - co-usage      x3 - how often the candidate appears on current members'
@@ -55,7 +55,7 @@ export function suggestTeammates(
         return {
           p,
           score: Math.sqrt(usage),
-          reasons: usage > 0 ? [`NatDex OU staple - ${(usage * 100).toFixed(1)}% usage`] : [],
+          reasons: usage > 0 ? [`${smogon?.meta.label ?? 'Ladder'} staple - ${(usage * 100).toFixed(1)}% usage`] : [],
         };
       })
       .sort((a, b) => b.score - a.score)
@@ -124,7 +124,7 @@ export function suggestTeammates(
     const usage = smogon?.species[p.id]?.usage ?? 0;
     if (usage > 0) {
       score += Math.sqrt(usage);
-      reasons.push(`${(usage * 100).toFixed(1)}% NatDex OU usage`);
+      reasons.push(`${(usage * 100).toFixed(1)}% ${smogon?.meta.label ?? 'ladder'} usage`);
     }
 
     // Momentum pairing: candidate completes a slow-pivot <-> wallbreaker core.

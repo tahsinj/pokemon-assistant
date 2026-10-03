@@ -3,7 +3,7 @@ import { buildGatedItemIds, gatedItemsByKind, makeItemFilter, isZCrystalName } f
 import type { HeldItem } from './types';
 
 const item = (name: string, category: HeldItem['category']): HeldItem =>
-  ({ id: name.toLowerCase().replace(/[^a-z0-9]/g, ''), name, category, source: 'showdown' });
+  ({ id: name.toLowerCase().replace(/[^a-z0-9]/g, ''), name, category });
 
 const items: HeldItem[] = [
   item('Leftovers', 'held'),

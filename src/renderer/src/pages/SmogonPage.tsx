@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Pokemon } from '../lib/types';
-import type { SmogonBundle } from '../lib/smogon';
+import { usagePeriod, type SmogonBundle } from '../lib/smogon';
 import { buildLeaderboard, maxUsage, type SmogonSortMode } from '../lib/smogonLeaderboard';
 import { bst } from '../lib/stats';
 import { TYPES } from '../lib/typechart';
@@ -60,7 +60,7 @@ export function SmogonPage({
     <ModuleFrame
       kicker="SMOGON"
       title="Smogon Intel"
-      subtitle={`${smogon.meta.label} · ${smogon.meta.month} · ${smogon.meta.battles.toLocaleString()} battles`}
+      subtitle={`${smogon.meta.label} · ${usagePeriod(smogon.meta)} · ${smogon.meta.battles.toLocaleString()} battles`}
     >
       <div className="grid grid-cols-[minmax(320px,460px),1fr] gap-5 items-start">
         {/* Leaderboard */}
@@ -198,7 +198,7 @@ export function SmogonPage({
                 }}
               />
               <div className="font-mono-hud text-[13px] tracking-wide text-[var(--ink-2)] text-center mt-4">
-                Usage data: Smogon · smogon.com/stats · {smogon.meta.month}
+                Usage data: Smogon · smogon.com/stats · {usagePeriod(smogon.meta)}
               </div>
             </>
           ) : (

@@ -58,7 +58,7 @@ export function ItemSearchInput({
       {open && suggestions.length > 0 && (
         <ul className="item-search-menu" role="listbox">
           {suggestions.map((item) => (
-            <li key={`${item.id}-${item.source}`}>
+            <li key={item.id}>
               <button
                 type="button"
                 role="option"
@@ -70,10 +70,7 @@ export function ItemSearchInput({
                 }}
               >
                 <span>{item.name}</span>
-                <span className="item-search-meta">
-                  {item.category}
-                  {item.source === 'cobblemon' ? ' · Cobblemon' : ''}
-                </span>
+                <span className="item-search-meta">{item.category}</span>
               </button>
             </li>
           ))}

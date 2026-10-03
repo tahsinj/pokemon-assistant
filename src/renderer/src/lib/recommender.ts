@@ -11,7 +11,7 @@ export type MovePool = 'all' | 'levelup' | 'tm';
 
 export interface MovesetOptions {
   pool?: MovePool;
-  /** When present, move scores are biased toward NatDex OU ladder usage. */
+  /** When present, move scores are biased toward ladder usage in the active format. */
   smogon?: SmogonSpeciesIntel | null;
 }
 
@@ -107,7 +107,7 @@ export function scoreMove(
   let score = 0;
   const physAttacker = physical ?? p.baseStats.atk >= p.baseStats.spa;
 
-  // Ladder reality check: what NatDex OU players actually click, capped so
+  // Ladder reality check: what players in the format actually click, capped so
   // usage informs rather than dictates.
   const usagePct = smogonUsagePct(smogon, m);
   if (usagePct > 0) {

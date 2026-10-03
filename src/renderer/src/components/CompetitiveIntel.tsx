@@ -1,4 +1,4 @@
-import type { SmogonBundle, SmogonSet, SmogonSpeciesIntel } from '../lib/smogon';
+import { usagePeriod, type SmogonBundle, type SmogonSet, type SmogonSpeciesIntel } from '../lib/smogon';
 
 const STAT_LABELS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe'];
 
@@ -86,7 +86,7 @@ export function CompetitiveIntel({
       <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
         COMPETITIVE INTEL ·{' '}
         <span className="text-[var(--ink-2)]">
-          {meta.label} {meta.month} · {(intel.usage * 100).toFixed(1)}% usage · #{intel.rank}
+          {meta.label} {usagePeriod(meta)} · {(intel.usage * 100).toFixed(1)}% usage · #{intel.rank}
         </span>
       </div>
 

@@ -115,7 +115,8 @@ describe('buildBestTeams - pool construction', () => {
 
   it('excludes banned (Uber/AG) species and counts them', () => {
     const byId = { ...pokemonById, zacian: species('zacian', ['fairy']) };
-    byId.zacian.natDexTier = 'Uber';
+    byId.zacian.tier = 'Uber';
+    byId.zacian.banned = true;
     const records = [...tenRecords, rec('uber', 'zacian', 100)];
     const out = buildBestTeams(records, byId, MOVES, null);
     expect(out.excludedBanned).toBe(1);
@@ -126,7 +127,8 @@ describe('buildBestTeams - pool construction', () => {
 
   it('includes banned species when legalOnly is off', () => {
     const byId = { ...pokemonById, zacian: species('zacian', ['fairy']) };
-    byId.zacian.natDexTier = 'Uber';
+    byId.zacian.tier = 'Uber';
+    byId.zacian.banned = true;
     const out = buildBestTeams([...tenRecords, rec('uber', 'zacian', 100)], byId, MOVES, null, {
       legalOnly: false,
     });
@@ -202,12 +204,12 @@ describe('buildBestTeams - scoring signals', () => {
     const byId = {
       regirock: species('regirock', ['rock'], {
         baseStats: { hp: 80, atk: 100, def: 200, spa: 50, spd: 100, spe: 50 },
-        natDexTier: 'RU',
+        tier: 'RU',
         moves: [{ learn: 'tm', move: 'earthquake' }],
       }),
       dragonite: species('dragonite', ['dragon', 'flying'], {
         baseStats: { hp: 91, atk: 134, def: 95, spa: 100, spd: 100, spe: 80 },
-        natDexTier: 'OU',
+        tier: 'OU',
         moves: [{ learn: 'tm', move: 'earthquake' }],
       }),
     };

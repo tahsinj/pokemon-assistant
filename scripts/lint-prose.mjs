@@ -22,6 +22,7 @@ const PROCESS_PHRASES = [
   /\bthe doc's\b/i,
   /\bpossible refinements\b/i,
   /\bsilence TS\b/i,
+  /\b(product spec|design spec|per the spec)\b/i,
 ];
 
 const FILLER_WORDS =
