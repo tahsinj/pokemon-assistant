@@ -648,12 +648,9 @@ The day-to-day rules live in `CONTRIBUTING.md`. Summary:
   - No filler words: "robust", "seamless", "leverage", "honest",
     "deliberately", "comprehensive", "crucial", "ensure".
   - UI strings may keep typographic characters where they are a design
-    choice, but the decorative "◢" prefix goes.
-- Known spots to fix first: `lib/counterDraft.ts:3`, `lib/bestSix.ts:405`,
-  `:818`, `:849` (and the `__internals__` export that only exists to silence
-  an unused-import warning), `lib/battle/search/simulate.ts:4-5`,
-  `search/evaluate.ts:5`, `search/expectimax.ts:17`, `battle/events.ts:272`,
-  `battle/state.ts:288`, `db/schema.sql:1-2`.
+    choice. The "◢" heading mark is drawn by the `hud-mark` CSS class and
+    never typed into text.
+- `npm run lint:prose` enforces these rules in CI.
 - **Build health.** Regenerate and commit `package-lock.json` so `npm ci`
   works, pin TypeScript 5.x until the `baseUrl` migration, add ESLint, and a
   GitHub Actions workflow: `npm ci`, typecheck, tests, build, short bot
@@ -736,6 +733,15 @@ Sizes are relative (S, M, L), not dates.
 
 M1 moves ahead of the UI work so the UI is rebuilt once, on the new data, and
 Spawns never needs fixing.
+
+Status:
+
+- **M0 done.** Lockfile fixed, CI (lint, prose lint, typecheck, tests,
+  build), dead pages and components deleted, `riven_tag` renamed with a tested
+  migration, id-form items fixed in the calc, comments cleaned up, the heading
+  mark moved into CSS (which also fixed a doubled mark on the Live tracker's
+  turn log). The roughly 240 CSS classes only the deleted files used are left
+  for M2, where screenshot tests can catch a wrong deletion.
 
 ## 8. Risks
 

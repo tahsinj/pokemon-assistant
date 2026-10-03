@@ -38,7 +38,8 @@ Solo project, but these rules keep the history and the code readable.
 - No tool, assistant or agent names anywhere in the repo: code, comments,
   docs, file names, branch names, commit messages.
 - UI strings may use typographic characters on purpose (the middle dot in
-  "ESC · CLOSE"), not as decoration.
+  "ESC · CLOSE"), not as decoration. The heading mark comes from the
+  `hud-mark` CSS class.
 
 ## Before pushing
 
