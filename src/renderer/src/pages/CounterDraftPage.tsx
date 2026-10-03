@@ -73,7 +73,7 @@ export function CounterDraftPage({
   // PC mons usable against a given opponent team. In a flat-level format both
   // sides are normalized, so the underlevel gate doesn't apply (every mon is
   // eligible at the flat level); otherwise drop the badly underleveled.
-  const candidatesFor = (opps: OppSlot[], flat: number | null): Candidate[] => {
+  const candidatesFor = useCallback((opps: OppSlot[], flat: number | null): Candidate[] => {
     const maxLevel = flat ?? opps.reduce((m, o) => Math.max(m, o.level), 1);
     const minLevel = maxLevel * 0.6;
     const out: Candidate[] = [];
@@ -84,10 +84,10 @@ export function CounterDraftPage({
       if (p) out.push({ rec: flat == null ? rec : { ...rec, level: flat }, p });
     }
     return out;
-  };
+  }, [pc.mons, pokemonById]);
   const candidates = useMemo<Candidate[]>(
     () => candidatesFor(opponents, flatLevel),
-    [pc.mons, pokemonById, opponents, flatLevel],
+    [candidatesFor, opponents, flatLevel],
   );
 
   // PC mons dropped by the underlevel gate - surfaced so an excluded mon

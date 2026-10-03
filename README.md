@@ -27,6 +27,7 @@ npm run dev        # Vite on :5173, then Electron
 Other scripts:
 
 ```bash
+npm run check      # eslint, prose lint, typecheck, tests
 npm test           # vitest
 npm run build      # renderer -> dist/, electron -> dist-electron/
 npm run pack:win   # Windows installer into release/

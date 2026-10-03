@@ -236,12 +236,12 @@ function QuickCheck({
       {opp && opp.id === p.id && (
         <div className="font-mono-hud text-[12px] text-[var(--ink-2)]">Pick a different species.</div>
       )}
-      {opp && cell && <VerdictCard p={p} opp={opp} cell={cell} />}
+      {opp && cell && <VerdictCard opp={opp} cell={cell} />}
     </div>
   );
 }
 
-function VerdictCard({ p, opp, cell }: { p: Pokemon; opp: Pokemon; cell: MatchupCell }) {
+function VerdictCard({ opp, cell }: { opp: Pokemon; cell: MatchupCell }) {
   const s = VERDICT_STYLE[cell.verdict];
   const koPct = Math.round(cell.myKoChance * 100);
   const rawBack = Math.round(cell.theirPctMax);

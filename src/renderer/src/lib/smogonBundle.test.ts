@@ -11,8 +11,9 @@ describe('shipped smogon.json', () => {
 
   it('contains no set descriptions', () => {
     const offenders: string[] = [];
-    for (const [id, sp] of Object.entries<any>(bundle.species)) {
-      for (const [setName, set] of Object.entries<any>(sp.sets ?? {})) {
+    const species = bundle.species as Record<string, { sets?: Record<string, object> }>;
+    for (const [id, sp] of Object.entries(species)) {
+      for (const [setName, set] of Object.entries(sp.sets ?? {})) {
         if ('description' in set) offenders.push(`${id} / ${setName}`);
       }
     }

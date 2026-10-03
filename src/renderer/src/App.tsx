@@ -342,7 +342,7 @@ export function App() {
       case 'breeding':
         return <BreedingPage pokemon={pokemon} />;
       case 'smogon':
-        return <SmogonPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+        return <SmogonPage pokemon={pokemon} smogon={smogon} />;
       case 'draft':
         return <CounterDraftPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:

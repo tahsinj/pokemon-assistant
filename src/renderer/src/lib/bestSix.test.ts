@@ -320,7 +320,6 @@ describe('buildBestTeams - member advice', () => {
   });
 
   it('flags underleveled members against the PC reference level', () => {
-    const records = [...tenRecords, rec('low', 'jolt', 40)]; // ref ~ 58-59
     // 'low' replaces the dedupe winner only if higher level - give it its own species.
     const byId = { ...pokemonById, lowmon: species('lowmon', ['normal']) };
     const out = buildBestTeams([...tenRecords, rec('low', 'lowmon', 40)], byId, MOVES, null, {

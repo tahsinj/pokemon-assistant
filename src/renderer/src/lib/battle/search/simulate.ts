@@ -55,11 +55,11 @@ export function simulateTurn(
 
   // If only one side moves, that side acts unopposed.
   if (playerAction.kind === 'switch' && opponentAction.kind === 'move') {
-    next = applyMove(next, 'opponent', opponentAction, ctx);
+    next = applyMove(next, 'opponent', opponentAction);
     return endOfTurn(next);
   }
   if (opponentAction.kind === 'switch' && playerAction.kind === 'move') {
-    next = applyMove(next, 'player', playerAction, ctx);
+    next = applyMove(next, 'player', playerAction);
     return endOfTurn(next);
   }
 
@@ -74,16 +74,16 @@ export function simulateTurn(
   const playerId = getActive(next, 'player')?.id;
   const opponentId = getActive(next, 'opponent')?.id;
   if (playerFirst) {
-    next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>, ctx);
+    next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>);
     const opp = getActive(next, 'opponent');
     if (opp && opp.id === opponentId && opp.battle.currentHP > 0) {
-      next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>, ctx);
+      next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>);
     }
   } else {
-    next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>, ctx);
+    next = applyMove(next, 'opponent', opponentAction as Extract<Action, { kind: 'move' }>);
     const us = getActive(next, 'player');
     if (us && us.id === playerId && us.battle.currentHP > 0) {
-      next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>, ctx);
+      next = applyMove(next, 'player', playerAction as Extract<Action, { kind: 'move' }>);
     }
   }
   return endOfTurn(next);
@@ -102,7 +102,6 @@ function applyMove(
   state: BattleState,
   attackerSide: SideId,
   action: Extract<Action, { kind: 'move' }>,
-  ctx: SimContext,
 ): BattleState {
   const defenderSide: SideId = attackerSide === 'player' ? 'opponent' : 'player';
   const attacker = getActive(state, attackerSide);
@@ -132,7 +131,7 @@ function applyMove(
   const atkSpec = toSpec(attacker);
   const defSpec = toSpec(defender);
   const field = toFieldSpec(state, attackerSide);
-  let outcome: DamageOutcome | null = null;
+  let outcome: DamageOutcome | null;
   try {
     outcome = calcDamage(9, atkSpec, defSpec, action.move, field);
   } catch {

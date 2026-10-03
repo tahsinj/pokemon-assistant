@@ -16,7 +16,7 @@ import type { BaseStats, Move, Pokemon } from './types';
 import type { PcPokemonRecord, MemberDetail } from './bridgeTypes';
 import type { SmogonBundle, SmogonSpeciesIntel } from './smogon';
 import { TYPES, effectiveness } from './typechart';
-import { bst, calcAllStats, NATURES } from './stats';
+import { bst, NATURES } from './stats';
 import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
 import { isNatDexOULegal } from './legality';

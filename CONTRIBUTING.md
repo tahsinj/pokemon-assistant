@@ -43,8 +43,7 @@ Solo project, but these rules keep the history and the code readable.
 ## Before pushing
 
 ```bash
-npm test
-npx tsc --noEmit
+npm run check   # eslint, prose lint, typecheck, tests
 ```
 
 ## Data

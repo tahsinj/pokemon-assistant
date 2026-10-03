@@ -11,8 +11,6 @@ import type { Pokemon, Move, BaseStats } from './types';
 import { abilityName } from './displayNames';
 import { calcAllStats, bst } from './stats';
 
-const normId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-
 /** Coerce a (possibly partial / missing) stat record into a full spread. */
 function toSpread(src: Record<string, number> | null | undefined, fallback: number): BaseStats {
   const f = (k: string) => (src && typeof src[k] === 'number' ? src[k] : fallback);

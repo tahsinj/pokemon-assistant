@@ -442,7 +442,6 @@ export function BattleSessionPage({
           dispatch={dispatch}
           battleStarted={battleStarted}
           pokemon={pokemon}
-          fuse={fuse}
           onReveal={onRevealOpponent}
         />
       </div>
@@ -645,7 +644,6 @@ function TeamPanel({
   dispatch,
   battleStarted,
   pokemon,
-  fuse,
   onReveal,
 }: {
   side: SideId;
@@ -653,7 +651,6 @@ function TeamPanel({
   dispatch: (e: BattleEvent) => void;
   battleStarted: boolean;
   pokemon?: Pokemon[];
-  fuse?: ReturnType<typeof buildSpeciesFuse>;
   onReveal?: (slot: number, name: string, level: number) => void;
 }) {
   const team = state.sides[side].team;
@@ -674,7 +671,6 @@ function TeamPanel({
             dispatch={dispatch}
             battleStarted={battleStarted}
             speciesList={pokemon}
-            fuse={fuse}
             onReveal={onReveal}
           />
         ))}
@@ -691,7 +687,6 @@ function SlotCard({
   dispatch,
   battleStarted,
   speciesList,
-  fuse,
   onReveal,
 }: {
   side: SideId;
@@ -701,7 +696,6 @@ function SlotCard({
   dispatch: (e: BattleEvent) => void;
   battleStarted: boolean;
   speciesList?: Pokemon[];
-  fuse?: ReturnType<typeof buildSpeciesFuse>;
   onReveal?: (slot: number, name: string, level: number) => void;
 }) {
   const [revealName, setRevealName] = useState('');

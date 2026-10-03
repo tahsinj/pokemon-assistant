@@ -141,7 +141,7 @@ describe('generateLegalActions', () => {
   it('returns each PP-positive move and no switch when alone', () => {
     const state = buildSeed();
     const actions = generateLegalActions(state, 'player', { includeSwitches: false });
-    const moves = actions.filter((a) => a.kind === 'move').map((a) => (a as any).move);
+    const moves = actions.flatMap((a) => (a.kind === 'move' ? [a.move] : []));
     expect(moves).toEqual(['Earthquake', 'Outrage', 'Stone Edge', 'Iron Head']);
     expect(actions.every((a) => a.kind === 'move')).toBe(true);
   });
@@ -336,9 +336,10 @@ describe('recommend', () => {
     const state = buildSeed();
     const recs = recommend(state, ctx, { depth: 1, topKSets: 1, includeSwitches: false });
     const top = recs[0];
-    expect(['Earthquake', 'Outrage']).toContain((top.action as any).move);
+    const topMove = top.action.kind === 'move' ? top.action.move : null;
+    expect(['Earthquake', 'Outrage']).toContain(topMove);
     // Iron Head shouldn't rank #1 against Tatsugiri (no super-effective hit).
-    expect((top.action as any).move).not.toBe('Iron Head');
+    expect(topMove).not.toBe('Iron Head');
   });
 
   it('depth-2 search still returns a valid ranked list', () => {

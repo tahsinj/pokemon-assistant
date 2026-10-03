@@ -97,7 +97,7 @@ export function SpawnPage({
   const [weatherF, setWeatherF] = useState<SpawnWeather | 'any'>('any');
   const [contextF, setContextF] = useState<SpawnContext | 'any'>('any');
 
-  const entries = selected ? spawns[selected.id] || [] : [];
+  const entries = useMemo(() => (selected ? spawns[selected.id] || [] : []), [selected, spawns]);
   const totalRules = useMemo(
     () => Object.values(spawns).reduce((a, b) => a + b.length, 0),
     [spawns],

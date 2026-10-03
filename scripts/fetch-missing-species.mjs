@@ -132,7 +132,7 @@ function learnsetFor(entry) {
 
 // -- Build records -----------------------------------------------------------
 const added = [];
-for (const [speciesId, entry] of Object.entries(dex)) {
+for (const entry of Object.values(dex)) {
   if (!entry.num || entry.num < 1) continue; // CAP / fakemon
   if (entry.baseSpecies) continue; // alternate forme
   if (entry.isNonstandard && SKIP_NONSTANDARD.has(entry.isNonstandard)) continue;

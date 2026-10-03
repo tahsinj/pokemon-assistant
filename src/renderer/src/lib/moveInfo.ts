@@ -1,7 +1,7 @@
 // Derived intelligence for the Move viewer: type coverage from the type chart,
 // human-readable flag/target labels, and a reverse "who learns this" index
 // built from each species' learnset in pokemon.json.
-import type { Move, Pokemon } from './types';
+import type { Pokemon } from './types';
 import { CHART, TYPES, type Type } from './typechart';
 
 export type LearnMethod = 'level' | 'tm' | 'egg' | 'tutor' | 'tutor-legacy' | 'special';

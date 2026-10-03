@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Pokemon, Move } from '../lib/types';
+import type { Pokemon } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { buildLeaderboard, maxUsage, type SmogonSortMode } from '../lib/smogonLeaderboard';
 import { bst } from '../lib/stats';
@@ -17,9 +17,8 @@ const SORTS: { id: SmogonSortMode; label: string }[] = [
 
 export function SmogonPage({
   pokemon,
-  moves: _moves,
   smogon,
-}: { pokemon: Pokemon[]; moves: Record<string, Move>; smogon: SmogonBundle | null }) {
+}: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
   const pokemonById = useMemo(() => {
     const m: Record<string, Pokemon> = {};
     for (const p of pokemon) m[p.id] = p;

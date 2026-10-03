@@ -13,7 +13,7 @@ import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { FocusLens } from '../components/hud/FocusLens';
 import { toHudTeam } from '../lib/hudTeam';
-import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
+import { ModuleFrame } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { GenderIcon } from '../components/GenderIcon';
 import { ItemSearchInput } from '../components/ItemSearchInput';
@@ -321,7 +321,7 @@ export function PcPage({
       );
       setBoxCounts(Object.fromEntries(counts));
     }
-  }, [bridge, activeBoxId]);
+  }, [bridge, activeBoxId, setActiveBoxId]);
 
   const refreshPokemon = useCallback(async () => {
     if (!bridge?.pcPokemonList || !activeBoxId) {
@@ -440,7 +440,7 @@ export function PcPage({
         setSelectedSlot(null);
       }
     },
-    [bridge, activeBoxId, editor.id, refreshBoxes, refreshPokemon],
+    [bridge, activeBoxId, editor.id, refreshBoxes, refreshPokemon, setEditorMode, setSelectedSlot],
   );
 
   const onPickSpecies = (p: Pokemon) => {
@@ -855,12 +855,14 @@ export function PcPage({
                       suppressClickRef.current = false;
                       return;
                     }
-                    mon ? openExisting(mon) : openEmptySlot(slot);
+                    if (mon) openExisting(mon);
+                    else openEmptySlot(slot);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      mon ? openExisting(mon) : openEmptySlot(slot);
+                      if (mon) openExisting(mon);
+                      else openEmptySlot(slot);
                     }
                   }}
                   onDragStart={(e) => {
@@ -1172,6 +1174,7 @@ function PcEditor({
     setLocal(draft);
     setNumeric(numericFormFromSpread(draft.level, draft.ivs, draft.evs));
     setFieldError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when a different mon opens; draft changes on every keystroke
   }, [draftKey]);
 
   // Continuously lift in-progress edits to the parent draft (which is
@@ -1232,7 +1235,7 @@ function PcEditor({
     const fix = s.fix;
     if (!fix) return;
     setLocal((d) => {
-      let next = { ...d };
+      const next = { ...d };
       if (fix.nature) next.nature = fix.nature;
       if (fix.item !== undefined) next.item = fix.item;
       if (fix.ability) next.ability = fix.ability;
