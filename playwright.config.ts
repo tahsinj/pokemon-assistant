@@ -19,10 +19,12 @@ export default defineConfig({
     { name: 'min', use: { viewport: { width: 1100, height: 700 } } },
     { name: 'large', use: { viewport: { width: 1920, height: 1080 } } },
   ],
+  // A production build, not the dev server: no dependency pre-bundling or
+  // reloads mid-test, and it is what ships.
   webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
+    command: `npm run build:renderer && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });
