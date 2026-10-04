@@ -19,7 +19,9 @@ import {
 import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
 import { migrateLegacyUserData } from './legacyUserData';
 
-const isDev = !app.isPackaged;
+// STABLAB_LOAD_BUILD=1 runs the built renderer from an unpackaged Electron,
+// as the installed app does (the Electron smoke test uses it).
+const isDev = !app.isPackaged && process.env.STABLAB_LOAD_BUILD !== '1';
 
 // Carry saved PC / teams over from the pre-rename data folder.
 migrateLegacyUserData();

@@ -5,9 +5,8 @@
 // Usage: npm run build && node scripts/electron-smoke.mjs
 // Needs a display; on Linux CI run it under xvfb-run.
 import { _electron as electron } from '@playwright/test';
-import path from 'node:path';
 
-const app = await electron.launch({ args: ['--no-sandbox', '.'] });
+const app = await electron.launch({ args: ['--no-sandbox', '.'], env: { ...process.env, STABLAB_LOAD_BUILD: '1' } });
 const fail = async (msg) => {
   console.error(msg);
   await app.close();
@@ -17,8 +16,8 @@ try {
   const win = await app.firstWindow();
   const errors = [];
   win.on('pageerror', (e) => errors.push(e.message));
-  // Unpackaged Electron points at the dev server; load the production build instead.
-  await app.evaluate(({ BrowserWindow }, file) => BrowserWindow.getAllWindows()[0].loadFile(file), path.resolve('dist/index.html'));
+  await win.waitForLoadState('domcontentloaded');
+  if (!win.url().startsWith('file:')) await fail(`Expected the built app over file://, got ${win.url()}`);
   await win.getByRole('button', { name: 'Battle', exact: true }).click({ timeout: 30_000 });
   await win.getByRole('tab', { name: 'Practice' }).click();
   await win.getByRole('button', { name: 'START BATTLE' }).click();
