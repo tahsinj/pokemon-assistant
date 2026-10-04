@@ -599,7 +599,7 @@ export function PcPage({
 
   if (!hasPc) {
     return (
-      <ModuleFrame kicker="PC STORAGE" title="PC Storage" subtitle="desktop app required">
+      <ModuleFrame subtitle="desktop app required">
         <p className="font-mono-hud text-[15px] text-[var(--ink-2)] m-0">
           PC storage requires the desktop app (Electron). Run with <code>npm run dev</code>.
         </p>
@@ -609,11 +609,9 @@ export function PcPage({
 
   return (
     <ModuleFrame
-      kicker="PC STORAGE"
-      title={activeBox?.name ?? 'PC Storage'}
       subtitle={
         activeBox
-          ? `${occupants.length} / ${PC_SLOTS_PER_BOX} · stored locally`
+          ? `${activeBox.name} · ${occupants.length} / ${PC_SLOTS_PER_BOX} · stored locally`
           : 'drag to move · drop on occupied slot to swap'
       }
       side={

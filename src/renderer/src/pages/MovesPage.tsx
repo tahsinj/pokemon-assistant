@@ -24,8 +24,6 @@ export function MovesPage({
 
   return (
     <ModuleFrame
-      kicker="MOVEDEX"
-      title="Move Index"
       subtitle={`${moveList.length} moves · power, coverage & learnsets`}
       side={selected && <TypeChip t={selected.type.toLowerCase()} size="md" />}
     >

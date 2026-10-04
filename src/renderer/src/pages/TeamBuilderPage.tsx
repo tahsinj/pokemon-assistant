@@ -505,8 +505,6 @@ export function TeamBuilderPage({
 
   return (
     <ModuleFrame
-      kicker="TEAM BUILDER"
-      title="Squad Six"
       subtitle={`Shared weakness · ${notableWeak.length} · type coverage ${coverageCount}/18`}
       side={
         <div className="flex items-center gap-2">

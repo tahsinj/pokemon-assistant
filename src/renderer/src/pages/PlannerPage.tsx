@@ -77,8 +77,6 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
 
   return (
     <ModuleFrame
-      kicker="EV / IV PLANNER"
-      title="Stat Sculptor"
       subtitle={species ? `${species.name} · ${nature} · LV ${level}` : 'Pick a species'}
       side={
         <div

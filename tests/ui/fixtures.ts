@@ -18,11 +18,22 @@ export const test = base.extend<{ app: Page }>({
   },
 });
 
-/** Open a tool from the home screen's hex ring and wait for its page header. */
-export async function openTool(page: Page, label: string): Promise<void> {
-  await page.getByRole('button', { name: label, exact: true }).first().click();
-  await expect(page.locator('.dive-content [data-ui="page-title"]').first()).toBeVisible();
-  await page.waitForTimeout(300);
+/** Open an area from the home screen's orb, switch to one of its tabs and wait for that page. */
+export async function openTool(page: Page, area: string, tool: string): Promise<void> {
+  await page.getByRole('button', { name: area, exact: true }).click();
+  await page.getByRole('tab', { name: tool, exact: true }).click();
+  await expect(page.locator('.dive-content [data-ui="page-title"]').first()).toHaveText(tool);
+  await settle(page);
+}
+
+/** Wait for the page's fade-in and other finite animations, so checks and screenshots see the final layout. */
+export async function settle(page: Page): Promise<void> {
+  await page.locator('.dive-content.dive-stagger-in').or(page.locator('.hud-root:not(.dive-open)')).first().waitFor();
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+  );
 }
 
 export async function pickFormat(page: Page, label: string): Promise<void> {

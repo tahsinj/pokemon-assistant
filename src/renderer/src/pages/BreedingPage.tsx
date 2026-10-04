@@ -181,8 +181,6 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
 
   return (
     <ModuleFrame
-      kicker="BREEDING"
-      title="Inheritance Calc"
       subtitle={`${slots} IVs inherited${natures[0].nature !== 'random' ? ' · nature locked' : ' · nature random'} · exact odds per egg`}
       side={
         <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--hud-accent-2)]">

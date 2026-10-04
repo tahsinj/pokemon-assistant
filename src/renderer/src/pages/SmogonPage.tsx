@@ -47,7 +47,7 @@ export function SmogonPage({
 
   if (!smogon) {
     return (
-      <ModuleFrame kicker="SMOGON" title="Smogon Intel" subtitle="Usage rankings & strategy">
+      <ModuleFrame subtitle="Usage rankings & strategy">
         <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-10 text-center">
           Smogon intel not available - run <span className="text-[var(--hud-accent-2)]">npm run fetch-smogon</span> to
           generate the data bundle.
@@ -58,8 +58,6 @@ export function SmogonPage({
 
   return (
     <ModuleFrame
-      kicker="SMOGON"
-      title="Smogon Intel"
       subtitle={`${smogon.meta.label} · ${usagePeriod(smogon.meta)} · ${smogon.meta.battles.toLocaleString()} battles`}
     >
       <div className="grid grid-cols-[minmax(320px,460px),1fr] gap-5 items-start">

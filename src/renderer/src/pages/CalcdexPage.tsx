@@ -366,8 +366,6 @@ export function CalcdexPage({
 
   return (
     <ModuleFrame
-      kicker="CALCDEX"
-      title="Damage Workbench"
       subtitle={`${matchupLabel}${weather ? ` · ${weather}` : ''}${terrain ? ` · ${terrain} Terrain` : ''}`}
       side={
         <button

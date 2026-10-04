@@ -21,8 +21,6 @@ export function PokedexPage({
   }, [pokemon]);
   return (
     <ModuleFrame
-      kicker="POKÉDEX"
-      title="Field Index"
       subtitle={`${pokemon.length} species · ${format.label}`}
       side={
         selected && (

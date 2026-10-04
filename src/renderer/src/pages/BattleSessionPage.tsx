@@ -299,8 +299,6 @@ export function BattleSessionPage({
 
   return (
     <ModuleFrame
-      kicker="LIVE SESSION"
-      title="Battle Tracker"
       subtitle={
         battleStarted
           ? `Turn ${state.turn}${state.field.weather ? ` · ${state.field.weather}` : ''}${

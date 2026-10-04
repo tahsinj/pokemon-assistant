@@ -1,15 +1,11 @@
-import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { loadDesignFonts } from './lib/loadDesignFonts';
 import { loadData } from './lib/data';
 import { DEFAULT_FORMAT, FORMAT_ORDER, FORMATS, FormatContext, isFormatId, type FormatId } from './lib/formats';
 import type { SmogonBundle } from './lib/smogon';
 import type { Pokemon, Move, HeldItem } from './lib/types';
-import {
-  BIOMES,
-  HUD_TOOLS,
-  type BiomeName,
-  type HudTeamMon,
-} from './lib/hudFixtures';
+import { BIOMES, type BiomeName, type HudTeamMon } from './lib/hudFixtures';
+import { AREAS, areaOf, TOOL_NAMES, ToolContext, type AreaId, type OpenTool, type ToolId } from './lib/areas';
 import { toHudTeam } from './lib/hudTeam';
 import { SyncCore } from './components/hud/SyncCore';
 import { TeamColumn } from './components/hud/TeamColumn';
@@ -49,32 +45,7 @@ const CounterDraftPage = lazy(() =>
   import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
 );
 
-type ToolId =
-  | 'pokedex'
-  | 'moves'
-  | 'team'
-  | 'battle'
-  | 'calcdex'
-  | 'session'
-  | 'planner'
-  | 'pc'
-  | 'breeding'
-  | 'smogon'
-  | 'draft';
-
-const TOOL_TITLES: Record<ToolId, string> = {
-  pokedex: 'Pokédex',
-  moves: 'Move Index',
-  team: 'Team Builder',
-  battle: 'Battle Calculator',
-  calcdex: 'Calcdex',
-  session: 'Live Battle Tracker',
-  planner: 'EV / IV Planner',
-  pc: 'PC Storage',
-  breeding: 'Breeding',
-  smogon: 'Smogon Intel',
-  draft: 'Counter Draft',
-};
+const FIRST_TABS = Object.fromEntries(AREAS.map((a) => [a.id, a.tools[0]])) as Record<AreaId, ToolId>;
 
 /**
  * Vertical budget that the Sync Core must fit in. Reserved heights:
@@ -115,7 +86,17 @@ export function App() {
   const [formatId, setFormatId] = useState<FormatId>(readStoredFormat);
   const format = FORMATS[formatId];
 
-  const [openTool, setOpenTool] = useState<ToolId | null>(null);
+  const [openArea, setOpenArea] = useState<AreaId | null>(null);
+  // Each area remembers its last tab for the session.
+  const [areaTabs, setAreaTabs] = useState<Record<AreaId, ToolId>>(FIRST_TABS);
+  const area = AREAS.find((a) => a.id === openArea) ?? null;
+  const openTool = area ? areaTabs[area.id] : null;
+  const showTool = (tool: ToolId) => {
+    const target = areaOf(tool).id;
+    setAreaTabs((prev) => ({ ...prev, [target]: tool }));
+    setOpenArea(target);
+  };
+  const closeArea = () => setOpenArea(null);
   const [staggerIn, setStaggerIn] = useState(false);
   const [hudTeam, setHudTeam] = useState<HudTeamMon[]>([]);
   const [activeMonId, setActiveMonId] = useState<string>('');
@@ -174,7 +155,7 @@ export function App() {
     } catch {
       /* storage unavailable: the choice lasts until restart */
     }
-    setOpenTool(null);
+    setOpenArea(null);
     setPokemon(null);
     setFormatId(id);
   };
@@ -299,7 +280,7 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && openTool) {
         e.preventDefault();
-        setOpenTool(null);
+        setOpenArea(null);
         return;
       }
       // 1-6 picks the lead on the home HUD (matches the key-hint).
@@ -325,6 +306,25 @@ export function App() {
   }, [hudTeam, activeMonId]);
 
   const dataReady = !!pokemon;
+
+  const openInfo = useMemo<OpenTool | null>(
+    () => (area && openTool ? { area, tool: openTool, name: TOOL_NAMES[openTool] } : null),
+    [area, openTool],
+  );
+
+  useEffect(() => {
+    document.title = openInfo ? `${openInfo.name} · ${openInfo.area.label} · STAB Lab` : 'STAB Lab';
+  }, [openInfo]);
+
+  // Arrow keys move between tabs, as in any tab list.
+  const onTabKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!area || !openTool || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    e.preventDefault();
+    const i = area.tools.indexOf(openTool);
+    const next = area.tools[(i + (e.key === 'ArrowRight' ? 1 : area.tools.length - 1)) % area.tools.length];
+    showTool(next);
+    e.currentTarget.querySelector<HTMLButtonElement>(`[data-tool="${next}"]`)?.focus();
+  };
 
   const diveModule = useMemo(() => {
     if (!openTool || !pokemon) return null;
@@ -419,7 +419,7 @@ export function App() {
                     type="button"
                     className="chunky font-display text-[12px]"
                     style={{ padding: '6px 14px' }}
-                    onClick={() => setOpenTool('team')}
+                    onClick={() => showTool('team')}
                   >
                     OPEN TEAM BUILDER
                   </button>
@@ -433,12 +433,10 @@ export function App() {
           >
             <div className="relative" style={{ width: coreSize, height: coreSize }}>
               <SyncCore
-                tools={HUD_TOOLS}
-                active={openTool}
+                hexes={AREAS}
+                active={openArea}
                 size={coreSize}
-                onPick={(id) =>
-                  setOpenTool((prev) => (prev === (id as ToolId) ? null : (id as ToolId)))
-                }
+                onPick={(id) => setOpenArea((prev) => (prev === id ? null : id))}
               />
             </div>
             {!dataReady && (
@@ -478,7 +476,7 @@ export function App() {
               <button
                 type="button"
                 className="glass rounded-[14px] px-4 py-5 text-center w-[170px] cursor-pointer hover:brightness-110 transition"
-                onClick={() => setOpenTool('team')}
+                onClick={() => showTool('team')}
                 title="Build a team in the Team Builder"
               >
                 <div className="text-[26px] leading-none mb-2 text-[var(--hud-accent)]">＋</div>
@@ -492,7 +490,8 @@ export function App() {
           {/* ROW 3 - Telemetry strip + key hint */}
           <div
             style={{ gridColumn: '1 / 4', gridRow: '3 / 4' }}
-            className="flex items-end justify-between gap-4 flex-wrap"
+            data-ui="home-bar"
+            className="flex items-end justify-between gap-4"
           >
             <TelemetryStrip />
             <div className="flex items-center gap-3">
@@ -539,11 +538,7 @@ export function App() {
                   {perfLite ? 'lite' : 'full'}
                 </span>
               </button>
-              <div className="key-hint" title="Shortcuts: click a hex around the orb to open that tool, Esc closes it, number keys 1–6 set your lead Pokémon">
-                <span>
-                  <span style={{ color: 'var(--hud-accent)' }}>CLICK HEX</span> open tool
-                </span>
-                <span className="sep">·</span>
+              <div className="key-hint" title="Esc closes the open area; number keys 1–6 set your lead Pokémon">
                 <span>
                   <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> close
                 </span>
@@ -558,23 +553,37 @@ export function App() {
 
         {/* Dive overlay */}
         <div className="dive-halo" />
-        <div className="dive-backdrop" onClick={() => setOpenTool(null)} />
+        <div className="dive-backdrop" onClick={closeArea} />
         <div
           className="dive-stage"
           role="dialog"
           aria-modal="true"
-          aria-label={openTool ? TOOL_TITLES[openTool] : ''}
+          aria-label={area?.label ?? ''}
         >
-          <button
-            type="button"
-            className="dive-close"
-          data-ui="close"
-            onClick={() => setOpenTool(null)}
-            aria-label="Close"
-          >
-            <span className="sr-only">Close</span>
-          </button>
-          <div className="dive-esc-hint" data-ui="close-hint">ESC · CLOSE</div>
+          <div className="area-bar" data-ui="area-bar">
+            <div className="area-name hud-mark">{area?.label}</div>
+            <div className="area-tabs" role="tablist" aria-label={area ? `${area.label} tools` : undefined} onKeyDown={onTabKey}>
+              {area?.tools.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  data-ui="area-tab"
+                  data-tool={t}
+                  aria-selected={t === openTool}
+                  tabIndex={t === openTool ? 0 : -1}
+                  className={`area-tab ${t === openTool ? 'active' : ''}`}
+                  onClick={() => showTool(t)}
+                >
+                  {TOOL_NAMES[t]}
+                </button>
+              ))}
+            </div>
+            <div className="dive-esc-hint" data-ui="close-hint">ESC · CLOSE</div>
+            <button type="button" className="dive-close" data-ui="close" onClick={closeArea} aria-label="Close">
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
           <div
             className={`dive-content ${staggerIn ? 'dive-stagger-in' : ''}`}
             key={openTool || 'empty'}
@@ -589,7 +598,7 @@ export function App() {
                   </div>
                 }
               >
-                {diveModule}
+                <ToolContext.Provider value={openInfo}>{diveModule}</ToolContext.Provider>
               </Suspense>
             </div>
           </div>

@@ -224,7 +224,7 @@ export function CounterDraftPage({
   };
 
   return (
-    <ModuleFrame kicker="MATCHUP DRAFT" title="Counter Draft" subtitle="Build a PC answer to their team">
+    <ModuleFrame subtitle="Build a PC answer to their team">
       <div className="glass rounded-[14px] p-3.5 mb-4">
         {/* Format bar - team size + battle level */}
         <div className="flex items-center justify-between gap-3 flex-wrap mb-3 pb-3 border-b border-white/8">

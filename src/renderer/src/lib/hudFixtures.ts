@@ -42,38 +42,8 @@ export interface HudTeamMon {
   moves: HudMove[];
 }
 
-export interface HudTool {
-  id: string;
-  label: string;
-  glyph: string;
-  angle: number;
-}
-
-/**
- * Radial nav tools, evenly spaced around the orb starting at -90 deg (the top).
- * SyncCore reads each tool's `angle`, derived here from its position.
- */
-const TOOL_ORDER: Omit<HudTool, 'angle'>[] = [
-  { id: 'pokedex',  label: 'Pokédex', glyph: 'P' },
-  { id: 'moves',    label: 'Moves',   glyph: 'V' },
-  { id: 'team',     label: 'Team',    glyph: 'T' },
-  { id: 'battle',   label: 'Battle',  glyph: 'X' },
-  { id: 'calcdex',  label: 'Calcdex', glyph: 'C' },
-  { id: 'session',  label: 'Live',    glyph: 'L' },
-  { id: 'planner',  label: 'EV/IV',   glyph: 'E' },
-  { id: 'pc',       label: 'PC Box',  glyph: 'B' },
-  { id: 'breeding', label: 'Breed',   glyph: 'O' },
-  { id: 'smogon',   label: 'Meta',    glyph: 'M' },
-  { id: 'draft',    label: 'Draft',   glyph: 'D' },
-];
-
-export const HUD_TOOLS: HudTool[] = TOOL_ORDER.map((tool, i) => ({
-  ...tool,
-  angle: -90 + (i * 360) / TOOL_ORDER.length,
-}));
-
-// Sprite URLs now resolve through src/renderer/src/lib/sprites.ts (offline-first
-// local sprites + remote fallback). Don't reintroduce hardcoded PokeAPI URLs here.
+// Sprite URLs resolve through lib/sprites.ts (local sprites first, then the
+// remote fallback). Keep hardcoded sprite URLs out of this file.
 
 export type BiomeName = 'Verdant Dusk' | 'Ember Caldera' | 'Tidal Reef' | 'Voltaic Storm' | 'Frostspire';
 

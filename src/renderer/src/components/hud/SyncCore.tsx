@@ -1,22 +1,32 @@
 import type { CSSProperties } from 'react';
-import type { HudTool } from '../../lib/hudFixtures';
 
 const HEX = 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)';
 
-export function SyncCore({
-  tools,
+export interface CoreHex {
+  id: string;
+  label: string;
+  glyph: string;
+}
+
+/**
+ * The home screen orb with one hex per entry, evenly spaced clockwise from the
+ * top. Hexes grow when there are few of them.
+ */
+export function SyncCore<T extends string>({
+  hexes,
   active,
   onPick,
   size = 480,
 }: {
-  tools: HudTool[];
-  active: string | null;
-  onPick: (id: string) => void;
+  hexes: (CoreHex & { id: T })[];
+  active: T | null;
+  onPick: (id: T) => void;
   size?: number;
 }) {
   const radius = Math.round(size * 0.35);
-  const hexW = Math.round(size * 0.1625);
-  const hexH = Math.round(size * 0.1875);
+  const scale = hexes.length <= 6 ? 1.35 : 1;
+  const hexW = Math.round(size * 0.1625 * scale);
+  const hexH = Math.round(size * 0.1875 * scale);
   const orbSize = Math.round(size * 0.32);
 
   return (
@@ -69,17 +79,16 @@ export function SyncCore({
         </div>
       </div>
 
-      {/* Radial hex tools */}
-      {tools.map((tool) => {
-        const rad = (tool.angle * Math.PI) / 180;
+      {hexes.map((hex, i) => {
+        const rad = ((-90 + (i * 360) / hexes.length) * Math.PI) / 180;
         const x = Math.cos(rad) * radius;
         const y = Math.sin(rad) * radius;
-        const isActive = tool.id === active;
+        const isActive = hex.id === active;
         return (
           <button
-            key={tool.id}
+            key={hex.id}
             type="button"
-            className={`nav-hex ${isActive ? 'active' : ''} has-tip`}
+            className={`nav-hex ${isActive ? 'active' : ''}`}
             style={
               {
                 width: hexW,
@@ -88,16 +97,15 @@ export function SyncCore({
                 top: `calc(50% - ${hexH / 2}px + ${y}px)`,
               } as CSSProperties
             }
-            onClick={() => onPick(tool.id)}
-            aria-label={tool.label}
+            onClick={() => onPick(hex.id)}
+            aria-label={hex.label}
           >
             <div className="hex-bg" />
             <div className="hex-stroke" />
             <div className="label flex flex-col items-center gap-0.5">
-              <div className="font-display text-[18px] font-bold">{tool.glyph}</div>
-              <div>{tool.label}</div>
+              <div className="font-display text-[22px] font-bold">{hex.glyph}</div>
+              <div>{hex.label}</div>
             </div>
-            <div className="tip">{tool.label}</div>
           </button>
         );
       })}

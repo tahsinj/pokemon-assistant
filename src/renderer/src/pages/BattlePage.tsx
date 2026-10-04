@@ -341,8 +341,6 @@ export function BattlePage({
 
   return (
     <ModuleFrame
-      kicker="BATTLE ASSISTANT"
-      title="Damage Calc"
       subtitle={
         opponentReady
           ? `vs ${opponent.speciesName} · LV ${opponent.level}${field.weather ? ` · ${field.weather}` : ''}`

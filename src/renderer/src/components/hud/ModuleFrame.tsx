@@ -1,48 +1,43 @@
 /**
- * Shared chrome for dive-module pages (header plus
- * sprite/move primitives). Every tool page
- * renders inside a ModuleFrame: kicker/title/subtitle header with an optional
- * `side` slot, above a slanted glass panel.
+ * Shared chrome for tool pages (header plus sprite/move primitives). Every
+ * tool page renders inside a ModuleFrame: a title and subtitle with an
+ * optional `side` slot, above a glass panel. The title defaults to the open
+ * tool's name so the tab, the page and the window agree.
  */
 import { type ReactNode } from 'react';
 import type { Move } from '../../lib/types';
+import { useOpenTool } from '../../lib/areas';
 import { spriteChain, useSpriteFallback } from '../../lib/sprites';
 import { TypeChip } from './HudPrimitives';
 
 export function ModuleFrame({
-  kicker,
   title,
   subtitle,
   side,
   children,
 }: {
-  kicker?: ReactNode;
-  title: ReactNode;
+  title?: ReactNode;
   subtitle?: ReactNode;
   side?: ReactNode;
   children: ReactNode;
 }) {
+  const open = useOpenTool();
   return (
     <div className="mod-in">
-      <div data-ui="page-header" className="flex items-end justify-between gap-4 mb-3 px-1">
+      <div data-ui="page-header" className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mb-3 px-1">
         <div className="min-w-0">
-          {kicker && (
-            <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--hud-accent-2)] mb-1 whitespace-nowrap">
-              {kicker}
-            </div>
-          )}
-          <div data-ui="page-title" className="font-display text-[28px] font-bold leading-none text-[var(--ink-0)]">
-            {title}
-          </div>
+          <h1 data-ui="page-title" className="font-display text-[28px] font-bold leading-none text-[var(--ink-0)]">
+            {title ?? open?.name}
+          </h1>
           {subtitle && (
-            <div className="font-mono-hud text-[15px] text-[var(--ink-2)] mt-1.5 uppercase tracking-wider">
+            <div data-ui="page-subtitle" className="text-[14px] text-[var(--ink-2)] mt-1.5">
               {subtitle}
             </div>
           )}
         </div>
-        {side && <div data-ui="page-actions" className="flex-shrink-0">{side}</div>}
+        {side && <div data-ui="page-actions" className="flex-shrink-0 max-w-full">{side}</div>}
       </div>
-      <div className="glass notch rounded-[18px] p-5">{children}</div>
+      <div className="glass rounded-[18px] p-5">{children}</div>
     </div>
   );
 }
