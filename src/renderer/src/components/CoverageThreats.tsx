@@ -54,9 +54,9 @@ export function CoverageThreats({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2">
         COVERAGE & THREATS ·{' '}
-        <span className="text-[var(--ink-2)]">
+        <span className="text-ink-2">
           {coverage.hasUsage ? 'from popular movesets' : 'from recommended set (no usage data)'}
         </span>
       </div>
@@ -68,7 +68,7 @@ export function CoverageThreats({
             Strong into
           </div>
           {coverage.entries.length === 0 ? (
-            <div className="font-mono-hud text-[13px] text-[var(--ink-2)]">
+            <div className="font-mono-hud text-[13px] text-ink-2">
               No reliable super-effective coverage on record.
             </div>
           ) : (
@@ -82,7 +82,7 @@ export function CoverageThreats({
               )}
             </div>
           )}
-          <div className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-snug mt-0.5">
+          <div className="font-mono-hud text-[11px] text-ink-2 leading-snug mt-0.5">
             {coverage.hasUsage
               ? '% = how often its sets carry a move that hits this type for 2×+.'
               : 'Super-effective coverage from its recommended STAB + coverage set.'}
@@ -95,11 +95,11 @@ export function CoverageThreats({
             Risky into
           </div>
           {!smogon ? (
-            <div className="font-mono-hud text-[13px] text-[var(--ink-2)]">
+            <div className="font-mono-hud text-[13px] text-ink-2">
               Meta threat data unavailable.
             </div>
           ) : riskyTop.length === 0 ? (
-            <div className="font-mono-hud text-[13px] text-[var(--ink-2)]">
+            <div className="font-mono-hud text-[13px] text-ink-2">
               No common super-effective attackers - solid defensively.
             </div>
           ) : (
@@ -119,7 +119,7 @@ export function CoverageThreats({
 
           {fastTop.length > 0 && (
             <>
-              <div className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] mt-1">
+              <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 mt-1">
                 ⚠ Outspeed you & hit super-effectively
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -129,10 +129,10 @@ export function CoverageThreats({
                     type="button"
                     onClick={() => onSelectSpecies(t.id)}
                     title={`${t.name} - ${t.move} (${t.viaType} ${t.mult}×). Click to inspect.`}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-[var(--hud-danger)]/30 bg-[var(--hud-danger)]/10 hover:bg-[var(--hud-danger)]/20 transition"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-danger/30 bg-danger/10 hover:bg-danger/20 transition"
                   >
                     <PokemonSprite dex={byDex(allPokemon, t.id)} name={t.name} size="xs" />
-                    <span className="font-display text-[12px] text-[var(--ink-0)]">{t.name}</span>
+                    <span className="font-display text-[12px] text-ink-0">{t.name}</span>
                     <TypeChip t={t.viaType} />
                   </button>
                 ))}
@@ -166,14 +166,14 @@ function CoverageRow({
   if (entries.length === 0) return null;
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${dim ? 'opacity-75' : ''}`}>
-      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] w-[68px] shrink-0">
+      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 w-[68px] shrink-0">
         {label}
       </span>
       {entries.map((e) => (
         <span key={e.type} className="inline-flex items-center gap-0.5" title={`via ${e.via}${e.stab ? ' (STAB)' : ''}`}>
           <TypeChip t={e.type} />
           {hasUsage && e.prob !== null && (
-            <span className="font-mono-hud text-[11px] text-[var(--ink-2)]">{Math.round(e.prob * 100)}%</span>
+            <span className="font-mono-hud text-[11px] text-ink-2">{Math.round(e.prob * 100)}%</span>
           )}
         </span>
       ))}
@@ -182,9 +182,9 @@ function CoverageRow({
 }
 
 const VERDICT_STYLE: Record<MatchupCell['verdict'], { box: string; word: string; mark: string }> = {
-  win: { box: 'border-[var(--hud-accent-2)]/45 bg-[var(--hud-accent-2)]/15 text-[#d7fff4]', word: 'Good lead', mark: '✓' },
+  win: { box: 'border-accent-2/45 bg-accent-2/15 text-[#d7fff4]', word: 'Good lead', mark: '✓' },
   trade: { box: 'border-[#e9a425]/40 bg-[#e9a425]/15 text-[#ffe6b0]', word: 'Risky trade', mark: '~' },
-  lose: { box: 'border-[var(--hud-danger)]/40 bg-[var(--hud-danger)]/12 text-[#ffc9cf]', word: "Don't send in", mark: '✕' },
+  lose: { box: 'border-danger/40 bg-danger/12 text-[#ffc9cf]', word: "Don't send in", mark: '✕' },
 };
 
 function QuickCheck({
@@ -212,7 +212,7 @@ function QuickCheck({
 
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
-      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--hud-accent-2)]">
+      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-accent-2">
         Should I send {p.name} in vs…?
       </div>
       <input
@@ -222,7 +222,7 @@ function QuickCheck({
         placeholder="Type an opponent species…"
         list="coverage-opp-list"
         autoComplete="off"
-        className="w-full px-3 py-1.5 rounded-[8px] bg-black/30 border border-white/10 font-display text-[14px] text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)]/50"
+        className="w-full px-3 py-1.5 rounded-[8px] bg-black/30 border border-white/10 font-display text-[14px] text-ink-0 outline-none focus:border-accent-2/50"
       />
       <datalist id="coverage-opp-list">
         {allPokemon.map((x) => (
@@ -231,10 +231,10 @@ function QuickCheck({
       </datalist>
 
       {query.trim() && !opp && (
-        <div className="font-mono-hud text-[12px] text-[var(--ink-2)]">No species matches “{query}”.</div>
+        <div className="font-mono-hud text-[12px] text-ink-2">No species matches “{query}”.</div>
       )}
       {opp && opp.id === p.id && (
-        <div className="font-mono-hud text-[12px] text-[var(--ink-2)]">Pick a different species.</div>
+        <div className="font-mono-hud text-[12px] text-ink-2">Pick a different species.</div>
       )}
       {opp && cell && <VerdictCard opp={opp} cell={cell} />}
     </div>

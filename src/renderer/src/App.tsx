@@ -387,7 +387,7 @@ export function App() {
             className="flex justify-end items-start"
           >
             {hudTeam.length > 0 && (
-              <div className="font-mono-hud text-[13px] uppercase tracking-[.28em] text-[var(--hud-accent-2)] flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
+              <div className="font-mono-hud text-[13px] uppercase tracking-[.28em] text-accent-2 flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
                 <span
                   className="w-1.5 h-1.5 rounded-full"
                   style={{
@@ -409,10 +409,10 @@ export function App() {
             ) : (
               <div className="h-full flex items-center justify-center">
                 <div className="glass rounded-[16px] px-5 py-6 text-center max-w-[260px]">
-                  <div className="font-display text-[16px] font-bold text-[var(--ink-0)] mb-1.5">
+                  <div className="font-display text-[16px] font-bold text-ink-0 mb-1.5">
                     No squad yet
                   </div>
-                  <div className="font-mono-hud text-[13px] text-[var(--ink-2)] leading-relaxed mb-3">
+                  <div className="font-mono-hud text-[13px] text-ink-2 leading-relaxed mb-3">
                     Build a team to see it on your dashboard.
                   </div>
                   <button
@@ -479,8 +479,8 @@ export function App() {
                 onClick={() => showTool('team')}
                 title="Build a team in the Team Builder"
               >
-                <div className="text-[26px] leading-none mb-2 text-[var(--hud-accent)]">＋</div>
-                <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-1)]">
+                <div className="text-[26px] leading-none mb-2 text-accent">＋</div>
+                <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-1">
                   Add a team
                 </div>
               </button>

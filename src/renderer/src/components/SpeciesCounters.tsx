@@ -73,7 +73,7 @@ export function SpeciesCounters({
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-3 mb-2">
-        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2">
           BEST ANSWERS → {target.name.toUpperCase()}
         </div>
         {pc.available && (
@@ -85,8 +85,8 @@ export function SpeciesCounters({
                 onClick={() => setSource(s)}
                 className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                   source === s
-                    ? 'bg-[var(--hud-accent-2)] text-black'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                    ? 'bg-accent-2 text-black'
+                    : 'text-ink-2 hover:text-ink-1'
                 }`}
               >
                 {s === 'dex' ? 'All species' : `My PC · ${pc.mons.length}`}
@@ -95,7 +95,7 @@ export function SpeciesCounters({
           </div>
         )}
         {source === 'pc' && (
-          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
             Threat lv
             <input
               type="number"
@@ -106,14 +106,14 @@ export function SpeciesCounters({
                 const v = Number(e.target.value);
                 if (Number.isFinite(v)) setTargetLevel(Math.max(1, Math.min(100, Math.round(v))));
               }}
-              className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+              className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] text-ink-1 outline-none focus:border-accent-2"
             />
           </label>
         )}
       </div>
 
       {source === 'pc' && rows.length === 0 ? (
-        <div className="font-mono-hud text-[15px] text-[var(--ink-2)] px-2 py-6 text-center">
+        <div className="font-mono-hud text-[15px] text-ink-2 px-2 py-6 text-center">
           {pc.loading
             ? 'Loading PC…'
             : pc.mons.length === 0
@@ -140,16 +140,16 @@ export function SpeciesCounters({
                   title={hint}
                   className="flex items-center gap-3 px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04] hover:bg-white/[.07] transition group"
                 >
-                  <div className="font-display text-[15px] font-bold text-[var(--hud-accent)] w-6">
+                  <div className="font-display text-[15px] font-bold text-accent w-6">
                     {i + 1}
                   </div>
                   <PokemonSprite dex={p.dex} name={p.name} size="xs" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-display text-[15px] font-semibold truncate text-[var(--ink-0)]">
+                    <div className="font-display text-[15px] font-semibold truncate text-ink-0">
                       {label}
                     </div>
                     {sub && (
-                      <div className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] truncate">
+                      <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 truncate">
                         {sub}
                       </div>
                     )}
@@ -168,7 +168,7 @@ export function SpeciesCounters({
                       }}
                     />
                   </div>
-                  <div className="font-mono-hud text-[16px] text-[var(--hud-accent-2)] w-12 text-right flex-shrink-0">
+                  <div className="font-mono-hud text-[16px] text-accent-2 w-12 text-right flex-shrink-0">
                     {score.toFixed(0)}
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export function SpeciesCounters({
             })}
           </div>
           {source === 'pc' && pcOutcome && pcOutcome.underleveled > 0 && (
-            <div className="font-mono-hud text-[12px] text-[var(--ink-2)] mt-2">
+            <div className="font-mono-hud text-[12px] text-ink-2 mt-2">
               › {pcOutcome.underleveled} PC Pokémon hidden - too underleveled for a level {targetLevel} threat (below{' '}
               {Math.ceil(targetLevel * 0.6)}).
             </div>

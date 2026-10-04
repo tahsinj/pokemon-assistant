@@ -60,9 +60,9 @@ export function TeamCompositionPanel({
 
   return (
     <div className="mono-panel p-3 rounded-[10px]">
-      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
         TEAM COMPOSITION
-        <span className="text-[var(--ink-2)]"> · {covered}/{audit.checklist.length} roles covered</span>
+        <span className="text-ink-2"> · {covered}/{audit.checklist.length} roles covered</span>
       </div>
 
       {/* Per-slot role chips */}
@@ -77,19 +77,19 @@ export function TeamCompositionPanel({
             >
               <PokemonSprite dex={m.p.dex} name={m.p.name} size="xs" />
               <span className="min-w-0">
-                <span className="block font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+                <span className="block font-display text-[13px] font-semibold text-ink-0 truncate">
                   {m.p.name}
                 </span>
                 <span className="flex flex-wrap gap-1 mt-0.5">
                   {m.tags.length === 0 ? (
-                    <span className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)]">
+                    <span className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2">
                       no clear role
                     </span>
                   ) : (
                     m.tags.map((t) => (
                       <span
                         key={t}
-                        className="font-mono-hud text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]"
+                        className="font-mono-hud text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/40 text-accent-2"
                       >
                         {inferred ? '~' : ''}{ROLE_SHORT[t]}
                       </span>
@@ -170,14 +170,14 @@ function GapRow({
         <span className="flex-shrink-0">{gap.severity === 'info' ? '◦' : '⚠'}</span>
         <span className="flex-1">{gap.message}</span>
         {clickable && (
-          <span className="flex-shrink-0 text-[var(--ink-2)]">{open ? '▾' : '▸ fixes'}</span>
+          <span className="flex-shrink-0 text-ink-2">{open ? '▾' : '▸ fixes'}</span>
         )}
       </button>
 
       {open && clickable && (
         <div className="grid grid-cols-3 gap-2 mt-1.5 mb-1">
           {suggestions.length === 0 ? (
-            <div className="col-span-3 font-mono-hud text-[12px] text-[var(--ink-2)] py-1">
+            <div className="col-span-3 font-mono-hud text-[12px] text-ink-2 py-1">
               Nothing in your PC or the legal dex cleanly fills this role.
             </div>
           ) : (
@@ -187,14 +187,14 @@ function GapRow({
                 type="button"
                 onClick={() => onAdd(s.p)}
                 title="Click to add to the first empty slot"
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-accent-2 transition"
               >
                 <PokemonSprite dex={s.p.dex} name={s.p.name} size="xs" />
                 <span className="flex-1 min-w-0">
-                  <span className="block font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                  <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                     {s.p.name}
                   </span>
-                  <span className="block font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                  <span className="block font-mono-hud text-[11px] text-ink-2 truncate">
                     {s.reason}
                   </span>
                 </span>

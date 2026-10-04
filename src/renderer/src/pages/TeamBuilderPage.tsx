@@ -497,9 +497,9 @@ export function TeamBuilderPage({
   };
 
   const sectionHead = (label: string, extra?: string) => (
-    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
       {label}
-      {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
+      {extra && <span className="text-ink-2"> · {extra}</span>}
     </div>
   );
 
@@ -545,20 +545,20 @@ export function TeamBuilderPage({
           <div className="mono-panel p-3 rounded-[10px]">
             {sectionHead('SHOWDOWN PASTE / TEAM META')}
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
                 Name
                 <input
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[14px] text-white outline-none focus:border-[var(--hud-accent-2)] min-w-[180px]"
+                  className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[14px] text-white outline-none focus:border-accent-2 min-w-[180px]"
                 />
               </label>
-              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
                 Tag
                 <select
                   value={teamTag}
                   onChange={(e) => setTeamTag(e.target.value as TeamTag)}
-                  className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+                  className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
                 >
                   {TEAM_TAGS.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -573,7 +573,7 @@ export function TeamBuilderPage({
               onChange={(e) => setPaste(e.target.value)}
               placeholder={'Paste a Showdown export…\n\nGarchomp @ Leftovers\nAbility: Rough Skin\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Earthquake'}
               rows={8}
-              className="w-full bg-black/40 border border-white/15 rounded-[10px] px-3 py-2 font-mono-hud text-[14px] text-[var(--ink-0)] placeholder:text-[var(--ink-2)] outline-none focus:border-[var(--hud-accent-2)] mb-2"
+              className="w-full bg-black/40 border border-white/15 rounded-[10px] px-3 py-2 font-mono-hud text-[14px] text-ink-0 placeholder:text-ink-2 outline-none focus:border-accent-2 mb-2"
             />
             <div className="flex flex-wrap gap-2">
               <button
@@ -597,7 +597,7 @@ export function TeamBuilderPage({
         )}
 
         {importMsg && (
-          <div role="status" className="font-mono-hud text-[14px] text-[var(--ink-1)] px-1">
+          <div role="status" className="font-mono-hud text-[14px] text-ink-1 px-1">
             › {importMsg}
           </div>
         )}
@@ -615,7 +615,7 @@ export function TeamBuilderPage({
           >
             <span className="uppercase tracking-widest">⚠ Heavy shared weakness</span>
             {massiveWeak.map((w) => (
-              <span key={w.attackType} className="inline-flex items-center gap-1 text-[var(--ink-0)]">
+              <span key={w.attackType} className="inline-flex items-center gap-1 text-ink-0">
                 <TypeChip t={w.attackType.toLowerCase()} /> hits {w.weakCount}/{teamMembers.length}
               </span>
             ))}
@@ -637,8 +637,8 @@ export function TeamBuilderPage({
                   }}
                   className={`rounded-[14px] border border-dashed p-3 min-h-[88px] flex items-center justify-center font-mono-hud text-[14px] uppercase tracking-widest transition ${
                     pickingSlot === i
-                      ? 'border-[var(--hud-accent)] text-[var(--hud-accent)]'
-                      : 'border-white/15 text-[var(--ink-2)] hover:border-white/30 hover:text-[var(--ink-1)]'
+                      ? 'border-accent text-accent'
+                      : 'border-white/15 text-ink-2 hover:border-white/30 hover:text-ink-1'
                   }`}
                 >
                   + Slot {i + 1}
@@ -656,7 +656,7 @@ export function TeamBuilderPage({
                 }}
                 title="Click to edit this Pokémon's set"
                 className={`relative overflow-hidden rounded-[14px] border bg-white/[.04] hover:bg-white/[.07] transition group cursor-pointer ${
-                  editingSlot === i ? 'border-[var(--hud-accent)]' : 'border-white/10'
+                  editingSlot === i ? 'border-accent' : 'border-white/10'
                 }`}
               >
                 <div
@@ -677,13 +677,13 @@ export function TeamBuilderPage({
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-display text-[15px] font-bold flex items-center justify-between text-[var(--ink-0)]">
+                    <div className="font-display text-[15px] font-bold flex items-center justify-between text-ink-0">
                       <span className="truncate">{p.name}</span>
-                      <span className="font-mono-hud text-[12px] text-[var(--ink-2)] flex-shrink-0 ml-2">
+                      <span className="font-mono-hud text-[12px] text-ink-2 flex-shrink-0 ml-2">
                         #{String(p.dex).padStart(4, '0')}
                       </span>
                     </div>
-                    <div className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase truncate">
+                    <div className="font-mono-hud text-[13px] text-ink-2 uppercase truncate">
                       {slot.detail
                         ? [
                             slot.detail.level != null ? `LV ${slot.detail.level}` : null,
@@ -703,7 +703,7 @@ export function TeamBuilderPage({
                   <button
                     type="button"
                     aria-label={`Remove ${p.name} from slot ${i + 1}`}
-                    className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-[var(--ink-1)] hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSlot(i, null);
@@ -749,8 +749,8 @@ export function TeamBuilderPage({
                       onClick={() => setPickSource(s)}
                       className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                         pickSource === s
-                          ? 'bg-[var(--hud-accent-2)] text-black'
-                          : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                          ? 'bg-accent-2 text-black'
+                          : 'text-ink-2 hover:text-ink-1'
                       }`}
                     >
                       {s === 'species' ? 'All species' : s === 'pc' ? `PC box · ${pc.mons.length}` : 'Suggested'}
@@ -767,10 +767,10 @@ export function TeamBuilderPage({
                     onChange={(e) => setPcQuery(e.target.value)}
                     placeholder="Search your PC…"
                     aria-label="Search PC Pokémon"
-                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 mb-2 font-mono-hud text-[14px] text-[var(--ink-0)] placeholder:text-[var(--ink-2)] outline-none focus:border-[var(--hud-accent-2)]"
+                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 mb-2 font-mono-hud text-[14px] text-ink-0 placeholder:text-ink-2 outline-none focus:border-accent-2"
                   />
                   {pcMonsFiltered.length === 0 ? (
-                    <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-6 text-center">
+                    <div className="font-mono-hud text-[14px] text-ink-2 py-6 text-center">
                       {pc.loading
                         ? 'Loading PC…'
                         : pc.mons.length === 0
@@ -787,13 +787,13 @@ export function TeamBuilderPage({
                             key={rec.id}
                             type="button"
                             onClick={() => pickOwnedSpecies(sp)}
-                            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-accent-2 transition"
                           >
                             <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
-                            <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                            <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                               {rec.nickname || sp.name}
                               {rec.nickname && (
-                                <span className="font-mono-hud text-[11px] text-[var(--ink-2)] ml-1.5">{sp.name}</span>
+                                <span className="font-mono-hud text-[11px] text-ink-2 ml-1.5">{sp.name}</span>
                               )}
                             </span>
                             <span className="flex gap-1 flex-shrink-0">
@@ -801,10 +801,10 @@ export function TeamBuilderPage({
                                 <TypeChip key={t} t={t.toLowerCase()} />
                               ))}
                             </span>
-                            <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0 w-12 text-right">
+                            <span className="font-mono-hud text-[12px] text-ink-1 flex-shrink-0 w-12 text-right">
                               Lv {rec.level}
                             </span>
-                            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                               {pc.boxNameById[rec.boxId] ?? 'Box'}
                             </span>
                           </button>
@@ -815,7 +815,7 @@ export function TeamBuilderPage({
                 </div>
               ) : pickSource === 'suggested' && pc.available ? (
                 pickerSuggestions.length === 0 ? (
-                  <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-6 text-center">
+                  <div className="font-mono-hud text-[14px] text-ink-2 py-6 text-center">
                     {pc.loading
                       ? 'Loading PC…'
                       : ownedSpecies.length === 0
@@ -824,7 +824,7 @@ export function TeamBuilderPage({
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
-                    <div className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] px-1 pb-1">
+                    <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 px-1 pb-1">
                       {teamMembers.length === 0
                         ? 'Owned species - add some to your team to rank these by synergy'
                         : 'Owned species ranked for this team · Smogon co-usage + coverage'}
@@ -834,14 +834,14 @@ export function TeamBuilderPage({
                         key={p.id}
                         type="button"
                         onClick={() => pickOwnedSpecies(p)}
-                        className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                        className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-accent-2 transition"
                       >
                         <PokemonSprite dex={p.dex} name={p.name} size="xs" />
                         <span className="flex-1 min-w-0">
-                          <span className="block font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                          <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                             {p.name}
                           </span>
-                          <span className="block font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                          <span className="block font-mono-hud text-[11px] text-ink-2 truncate">
                             {reasons[0] ?? ''}
                           </span>
                         </span>
@@ -894,7 +894,7 @@ export function TeamBuilderPage({
           <div className="mono-panel p-3 rounded-[10px]">
             {sectionHead('OFFENSIVE COVERAGE', 'best STAB vs defender')}
             {teamMembers.length === 0 ? (
-              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+              <div className="font-mono-hud text-[14px] text-ink-2 py-4 text-center">
                 Add Pokémon to see STAB coverage.
               </div>
             ) : (
@@ -955,14 +955,14 @@ export function TeamBuilderPage({
                     if (empty >= 0) setSlot(empty, p);
                   }}
                   title="Click to add to the first empty slot"
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-accent-2 transition"
                 >
                   <PokemonSprite dex={p.dex} name={p.name} size="xs" />
                   <span className="flex-1 min-w-0">
-                    <span className="block font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                    <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                       {p.name}
                     </span>
-                    <span className="block font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                    <span className="block font-mono-hud text-[11px] text-ink-2 truncate">
                       {reasons[0] ?? ''}
                     </span>
                   </span>
@@ -985,7 +985,7 @@ export function TeamBuilderPage({
                     : 'coverage + level/IV quality (no Smogon data)',
               )}
               <div className="flex items-center gap-3 mb-2">
-                <label className="flex items-center gap-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] cursor-pointer">
+                <label className="flex items-center gap-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={legalOnly}
@@ -1018,7 +1018,7 @@ export function TeamBuilderPage({
             {ownedOpen && (
               <div className="rounded-[10px] border border-white/10 bg-black/30 p-2.5 mb-2.5">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
                     Mega Stones / Z-Crystals you own - only these get suggested (others fall back to craftable items)
                   </span>
                   <input
@@ -1026,7 +1026,7 @@ export function TeamBuilderPage({
                     onChange={(e) => setOwnedQuery(e.target.value)}
                     placeholder="Search…"
                     aria-label="Search special items"
-                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[13px] text-white outline-none focus:border-[var(--hud-accent-2)] w-[160px] flex-shrink-0"
+                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[13px] text-white outline-none focus:border-accent-2 w-[160px] flex-shrink-0"
                   />
                 </div>
                 <div className="max-h-[180px] overflow-y-auto grid grid-cols-3 gap-1 no-scrollbar pr-1">
@@ -1043,8 +1043,8 @@ export function TeamBuilderPage({
                           aria-pressed={on}
                           className={`flex items-center gap-1.5 px-2 py-1 rounded-[8px] border text-left font-mono-hud text-[12px] transition ${
                             on
-                              ? 'border-[var(--hud-accent-2)] bg-white/[.06] text-[var(--ink-0)]'
-                              : 'border-white/10 text-[var(--ink-2)] hover:border-white/25'
+                              ? 'border-accent-2 bg-white/[.06] text-ink-0'
+                              : 'border-white/10 text-ink-2 hover:border-white/25'
                           }`}
                         >
                           <span className="flex-shrink-0">{on ? '☑' : '☐'}</span>
@@ -1053,34 +1053,34 @@ export function TeamBuilderPage({
                       );
                     })}
                 </div>
-                <div className="mt-1.5 font-mono-hud text-[11px] text-[var(--ink-2)]">
+                <div className="mt-1.5 font-mono-hud text-[11px] text-ink-2">
                   Re-analyze to apply your owned items.
                 </div>
               </div>
             )}
 
             {!bestSix ? (
-              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+              <div className="font-mono-hud text-[14px] text-ink-2 py-3 text-center">
                 {pc.mons.length < 3
                   ? 'Store at least 3 Pokémon in the PC to build teams.'
                   : 'Analyze your PC to get ranked team candidates with per-mon optimization advice.'}
               </div>
             ) : bestSix.candidates.length === 0 ? (
-              <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+              <div className="font-mono-hud text-[14px] text-ink-2 py-3 text-center">
                 Not enough battle-ready Pokémon - level some up first.
               </div>
             ) : (
               <>
                 {bestSix.coreDeficits.length > 0 && (
                   <div className="rounded-[10px] border border-[#e0a533]/40 bg-[#e0a533]/[.08] p-2.5 mb-2.5">
-                    <div className="font-display text-[13px] font-bold text-[var(--ink-0)] mb-1">
+                    <div className="font-display text-[13px] font-bold text-ink-0 mb-1">
                       ⚠ CORE + MORE - best team your PC allows, but it can’t fill{' '}
                       {bestSix.coreDeficits.length === 1 ? 'a key role' : 'some key roles'}
                     </div>
                     <div className="flex flex-col gap-1">
                       {bestSix.coreDeficits.map((d) => (
-                        <div key={d.role} className="font-mono-hud text-[12px] text-[var(--ink-1)]">
-                          <span className="uppercase tracking-wider text-[var(--ink-2)]">No {d.label.toLowerCase()}</span>
+                        <div key={d.role} className="font-mono-hud text-[12px] text-ink-1">
+                          <span className="uppercase tracking-wider text-ink-2">No {d.label.toLowerCase()}</span>
                           {d.suggestions.length > 0 ? (
                             <>
                               {' '}- go catch:{' '}
@@ -1100,13 +1100,13 @@ export function TeamBuilderPage({
                   {bestSix.candidates.map((c) => (
                   <div key={c.preset} className="rounded-[10px] border border-white/10 bg-white/[.03] p-2.5 flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-display text-[14px] font-bold text-[var(--ink-0)]">{c.label}</span>
-                      <span className="font-mono-hud text-[13px] tabular-nums text-[var(--hud-accent-2)]">
+                      <span className="font-display text-[14px] font-bold text-ink-0">{c.label}</span>
+                      <span className="font-mono-hud text-[13px] tabular-nums text-accent-2">
                         {c.score.toFixed(1)}
                       </span>
                     </div>
                     <div
-                      className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)]"
+                      className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2"
                       title="quality · chemistry · defense · offense · roles"
                     >
                       Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
@@ -1126,10 +1126,10 @@ export function TeamBuilderPage({
                               title={lines.length ? 'Click for optimization advice' : 'Already optimal'}
                             >
                               <PokemonSprite dex={a.p.dex} name={a.p.name} size="xs" />
-                              <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                              <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                                 {a.rec.nickname || a.p.name}
                               </span>
-                              <span className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                              <span className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                                 {a.role} · Lv {a.rec.level}
                               </span>
                               {lines.length > 0 && (
@@ -1147,7 +1147,7 @@ export function TeamBuilderPage({
                             {expandedAdvice === key && lines.length > 0 && (
                               <div className="px-2 pb-1.5 flex flex-col gap-0.5">
                                 {a.matchedSetName && (
-                                  <div className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--ink-2)]">
+                                  <div className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2">
                                     vs {a.matchedSetName}
                                   </div>
                                 )}
@@ -1167,7 +1167,7 @@ export function TeamBuilderPage({
                       })}
                     </div>
                     {c.stackedWeaknesses.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)]">
+                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[11px] uppercase tracking-wider text-ink-2">
                         weak:
                         {c.stackedWeaknesses.map((t) => (
                           <TypeChip key={t} t={t.toLowerCase()} />
@@ -1215,7 +1215,7 @@ export function TeamBuilderPage({
             </div>
           </div>
           {savedTeams.length === 0 ? (
-            <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3 text-center">
+            <div className="font-mono-hud text-[14px] text-ink-2 py-3 text-center">
               Build a squad and hit SAVE TEAM - every save is its own named team.
             </div>
           ) : (
@@ -1224,7 +1224,7 @@ export function TeamBuilderPage({
                 <div
                   key={t.id}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-[8px] border bg-white/[.03] ${
-                    t.id === currentTeamId ? 'border-[var(--hud-accent-2)]/60' : 'border-white/5'
+                    t.id === currentTeamId ? 'border-accent-2/60' : 'border-white/5'
                   }`}
                 >
                   {renamingTeamId === t.id ? (
@@ -1244,7 +1244,7 @@ export function TeamBuilderPage({
                           setRenamingTeamId(null);
                         }
                       }}
-                      className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-3 py-0.5 font-display text-[14px] font-semibold text-white outline-none focus:border-[var(--hud-accent-2)]"
+                      className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-3 py-0.5 font-display text-[14px] font-semibold text-white outline-none focus:border-accent-2"
                     />
                   ) : (
                     <button
@@ -1255,20 +1255,20 @@ export function TeamBuilderPage({
                         setRenamingTeamId(t.id);
                       }}
                       onClick={() => void onLoad(t.id)}
-                      className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-left text-[var(--ink-0)] hover:text-white transition"
+                      className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-left text-ink-0 hover:text-white transition"
                     >
                       {t.name}
                       {t.id === currentTeamId && (
-                        <span className="font-mono-hud text-[10px] uppercase tracking-wider text-[var(--hud-accent-2)] ml-2">
+                        <span className="font-mono-hud text-[10px] uppercase tracking-wider text-accent-2 ml-2">
                           loaded
                         </span>
                       )}
                     </button>
                   )}
-                  <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-[var(--hud-accent-2)]">
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-accent-2">
                     {t.tag}
                   </span>
-                  <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">
+                  <span className="font-mono-hud text-[12px] text-ink-2">
                     {new Date(t.updatedAt).toLocaleString()}
                   </span>
                   <button

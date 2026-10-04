@@ -56,7 +56,7 @@ export function PokemonDexDetail({
           onClick={() => setView(id)}
           aria-pressed={view === id}
           className={`font-mono-hud text-[13px] uppercase tracking-wider px-4 py-1 rounded-full transition-colors ${
-            view === id ? 'bg-[var(--hud-accent-2)] text-black' : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+            view === id ? 'bg-accent-2 text-black' : 'text-ink-2 hover:text-ink-1'
           }`}
         >
           {label}
@@ -81,7 +81,7 @@ export function PokemonDexDetail({
         {/* Holo sprite + identity */}
         <div className="flex flex-col gap-2">
           <SpriteFrame dex={p.dex} name={p.name} />
-          <div className="font-display text-[17px] font-bold leading-tight text-[var(--ink-0)]">
+          <div className="font-display text-[17px] font-bold leading-tight text-ink-0">
             {p.name}
           </div>
           <div className="flex gap-1.5">
@@ -89,7 +89,7 @@ export function PokemonDexDetail({
               <TypeChip key={t} t={t.toLowerCase()} />
             ))}
           </div>
-          <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[14px] text-[var(--ink-1)]">
+          <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[14px] text-ink-1">
             BST <span className="text-white">{bst(p.baseStats)}</span> ·{' '}
             {(p.height / 10).toFixed(1)}m · {(p.weight / 10).toFixed(1)}kg
           </div>
@@ -99,10 +99,10 @@ export function PokemonDexDetail({
         <div className="flex flex-col gap-3 min-w-0">
           <div className="mono-panel p-3 rounded-[10px]">
             <div className="flex items-center justify-between mb-1.5 font-mono-hud">
-              <div className="text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+              <div className="text-[14px] uppercase tracking-widest text-accent-2">
                 BASE STATS
               </div>
-              <div className="text-[14px] text-[var(--ink-2)]">BST {bst(p.baseStats)}</div>
+              <div className="text-[14px] text-ink-2">BST {bst(p.baseStats)}</div>
             </div>
             <div className="flex flex-col gap-1">
               {Object.entries(p.baseStats).map(([k, v]) => (
@@ -125,7 +125,7 @@ export function PokemonDexDetail({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1">
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mb-1">
                 Abilities
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -134,7 +134,7 @@ export function PokemonDexDetail({
                   .map((a) => (
                     <span
                       key={a}
-                      className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)]"
+                      className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-ink-0"
                     >
                       {a}
                     </span>
@@ -142,7 +142,7 @@ export function PokemonDexDetail({
                 {p.hiddenAbilities.map((a) => (
                   <span
                     key={a}
-                    className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-[var(--hud-accent)]/50 bg-black/30 text-[var(--hud-accent)]"
+                    className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-accent/50 bg-black/30 text-accent"
                   >
                     {a} (H)
                   </span>
@@ -150,7 +150,7 @@ export function PokemonDexDetail({
               </div>
             </div>
             <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] mb-1">
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mb-1">
                 Defending
               </div>
               <div className="flex flex-col gap-1 font-mono-hud text-[13px]">
@@ -160,7 +160,7 @@ export function PokemonDexDetail({
                     {weaks.map(([t, m]) => (
                       <span key={t} className="inline-flex items-center gap-0.5">
                         <TypeChip t={t.toLowerCase()} />
-                        <span className="text-[var(--ink-2)]">×{m}</span>
+                        <span className="text-ink-2">×{m}</span>
                       </span>
                     ))}
                   </div>
@@ -171,14 +171,14 @@ export function PokemonDexDetail({
                     {resists.map(([t, m]) => (
                       <span key={t} className="inline-flex items-center gap-0.5">
                         <TypeChip t={t.toLowerCase()} />
-                        <span className="text-[var(--ink-2)]">×{m}</span>
+                        <span className="text-ink-2">×{m}</span>
                       </span>
                     ))}
                   </div>
                 )}
                 {immunes.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[var(--ink-2)]">IMMUNE</span>
+                    <span className="text-ink-2">IMMUNE</span>
                     {immunes.map(([t]) => (
                       <TypeChip key={t} t={t.toLowerCase()} />
                     ))}
@@ -202,9 +202,9 @@ export function PokemonDexDetail({
       {/* Recommended moveset - tabbed: Smogon-blended / level-up only / TM priorities */}
       <div>
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)]">
+          <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2">
             RECOMMENDED MOVESET ·{' '}
-            <span className="text-[var(--ink-2)]">
+            <span className="text-ink-2">
               {moveTab === 'tm'
                 ? 'TMs / tutors worth teaching'
                 : moveTab === 'levelup'
@@ -228,8 +228,8 @@ export function PokemonDexDetail({
                 onClick={() => setMoveTab(id)}
                 className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                   moveTab === id
-                    ? 'bg-[var(--hud-accent-2)] text-black'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+                    ? 'bg-accent-2 text-black'
+                    : 'text-ink-2 hover:text-ink-1'
                 }`}
               >
                 {label}
@@ -239,7 +239,7 @@ export function PokemonDexDetail({
         </div>
         {moveTab === 'tm' ? (
           tms.length === 0 ? (
-            <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+            <div className="font-mono-hud text-[14px] text-ink-2 py-4 text-center">
               No TM or tutor moves beyond its level-up learnset.
             </div>
           ) : (
@@ -250,26 +250,26 @@ export function PokemonDexDetail({
                   title={reasons.join(' · ')}
                   className="grid grid-cols-[28px,1fr,auto,52px,56px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
                 >
-                  <span className="font-display text-[14px] font-bold text-[var(--hud-accent)]">{i + 1}</span>
+                  <span className="font-display text-[14px] font-bold text-accent">{i + 1}</span>
                   <div className="min-w-0">
-                    <div className="font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+                    <div className="font-display text-[14px] font-semibold truncate text-ink-0">
                       {move.name}
                     </div>
-                    <div className="font-mono-hud text-[11px] text-[var(--ink-2)] truncate">
+                    <div className="font-mono-hud text-[11px] text-ink-2 truncate">
                       {reasons.join(' · ')}
                     </div>
                   </div>
                   <TypeChip t={move.type.toLowerCase()} />
-                  <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+                  <span className="font-mono-hud text-[13px] text-ink-1">
                     PWR {move.power || '-'}
                   </span>
-                  <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">{move.category}</span>
+                  <span className="font-mono-hud text-[13px] text-ink-1">{move.category}</span>
                 </div>
               ))}
             </div>
           )
         ) : suggested.length === 0 ? (
-          <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-4 text-center">
+          <div className="font-mono-hud text-[14px] text-ink-2 py-4 text-center">
             Nothing learnable in this pool.
           </div>
         ) : (
@@ -292,8 +292,8 @@ export function PokemonDexDetail({
 
       {/* Full learnset */}
       <div>
-        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
-          FULL LEARNSET · <span className="text-[var(--ink-2)]">{learnable.length} MOVES</span>
+        <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
+          FULL LEARNSET · <span className="text-ink-2">{learnable.length} MOVES</span>
         </div>
         <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto pr-1 no-scrollbar">
           {learnable.map(({ learn, mv }) => (
@@ -302,18 +302,18 @@ export function PokemonDexDetail({
               className="grid grid-cols-[1fr,auto,52px,56px,56px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
               title={mv.desc}
             >
-              <div className="font-display text-[14px] font-semibold truncate text-[var(--ink-0)]">
+              <div className="font-display text-[14px] font-semibold truncate text-ink-0">
                 {mv.name}{' '}
-                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase">
+                <span className="font-mono-hud text-[12px] text-ink-2 uppercase">
                   {learn}
                 </span>
               </div>
               <TypeChip t={mv.type.toLowerCase()} />
-              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">{mv.category[0]}</span>
-              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+              <span className="font-mono-hud text-[13px] text-ink-1">{mv.category[0]}</span>
+              <span className="font-mono-hud text-[13px] text-ink-1">
                 PWR {mv.power || '-'}
               </span>
-              <span className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+              <span className="font-mono-hud text-[13px] text-ink-1">
                 ACC {mv.accuracy === true ? '-' : mv.accuracy}
               </span>
             </div>

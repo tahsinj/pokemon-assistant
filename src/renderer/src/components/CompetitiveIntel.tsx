@@ -21,20 +21,20 @@ function ivLine(ivs?: number[]): string {
 function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-1.5 min-w-0">
-      <div className="font-display text-[14px] font-bold text-[var(--ink-0)] truncate">{name}</div>
-      <div className="font-mono-hud text-[13px] text-[var(--ink-1)]">
+      <div className="font-display text-[14px] font-bold text-ink-0 truncate">{name}</div>
+      <div className="font-mono-hud text-[13px] text-ink-1">
         {set.item.join(' / ') || 'No item'} · {set.ability ?? '-'} · {set.nature ?? '-'}
       </div>
       {evLine(set.evs) && (
-        <div className="font-mono-hud text-[12px] tabular-nums text-[var(--ink-2)]">EVs {evLine(set.evs)}</div>
+        <div className="font-mono-hud text-[12px] tabular-nums text-ink-2">EVs {evLine(set.evs)}</div>
       )}
       {ivLine(set.ivs) && (
-        <div className="font-mono-hud text-[12px] tabular-nums text-[var(--ink-2)]">IVs {ivLine(set.ivs)}</div>
+        <div className="font-mono-hud text-[12px] tabular-nums text-ink-2">IVs {ivLine(set.ivs)}</div>
       )}
       <div className="flex flex-col gap-0.5 mt-0.5">
         {set.moves.map((slot, i) => (
-          <div key={i} className="font-display text-[14px] font-semibold text-[var(--ink-0)] truncate">
-            <span className="font-mono-hud text-[11px] text-[var(--ink-2)] mr-1.5">{i + 1}</span>
+          <div key={i} className="font-display text-[14px] font-semibold text-ink-0 truncate">
+            <span className="font-mono-hud text-[11px] text-ink-2 mr-1.5">{i + 1}</span>
             {slot.join(' / ')}
           </div>
         ))}
@@ -47,20 +47,20 @@ function PctRow({ name, pct }: { name: string; pct: number }) {
   return (
     <div className="relative flex items-center justify-between gap-2 px-1.5 -mx-1.5 py-0.5 rounded-[4px] overflow-hidden">
       <div
-        className="absolute inset-y-0 left-0 rounded-[4px] bg-[var(--hud-accent-2)] opacity-[.08]"
+        className="absolute inset-y-0 left-0 rounded-[4px] bg-accent-2 opacity-[.08]"
         style={{ width: `${Math.min(100, pct)}%` }}
       />
-      <span className="relative font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+      <span className="relative font-display text-[13px] font-semibold text-ink-0 truncate">
         {name}
       </span>
-      <span className="relative font-mono-hud text-[12px] tabular-nums text-[var(--ink-1)] flex-shrink-0">
+      <span className="relative font-mono-hud text-[12px] tabular-nums text-ink-1 flex-shrink-0">
         {pct.toFixed(1)}%
       </span>
     </div>
   );
 }
 
-const INTEL_HEADER = 'font-mono-hud text-[11px] uppercase tracking-[0.16em] text-[var(--hud-accent-2)] opacity-70 mb-1.5';
+const INTEL_HEADER = 'font-mono-hud text-[11px] uppercase tracking-[0.16em] text-accent-2 opacity-70 mb-1.5';
 
 export function CompetitiveIntel({
   intel,
@@ -83,9 +83,9 @@ export function CompetitiveIntel({
   const sets = Object.entries(intel.sets ?? {});
   return (
     <div>
-      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+      <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
         COMPETITIVE INTEL ·{' '}
-        <span className="text-[var(--ink-2)]">
+        <span className="text-ink-2">
           {meta.label} {usagePeriod(meta)} · {(intel.usage * 100).toFixed(1)}% usage · #{intel.rank}
         </span>
       </div>
@@ -161,11 +161,11 @@ export function CompetitiveIntel({
                         ? `On ${t.pct.toFixed(1)}% of ${intel.name} teams - click to open`
                         : `On ${t.pct.toFixed(1)}% of ${intel.name} teams - no usage data`
                     }
-                    className={`font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-[var(--ink-0)] transition ${
-                      selectable ? 'hover:border-[var(--hud-accent-2)]' : 'opacity-50 cursor-default'
+                    className={`font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-ink-0 transition ${
+                      selectable ? 'hover:border-accent-2' : 'opacity-50 cursor-default'
                     }`}
                   >
-                    {t.name} <span className="font-mono-hud text-[11px] text-[var(--ink-2)]">{Math.round(t.pct)}%</span>
+                    {t.name} <span className="font-mono-hud text-[11px] text-ink-2">{Math.round(t.pct)}%</span>
                   </button>
                 );
               })}
@@ -192,10 +192,10 @@ export function CompetitiveIntel({
                   title="Matchup rating - fraction of encounters this check KOs or forces out. Click to open."
                 >
                   <div
-                    className="absolute inset-y-0 left-0 rounded-[4px] bg-[var(--hud-danger)] opacity-[.08]"
+                    className="absolute inset-y-0 left-0 rounded-[4px] bg-danger opacity-[.08]"
                     style={{ width: `${Math.min(100, c.score * 100)}%` }}
                   />
-                  <span className="relative font-display text-[13px] font-semibold text-[var(--ink-0)] truncate">
+                  <span className="relative font-display text-[13px] font-semibold text-ink-0 truncate">
                     {c.name}
                   </span>
                   <span

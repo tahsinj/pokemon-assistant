@@ -63,7 +63,7 @@ export function SpeciesList({
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           aria-label="Filter by type"
-          className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+          className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
         >
           <option value="">All types</option>
           {TYPES.map((t) => (
@@ -73,12 +73,12 @@ export function SpeciesList({
           ))}
         </select>
       </div>
-      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-2 px-1">
+      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-ink-2 mb-2 px-1">
         {filtered.length} species
       </div>
       <div className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar">
         {filtered.length === 0 ? (
-          <div className="font-mono-hud text-[14px] text-[var(--ink-2)] px-2 py-4 text-center">
+          <div className="font-mono-hud text-[14px] text-ink-2 px-2 py-4 text-center">
             No species match your filters.
           </div>
         ) : (
@@ -92,17 +92,17 @@ export function SpeciesList({
                 onClick={() => onSelect(p)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-[10px] text-left transition border ${
                   isSel
-                    ? 'bg-white/10 border-[var(--hud-accent-2)]/40'
+                    ? 'bg-white/10 border-accent-2/40'
                     : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
                 }`}
               >
                 <PokemonSprite dex={p.dex} name={p.name} size="xs" />
                 {!compact && (
-                  <span className="font-mono-hud text-[14px] text-[var(--ink-2)] w-12 flex-shrink-0">
+                  <span className="font-mono-hud text-[14px] text-ink-2 w-12 flex-shrink-0">
                     #{String(p.dex).padStart(4, '0')}
                   </span>
                 )}
-                <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                   {p.name}
                 </span>
                 <span className="flex gap-1 flex-shrink-0">
@@ -110,7 +110,7 @@ export function SpeciesList({
                     <TypeChip key={t} t={t.toLowerCase()} />
                   ))}
                 </span>
-                <span className="font-mono-hud text-[13px] text-[var(--ink-1)] w-10 text-right flex-shrink-0">
+                <span className="font-mono-hud text-[13px] text-ink-1 w-10 text-right flex-shrink-0">
                   {bst(p.baseStats)}
                 </span>
               </button>

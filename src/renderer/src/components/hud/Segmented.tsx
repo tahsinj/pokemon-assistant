@@ -23,7 +23,7 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.id)}
           aria-pressed={value === o.id}
           className={`font-mono-hud uppercase tracking-wider rounded-full transition-colors ${pad} ${
-            value === o.id ? 'bg-[var(--hud-accent-2)] text-black' : 'text-[var(--ink-2)] hover:text-[var(--ink-1)]'
+            value === o.id ? 'bg-accent-2 text-black' : 'text-ink-2 hover:text-ink-1'
           }`}
         >
           {o.label}

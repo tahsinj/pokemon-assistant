@@ -406,7 +406,7 @@ export function CalcdexPage({
 
         {/* Global field controls between the two players */}
         <div className="mono-panel rounded-[10px] px-4 py-1.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1">
-          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
             Weather
             <select
               value={weather}
@@ -420,7 +420,7 @@ export function CalcdexPage({
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)]">
+          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
             Terrain
             <select
               value={terrain}
@@ -436,7 +436,7 @@ export function CalcdexPage({
           </label>
           <span className="w-px h-4 bg-white/10" />
           {(['p1', 'p2'] as SideKey[]).map((side) => (
-            <div key={side} className="flex items-center gap-2 font-mono-hud text-[13px] text-[var(--ink-1)]">
+            <div key={side} className="flex items-center gap-2 font-mono-hud text-[13px] text-ink-1">
               <span
                 className="uppercase tracking-wider font-bold"
                 style={{ color: side === 'p1' ? 'var(--hud-accent-2)' : 'var(--hud-danger)' }}
@@ -712,7 +712,7 @@ function PlayerPanel({
                       </span>
                     </>
                   ) : (
-                    <span className="font-mono-hud text-[16px] text-[var(--ink-2)] group-hover:text-[var(--ink-1)] transition">
+                    <span className="font-mono-hud text-[16px] text-ink-2 group-hover:text-ink-1 transition">
                       ＋
                     </span>
                   )}
@@ -722,7 +722,7 @@ function PlayerPanel({
                     type="button"
                     aria-label={`Remove ${mon.species.name}`}
                     onClick={() => setRosterSlot(i, null)}
-                    className="absolute -top-1 -right-1 w-[15px] h-[15px] rounded-full bg-black/80 border border-white/20 text-[var(--ink-1)] hover:text-white font-mono-hud text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    className="absolute -top-1 -right-1 w-[15px] h-[15px] rounded-full bg-black/80 border border-white/20 text-ink-1 hover:text-white font-mono-hud text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
                   >
                     ×
                   </button>
@@ -733,7 +733,7 @@ function PlayerPanel({
         </div>
 
         {msg && (
-          <span className="font-mono-hud text-[12px] text-[var(--ink-2)] min-w-0 flex-1 truncate" role="status">
+          <span className="font-mono-hud text-[12px] text-ink-2 min-w-0 flex-1 truncate" role="status">
             › {msg}
           </span>
         )}
@@ -774,7 +774,7 @@ function PlayerPanel({
       {importOpen && (
         <div className="mt-2 rounded-[10px] border border-white/10 bg-black/25 p-2.5 grid grid-cols-[200px,1fr] gap-3">
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-[var(--ink-2)]">
+            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-ink-2">
               Load a team
             </span>
             {savedTeams.length > 0 && (
@@ -804,7 +804,7 @@ function PlayerPanel({
             </button>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-[var(--ink-2)]">
+            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-ink-2">
               Or paste a Showdown export
             </span>
             <textarea
@@ -859,7 +859,7 @@ function PlayerPanel({
           }}
         />
       ) : (
-        <div className="font-mono-hud text-[14px] text-[var(--ink-2)] text-center py-6">
+        <div className="font-mono-hud text-[14px] text-ink-2 text-center py-6">
           {filled.length
             ? 'Click a roster sprite to open its dashboard.'
             : 'Empty roster - click a ＋ slot, import a saved team, or paste a Showdown export.'}
@@ -954,11 +954,11 @@ function ActiveDashboard({
           <div className="relative p-2 flex flex-col gap-1.5 h-full">
             <div className="flex items-center gap-1.5 min-w-0">
               <PokemonSprite dex={mon.species.dex} name={mon.species.name} size="xs" />
-              <span className="font-display text-[15px] font-bold leading-tight text-[var(--ink-0)] truncate flex-1 min-w-0">
+              <span className="font-display text-[15px] font-bold leading-tight text-ink-0 truncate flex-1 min-w-0">
                 {mon.species.name}
               </span>
               <label
-                className="flex items-center gap-1 font-mono-hud text-[10px] uppercase text-[var(--ink-2)] flex-shrink-0"
+                className="flex items-center gap-1 font-mono-hud text-[10px] uppercase text-ink-2 flex-shrink-0"
                 title="Level"
               >
                 LV
@@ -980,7 +980,7 @@ function ActiveDashboard({
               {mon.teraType && (
                 <span
                   className={`font-mono-hud text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${
-                    mon.isTera ? 'text-black' : 'text-[var(--ink-1)]'
+                    mon.isTera ? 'text-black' : 'text-ink-1'
                   }`}
                   style={{
                     borderColor: `var(--t-${mon.teraType.toLowerCase()})`,
@@ -1009,7 +1009,7 @@ function ActiveDashboard({
                 className="no-spin w-[46px] text-center"
                 style={NUM_INPUT}
               />
-              <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">% HP</span>
+              <span className="font-mono-hud text-[12px] text-ink-2">% HP</span>
               <select
                 value={mon.status}
                 aria-label="Status condition"
@@ -1100,7 +1100,7 @@ function ActiveDashboard({
                 aria-label="Remove item"
                 title="Remove item (e.g. after Knock Off)"
                 onClick={() => update({ item: '' })}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-black/60 border border-white/20 text-[var(--ink-2)] hover:text-[var(--hud-danger)] font-mono-hud text-[10px] leading-none transition"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-black/60 border border-white/20 text-ink-2 hover:text-danger font-mono-hud text-[10px] leading-none transition"
               >
                 ×
               </button>
@@ -1144,7 +1144,7 @@ function ActiveDashboard({
             <span className="hud-mark font-mono-hud text-[11px] uppercase tracking-widest" style={{ color: accent }}>
               Moves
             </span>
-            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] truncate">
+            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 truncate">
               {opposing ? `vs ${opposing.species.name} · ${opposing.hpPercent}% HP` : 'no target - add an opposing active'}
             </span>
           </div>
@@ -1219,7 +1219,7 @@ function ActiveDashboard({
                     type="button"
                     aria-label={`Clear move ${i + 1}`}
                     onClick={() => setMove(i, '')}
-                    className="w-4 h-4 rounded-full bg-black/50 border border-white/15 text-[var(--ink-2)] hover:text-white font-mono-hud text-[10px] leading-none"
+                    className="w-4 h-4 rounded-full bg-black/50 border border-white/15 text-ink-2 hover:text-white font-mono-hud text-[10px] leading-none"
                   >
                     ×
                   </button>
@@ -1275,7 +1275,7 @@ function ActiveDashboard({
                       type="button"
                       aria-label={`Raise ${STAT_LABELS[k]} stage`}
                       onClick={() => bumpStage(k, 1)}
-                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-[var(--ink-2)] hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
+                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
                     >
                       +
                     </button>
@@ -1291,7 +1291,7 @@ function ActiveDashboard({
                       type="button"
                       aria-label={`Lower ${STAT_LABELS[k]} stage`}
                       onClick={() => bumpStage(k, -1)}
-                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-[var(--ink-2)] hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
+                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
                     >
                       −
                     </button>
@@ -1303,7 +1303,7 @@ function ActiveDashboard({
 
           <button
             type="button"
-            className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-1)] hover:text-white transition whitespace-nowrap justify-self-end"
+            className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-1 hover:text-white transition whitespace-nowrap justify-self-end"
             onClick={() => setShowSpread((v) => !v)}
           >
             {showSpread ? '▾' : '▸'} IV / EV
@@ -1324,7 +1324,7 @@ function ActiveDashboard({
                   style={NUM_INPUT}
                 />
               ))}
-              <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] justify-self-end">
+              <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 justify-self-end">
                 IV
               </span>
               {STAT_KEYS.map((k) => (

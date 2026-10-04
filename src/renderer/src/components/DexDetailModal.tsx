@@ -56,14 +56,14 @@ export function DexDetailModal({
         role="dialog"
         aria-modal="true"
         aria-label={`${title} Pokédex`}
-        className="relative z-[1] w-[min(1040px,94vw)] max-h-[90vh] overflow-hidden rounded-[18px] border border-[var(--hairline)] bg-[rgba(10,22,32,0.96)] shadow-[0_40px_100px_-10px_rgba(0,0,0,0.7)] flex flex-col"
+        className="relative z-[1] w-[min(1040px,94vw)] max-h-[90vh] overflow-hidden rounded-[18px] border border-hairline bg-[rgba(10,22,32,0.96)] shadow-[0_40px_100px_-10px_rgba(0,0,0,0.7)] flex flex-col"
       >
         <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="hud-mark font-mono-hud text-[12px] uppercase tracking-[0.16em] text-[var(--hud-accent-2)]">
+            <span className="hud-mark font-mono-hud text-[12px] uppercase tracking-[0.16em] text-accent-2">
               POKÉDEX
             </span>
-            <span className="font-display text-[16px] font-bold text-[var(--ink-0)] truncate">
+            <span className="font-display text-[16px] font-bold text-ink-0 truncate">
               {current.name}
             </span>
             <div className="flex gap-1.5">

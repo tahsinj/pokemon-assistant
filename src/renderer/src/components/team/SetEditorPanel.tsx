@@ -148,7 +148,7 @@ export function SetEditorPanel({
   };
 
   const label = (text: string) => (
-    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">{text}</span>
+    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">{text}</span>
   );
 
   return (
@@ -157,7 +157,7 @@ export function SetEditorPanel({
       <div className="flex items-center gap-3 mb-3">
         <PokemonSprite dex={species.dex} name={species.name} size="sm" />
         <div className="min-w-0">
-          <div className="font-display text-[16px] font-bold text-[var(--ink-0)]">{species.name}</div>
+          <div className="font-display text-[16px] font-bold text-ink-0">{species.name}</div>
           <div className="flex gap-1 mt-0.5">
             {species.types.map((t) => (
               <TypeChip key={t} t={t.toLowerCase()} />
@@ -195,7 +195,7 @@ export function SetEditorPanel({
       {/* Quick sets */}
       {quickSets.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
             Quick set
           </span>
           {quickSets.map((f) => (
@@ -204,7 +204,7 @@ export function SetEditorPanel({
               type="button"
               onClick={() => applyFill(f)}
               title={`${f.nature ?? '-'} · ${f.item ?? 'no item'} · ${f.moves.join(' / ')}`}
-              className="font-mono-hud text-[12px] px-2.5 py-1 rounded-full border border-white/15 text-[var(--ink-1)] hover:border-[var(--hud-accent-2)] hover:text-[var(--ink-0)] transition"
+              className="font-mono-hud text-[12px] px-2.5 py-1 rounded-full border border-white/15 text-ink-1 hover:border-accent-2 hover:text-ink-0 transition"
             >
               {f.label}
             </button>
@@ -281,11 +281,11 @@ export function SetEditorPanel({
 
       {/* EVs / IVs / final stats */}
       <div className="grid grid-cols-[64px,repeat(6,1fr)] gap-1.5 items-center">
-        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]" />
+        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2" />
         {STAT_KEYS.map((k) => (
           <span
             key={k}
-            className="font-mono-hud text-[12px] uppercase tracking-wider text-center text-[var(--ink-2)]"
+            className="font-mono-hud text-[12px] uppercase tracking-wider text-center text-ink-2"
           >
             {STAT_LABELS[k]}
           </span>
@@ -312,7 +312,7 @@ export function SetEditorPanel({
           />
         ))}
 
-        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">IV</span>
+        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">IV</span>
         {STAT_KEYS.map((k) => (
           <input
             key={`iv-${k}`}
@@ -326,7 +326,7 @@ export function SetEditorPanel({
           />
         ))}
 
-        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
           LV {draft.level}
         </span>
         {STAT_KEYS.map((k) => {

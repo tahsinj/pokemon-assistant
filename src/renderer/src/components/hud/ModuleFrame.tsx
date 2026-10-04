@@ -26,11 +26,11 @@ export function ModuleFrame({
     <div className="mod-in">
       <div data-ui="page-header" className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 mb-3 px-1">
         <div className="min-w-0">
-          <h1 data-ui="page-title" className="font-display text-[28px] font-bold leading-none text-[var(--ink-0)]">
+          <h1 data-ui="page-title" className="font-display text-[28px] font-bold leading-none text-ink-0">
             {title ?? open?.name}
           </h1>
           {subtitle && (
-            <div data-ui="page-subtitle" className="text-[14px] text-[var(--ink-2)] mt-1.5">
+            <div data-ui="page-subtitle" className="text-[14px] text-ink-2 mt-1.5">
               {subtitle}
             </div>
           )}
@@ -74,7 +74,7 @@ export function SpriteFrame({
             onError={sprite.onError}
           />
         ) : (
-          <span className="font-display text-[42px] font-bold text-[var(--ink-2)]">
+          <span className="font-display text-[42px] font-bold text-ink-2">
             {(name.trim()[0] ?? '?').toUpperCase()}
           </span>
         )}
@@ -105,10 +105,10 @@ export function MoveCard({ m, hint }: { m: Move; hint?: string }) {
         <TypeChip t={m.type.toLowerCase()} />
       </div>
       <div className="relative px-3 pt-3 pb-2.5">
-        <div className="font-display text-[15px] font-bold leading-tight pr-12 text-[var(--ink-0)]">
+        <div className="font-display text-[15px] font-bold leading-tight pr-12 text-ink-0">
           {m.name}
         </div>
-        <div className="flex items-center gap-3 mt-2 font-mono-hud text-[14px] text-[var(--ink-1)]">
+        <div className="flex items-center gap-3 mt-2 font-mono-hud text-[14px] text-ink-1">
           <span>
             PWR <span className="text-white">{m.power || '-'}</span>
           </span>
@@ -127,9 +127,9 @@ export function MoveCard({ m, hint }: { m: Move; hint?: string }) {
 /** Mono section header used inside module panels. */
 export function SectionHead({ label, extra }: { label: ReactNode; extra?: ReactNode }) {
   return (
-    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-[var(--hud-accent-2)] mb-2">
+    <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
       {label}
-      {extra && <span className="text-[var(--ink-2)]"> · {extra}</span>}
+      {extra && <span className="text-ink-2"> · {extra}</span>}
     </div>
   );
 }
@@ -154,7 +154,7 @@ export function SearchPill({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
-      className="bg-black/40 border border-white/15 rounded-full px-4 py-1.5 font-mono-hud text-[15px] text-white placeholder:text-[var(--ink-2)] outline-none focus:border-[var(--hud-accent-2)]"
+      className="bg-black/40 border border-white/15 rounded-full px-4 py-1.5 font-mono-hud text-[15px] text-white placeholder:text-ink-2 outline-none focus:border-accent-2"
       style={{ width }}
     />
   );

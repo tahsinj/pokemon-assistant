@@ -41,10 +41,19 @@ Solo project, but these rules keep the history and the code readable.
   "ESC · CLOSE"), not as decoration. The heading mark comes from the
   `hud-mark` CSS class.
 
+## Styles
+
+- All CSS lives in `src/renderer/src/styles.css`. Tokens (colors, type
+  colors, radii) sit at the top as CSS variables.
+- Tailwind's theme maps to the same variables: use `text-ink-2`,
+  `text-accent-2`, `bg-danger` and so on instead of `text-[var(--ink-2)]`.
+- `npm run lint:css` fails on selectors whose classes nothing uses. Delete
+  the rule with the component that used it.
+
 ## Before pushing
 
 ```bash
-npm run check   # eslint, prose lint, typecheck, tests
+npm run check   # eslint, prose lint, CSS lint, typecheck, tests
 ```
 
 ## Data

@@ -50,9 +50,9 @@ function TeamSlot({
       >
         <div className="font-display text-[15px] font-bold flex items-center justify-between">
           {mon.name}
-          <span className="font-mono-hud text-[13px] text-[var(--ink-2)]">{mon.dex}</span>
+          <span className="font-mono-hud text-[13px] text-ink-2">{mon.dex}</span>
         </div>
-        <div className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mb-1.5">
+        <div className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider mb-1.5">
           {typeof mon.lv === 'number' ? `LV ${mon.lv} · ${mon.role}` : mon.role}
         </div>
         <div className="flex gap-1 mb-2">
@@ -62,7 +62,7 @@ function TeamSlot({
         </div>
         {hasHp && (
           <div className="flex items-center gap-1.5">
-            <span className="font-mono-hud text-[12px] text-[var(--ink-2)]">HP</span>
+            <span className="font-mono-hud text-[12px] text-ink-2">HP</span>
             <div className="relative h-1.5 flex-1 rounded-full bg-black/40 overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 rounded-full"
@@ -102,7 +102,7 @@ function TeamSlot({
           <div className="absolute inset-[3px] hex" style={{ background: 'rgba(8,18,26,.9)' }} />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             {sprite.exhausted ? (
-              <span className="font-display font-bold text-[var(--ink-2)]" style={{ fontSize: 18 }}>
+              <span className="font-display font-bold text-ink-2" style={{ fontSize: 18 }}>
                 {(mon.name.trim()[0] ?? '?').toUpperCase()}
               </span>
             ) : (
@@ -182,7 +182,7 @@ export function TeamColumn({
         />
       ))}
       <div
-        className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider mt-1"
+        className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider mt-1"
         title="Your saved squad from the Team Builder"
       >
         {team.length}/6 · squad

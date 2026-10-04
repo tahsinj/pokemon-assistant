@@ -38,8 +38,8 @@ export function StatBar({
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-9 font-mono-hud text-[14px] text-[var(--ink-1)] uppercase tracking-wider">{label}</div>
-      <div className="font-mono-hud text-[16px] w-8 text-right text-[var(--ink-0)]">{num ?? value}</div>
+      <div className="w-9 font-mono-hud text-[14px] text-ink-1 uppercase tracking-wider">{label}</div>
+      <div className="font-mono-hud text-[16px] w-8 text-right text-ink-0">{num ?? value}</div>
       <div className="statbar flex-1">
         <div
           className="fill"
@@ -73,7 +73,7 @@ export function Hex({
 export function KVCard({ k, v }: { k: string; v: string }) {
   return (
     <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">{k}</div>
+      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">{k}</div>
       <div className="font-display text-[15px] font-semibold mt-0.5 truncate">{v}</div>
     </div>
   );

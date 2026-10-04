@@ -600,7 +600,7 @@ export function PcPage({
   if (!hasPc) {
     return (
       <ModuleFrame subtitle="desktop app required">
-        <p className="font-mono-hud text-[15px] text-[var(--ink-2)] m-0">
+        <p className="font-mono-hud text-[15px] text-ink-2 m-0">
           PC storage requires the desktop app (Electron). Run with <code>npm run dev</code>.
         </p>
       </ModuleFrame>
@@ -633,7 +633,7 @@ export function PcPage({
     >
       <div className="pc-page mod-page hud-form">
       {statusMsg && (
-        <div className="font-mono-hud text-[14px] text-[var(--ink-1)] mb-3" role="status">
+        <div className="font-mono-hud text-[14px] text-ink-1 mb-3" role="status">
           › {statusMsg}
         </div>
       )}
@@ -1034,7 +1034,7 @@ export function PcPage({
           {editorMode === 'view' && editor.species && viewerMon && (
             <div className="pc-view">
               <div className="pc-view-actions">
-                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider">
+                <span className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider">
                   Slot {editor.slot + 1}
                 </span>
                 {editor.shiny && (
@@ -1317,7 +1317,7 @@ function PcEditor({
             {species.types.map((t) => (
               <TypeChip key={t} t={t.toLowerCase()} />
             ))}
-            <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase tracking-wider">
+            <span className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider">
               Slot {draft.slot + 1}
             </span>
           </div>
@@ -1613,13 +1613,13 @@ function CoachPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 font-mono-hud text-[13px] uppercase tracking-widest text-[var(--hud-accent-2)]"
+        className="w-full flex items-center gap-2 font-mono-hud text-[13px] uppercase tracking-widest text-accent-2"
         aria-expanded={open}
         style={{ marginBottom: open ? 8 : 0 }}
       >
         <span style={{ display: 'inline-block', width: 10 }}>{open ? '▾' : '▸'}</span>
         <span className="hud-mark">
-          SET REVIEW{metaLabel ? <span className="text-[var(--ink-2)]"> · vs {metaLabel} usage</span> : null}
+          SET REVIEW{metaLabel ? <span className="text-ink-2"> · vs {metaLabel} usage</span> : null}
         </span>
         <span
           className="ml-auto font-mono-hud text-[11px] px-1.5 py-0.5 rounded-[4px]"
@@ -1668,8 +1668,8 @@ function CoachPanel({
                   {sev.label}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-display text-[13px] font-semibold text-[var(--ink-0)]">{s.title}</div>
-                  <div className="font-mono-hud text-[12px] text-[var(--ink-2)] leading-snug">{s.detail}</div>
+                  <div className="font-display text-[13px] font-semibold text-ink-0">{s.title}</div>
+                  <div className="font-mono-hud text-[12px] text-ink-2 leading-snug">{s.detail}</div>
                 </div>
                 {fixLabel && (
                   <button
@@ -1684,7 +1684,7 @@ function CoachPanel({
                 )}
                 <button
                   type="button"
-                  className="flex-shrink-0 mt-0.5 font-mono-hud text-[14px] leading-none text-[var(--ink-2)] hover:text-[var(--ink-0)] transition-colors"
+                  className="flex-shrink-0 mt-0.5 font-mono-hud text-[14px] leading-none text-ink-2 hover:text-ink-0 transition-colors"
                   style={{ padding: '2px 4px' }}
                   onClick={() => onDismiss(s.key)}
                   title="Dismiss - hide this tip for every copy of this species (e.g. a move your game can't teach)"
@@ -1702,7 +1702,7 @@ function CoachPanel({
           <button
             type="button"
             onClick={() => setShowHidden((v) => !v)}
-            className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] hover:text-[var(--ink-1)] transition-colors"
+            className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 hover:text-ink-1 transition-colors"
             aria-expanded={showHidden}
           >
             {showHidden ? '▾' : '▸'} {hidden.length} dismissed
@@ -1714,7 +1714,7 @@ function CoachPanel({
                   key={s.key}
                   className="flex items-center gap-2 px-2 py-1 rounded-[6px] border border-white/5 bg-white/[.02]"
                 >
-                  <span className="font-display text-[12px] text-[var(--ink-2)] line-through truncate flex-1 min-w-0">
+                  <span className="font-display text-[12px] text-ink-2 line-through truncate flex-1 min-w-0">
                     {s.title}
                   </span>
                   <button

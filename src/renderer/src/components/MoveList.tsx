@@ -52,7 +52,7 @@ export function MoveList({
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           aria-label="Filter by type"
-          className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+          className="bg-black/40 border border-white/15 rounded-full px-3 py-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
         >
           <option value="">All types</option>
           {TYPES.map((t) => (
@@ -86,13 +86,13 @@ export function MoveList({
         />
       </div>
 
-      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-[var(--ink-2)] mb-2 px-1">
+      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-ink-2 mb-2 px-1">
         {filtered.length} moves
       </div>
 
       <div className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar">
         {filtered.length === 0 ? (
-          <div className="font-mono-hud text-[14px] text-[var(--ink-2)] px-2 py-4 text-center">No moves match your filters.</div>
+          <div className="font-mono-hud text-[14px] text-ink-2 px-2 py-4 text-center">No moves match your filters.</div>
         ) : (
           filtered.map((m) => {
             const isSel = selectedId === m.id;
@@ -104,17 +104,17 @@ export function MoveList({
                 onClick={() => onSelect(m)}
                 style={{ borderLeft: `3px solid var(--t-${m.type.toLowerCase()})` } as CSSProperties}
                 className={`grid grid-cols-[1fr,auto,30px,32px] items-center gap-3 pl-3 pr-3 py-2 rounded-[10px] text-left transition border ${
-                  isSel ? 'bg-white/10 border-[var(--hud-accent-2)]/40' : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
+                  isSel ? 'bg-white/10 border-accent-2/40' : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
                 }`}
               >
-                <span className="font-display text-[15px] font-semibold leading-normal truncate min-w-0 text-[var(--ink-0)]">
+                <span className="font-display text-[15px] font-semibold leading-normal truncate min-w-0 text-ink-0">
                   {m.name}
                 </span>
                 <TypeChip t={m.type.toLowerCase()} />
-                <span className="font-mono-hud text-[12px] text-[var(--ink-2)] text-right" title={m.category}>
+                <span className="font-mono-hud text-[12px] text-ink-2 text-right" title={m.category}>
                   {CAT_LETTER[m.category]}
                 </span>
-                <span className="font-mono-hud text-[13px] text-[var(--ink-1)] text-right">{m.power || '-'}</span>
+                <span className="font-mono-hud text-[13px] text-ink-1 text-right">{m.power || '-'}</span>
               </button>
             );
           })

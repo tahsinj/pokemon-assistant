@@ -348,9 +348,9 @@ export function BattlePage({
       }
       side={
         opponentReady && (
-          <div className="flex items-center gap-2 mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--ink-1)]">
+          <div className="flex items-center gap-2 mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-ink-1">
             <span
-              className="w-2 h-2 rounded-full bg-[var(--hud-danger)]"
+              className="w-2 h-2 rounded-full bg-danger"
               style={{ boxShadow: '0 0 8px var(--hud-danger)' }}
             />
             OPP. HP {opponent.currentHPPercent}%
@@ -418,7 +418,7 @@ export function BattlePage({
                 onChange={(e) => {
                   if (e.target.value) void onImportSavedTeam(e.target.value);
                 }}
-                className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-1)] outline-none focus:border-[var(--hud-accent-2)]"
+                className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[12px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
               >
                 <option value="">From saved team…</option>
                 {savedTeams.map((t) => (
@@ -438,13 +438,13 @@ export function BattlePage({
               FROM BUILDER
             </button>
             {parseMsg && (
-              <span className="font-mono-hud text-[14px] text-[var(--ink-2)]">› {parseMsg}</span>
+              <span className="font-mono-hud text-[14px] text-ink-2">› {parseMsg}</span>
             )}
           </div>
           {showPcPicker && pc.available && (
             <div className="mt-2 max-h-[200px] overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
               {pc.mons.length === 0 ? (
-                <div className="font-mono-hud text-[13px] text-[var(--ink-2)] py-3 text-center">
+                <div className="font-mono-hud text-[13px] text-ink-2 py-3 text-center">
                   {pc.loading ? 'Loading PC…' : 'No Pokémon stored in the PC yet.'}
                 </div>
               ) : (
@@ -457,16 +457,16 @@ export function BattlePage({
                       type="button"
                       onClick={() => importOne(fromPcRecord(rec))}
                       title="Click to load into the next empty slot"
-                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-[var(--hud-accent-2)] transition"
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-[10px] border border-white/10 bg-white/[.04] text-left hover:border-accent-2 transition"
                     >
                       <PokemonSprite dex={sp.dex} name={sp.name} size="xs" />
-                      <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-[var(--ink-0)]">
+                      <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                         {rec.nickname || sp.name}
                       </span>
-                      <span className="font-mono-hud text-[12px] text-[var(--ink-1)] flex-shrink-0">
+                      <span className="font-mono-hud text-[12px] text-ink-1 flex-shrink-0">
                         Lv {rec.level}
                       </span>
-                      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-[var(--ink-2)] flex-shrink-0">
+                      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                         {pc.boxNameById[rec.boxId] ?? 'Box'}
                       </span>
                     </button>
@@ -492,7 +492,7 @@ export function BattlePage({
         </div>
 
         {!opponentReady && (
-          <div className="font-mono-hud text-[15px] text-[var(--ink-2)] text-center py-4">
+          <div className="font-mono-hud text-[15px] text-ink-2 text-center py-4">
             Pick an opponent species above to see damage calculations.
           </div>
         )}
@@ -510,11 +510,11 @@ export function BattlePage({
                   cornerColor="var(--hud-danger)"
                 />
               ) : (
-                <div className="sprite-frame rounded-[14px] aspect-square flex items-center justify-center font-mono-hud text-[15px] text-[var(--ink-2)]">
+                <div className="sprite-frame rounded-[14px] aspect-square flex items-center justify-center font-mono-hud text-[15px] text-ink-2">
                   UNKNOWN SPECIES
                 </div>
               )}
-              <div className="font-display text-[15px] font-bold mt-2 text-[var(--ink-0)]">
+              <div className="font-display text-[15px] font-bold mt-2 text-ink-0">
                 {opponent.speciesName}
               </div>
               {opponentSpecies && (
@@ -524,7 +524,7 @@ export function BattlePage({
                   ))}
                 </div>
               )}
-              <div className="mono-panel mt-2 p-2 rounded-[8px] font-mono-hud text-[14px] text-[var(--ink-1)] leading-relaxed">
+              <div className="mono-panel mt-2 p-2 rounded-[8px] font-mono-hud text-[14px] text-ink-1 leading-relaxed">
                 ABL · {(opponent.ability || opponentSpecies?.abilities[0] || '?').toUpperCase()}
                 <br />
                 ITM · {(opponent.item || 'none').toUpperCase()}
@@ -541,7 +541,7 @@ export function BattlePage({
                   extra={`${opponent.currentHPPercent}% HP`}
                 />
                 {team.every((s) => !s) ? (
-                  <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-3">
+                  <div className="font-mono-hud text-[14px] text-ink-2 py-3">
                     Add at least one team member to see damage rows.
                   </div>
                 ) : (
@@ -561,15 +561,15 @@ export function BattlePage({
                           key={idx}
                           className={`rounded-[12px] border p-3 ${
                             activeSlot === idx
-                              ? 'border-[var(--hud-accent)]/60 bg-white/[.05]'
+                              ? 'border-accent/60 bg-white/[.05]'
                               : 'border-white/10 bg-white/[.03]'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 mb-2">
-                            <span className="font-display text-[15px] font-bold text-[var(--ink-0)]">
+                            <span className="font-display text-[15px] font-bold text-ink-0">
                               {slot.speciesName}
                             </span>
-                            <span className="font-mono-hud text-[13px] text-[var(--ink-2)] uppercase">
+                            <span className="font-mono-hud text-[13px] text-ink-2 uppercase">
                               L{slot.level} {slot.nature}
                               {slot.item ? ` · ${slot.item}` : ''}
                               {slot.ability ? ` · ${slot.ability}` : ''}
@@ -584,7 +584,7 @@ export function BattlePage({
                             </button>
                           </div>
                           {outcomes.length === 0 ? (
-                            <div className="font-mono-hud text-[13px] text-[var(--ink-2)]">
+                            <div className="font-mono-hud text-[13px] text-ink-2">
                               No moves configured.
                             </div>
                           ) : (
@@ -613,7 +613,7 @@ export function BattlePage({
                     extra={`${team[activeSlot]!.currentHPPercent}% HP`}
                   />
                   {reverseDamage.length === 0 ? (
-                    <div className="font-mono-hud text-[14px] text-[var(--ink-2)] py-2">
+                    <div className="font-mono-hud text-[14px] text-ink-2 py-2">
                       Add moves to the opponent above to see what they might hit you with.
                     </div>
                   ) : (
@@ -662,11 +662,11 @@ function DamageRow({ d, moveType, danger }: { d: DamageOutcome; moveType?: strin
       className="grid grid-cols-[minmax(0,1.2fr),90px,1fr,150px] items-center gap-3 px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]"
       title={d.desc}
     >
-      <div className="font-display text-[15px] font-semibold flex items-center gap-2 min-w-0 text-[var(--ink-0)]">
+      <div className="font-display text-[15px] font-semibold flex items-center gap-2 min-w-0 text-ink-0">
         <span className="truncate">{d.moveName}</span>
         {moveType && <TypeChip t={moveType.toLowerCase()} />}
       </div>
-      <div className="font-mono-hud text-[14px] text-[var(--ink-2)]">
+      <div className="font-mono-hud text-[14px] text-ink-2">
         {d.category[0]} · {d.basePower || '-'}
       </div>
       <div className="relative h-[14px] rounded-[4px] bg-black/40 overflow-hidden">
@@ -712,7 +712,7 @@ function SlotChip({
       onClick={onActivate}
       className={`relative rounded-[12px] border p-2 min-h-[92px] flex flex-col items-center justify-center gap-1 text-center cursor-pointer transition group ${
         active
-          ? 'border-[var(--hud-accent)] bg-[rgba(255,198,54,.06)]'
+          ? 'border-accent bg-[rgba(255,198,54,.06)]'
           : 'border-white/10 bg-white/[.03] hover:bg-white/[.06]'
       }`}
     >
@@ -722,19 +722,19 @@ function SlotChip({
             const dex = dexForSpeciesName(pokemon, slot.speciesName);
             return dex ? <PokemonSprite dex={dex} name={slot.speciesName} size="xs" /> : null;
           })()}
-          <span className="font-display text-[13px] font-bold leading-tight text-[var(--ink-0)]">
+          <span className="font-display text-[13px] font-bold leading-tight text-ink-0">
             {slot.speciesName}
           </span>
-          <span className="font-mono-hud text-[11px] text-[var(--ink-2)] uppercase">
+          <span className="font-mono-hud text-[11px] text-ink-2 uppercase">
             L{slot.level} · {slot.nature}
           </span>
-          <span className="font-mono-hud text-[11px] text-[var(--ink-2)] leading-tight line-clamp-2">
+          <span className="font-mono-hud text-[11px] text-ink-2 leading-tight line-clamp-2">
             {slot.moves.filter(Boolean).join(', ') || 'no moves'}
           </span>
           <button
             type="button"
             aria-label={`Clear slot ${idx + 1}`}
-            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-[var(--ink-1)] hover:text-white font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
             onClick={(e) => {
               e.stopPropagation();
               onClear();
@@ -745,7 +745,7 @@ function SlotChip({
         </>
       ) : (
         <>
-          <span className="font-mono-hud text-[12px] uppercase tracking-widest text-[var(--ink-2)]">
+          <span className="font-mono-hud text-[12px] uppercase tracking-widest text-ink-2">
             Slot {idx + 1}
           </span>
           <input
@@ -782,7 +782,7 @@ function SlotChip({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">
+    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
       {children}
     </span>
   );
@@ -1006,7 +1006,7 @@ function CombatPanel({
       </div>
 
       {species && (
-        <div className="mt-2 flex items-center gap-1.5 font-mono-hud text-[13px] text-[var(--ink-2)]">
+        <div className="mt-2 flex items-center gap-1.5 font-mono-hud text-[13px] text-ink-2">
           {species.types.map((t) => (
             <TypeChip key={t} t={t.toLowerCase()} />
           ))}
@@ -1079,7 +1079,7 @@ function SidePanel({
 }) {
   return (
     <div>
-      <div className="font-mono-hud text-[13px] uppercase tracking-widest text-[var(--ink-2)] mb-1.5">
+      <div className="font-mono-hud text-[13px] uppercase tracking-widest text-ink-2 mb-1.5">
         {label}
       </div>
       <div className="flex flex-col gap-1.5">

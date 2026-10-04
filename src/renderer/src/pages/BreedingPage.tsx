@@ -183,7 +183,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
     <ModuleFrame
       subtitle={`${slots} IVs inherited${natures[0].nature !== 'random' ? ' · nature locked' : ' · nature random'} · exact odds per egg`}
       side={
-        <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-[var(--hud-accent-2)]">
+        <div className="mono-panel px-3 py-1 rounded-full font-mono-hud text-[14px] text-accent-2">
           5×31+ · {pct(atLeast(5))}
         </div>
       }
@@ -235,7 +235,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                   { label: '≥3×31', p: atLeast(3) },
                 ].map((row) => (
                   <div key={row.label} className="grid grid-cols-[72px,1fr,140px] items-center gap-2">
-                    <span className="font-mono-hud text-[14px] text-[var(--ink-1)] uppercase">{row.label}</span>
+                    <span className="font-mono-hud text-[14px] text-ink-1 uppercase">{row.label}</span>
                     <div className="relative h-[10px] rounded-full bg-black/40 overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full"
@@ -245,8 +245,8 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                         }}
                       />
                     </div>
-                    <span className="font-mono-hud text-[14px] text-right text-[var(--ink-0)]">
-                      {pct(row.p)} <span className="text-[var(--ink-2)]">· {oneIn(row.p)}</span>
+                    <span className="font-mono-hud text-[14px] text-right text-ink-0">
+                      {pct(row.p)} <span className="text-ink-2">· {oneIn(row.p)}</span>
                     </span>
                   </div>
                 ))}
@@ -254,7 +254,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
               <div className="grid grid-cols-6 gap-1.5 mt-3">
                 {STAT_KEYS.map((k) => (
                   <div key={k} className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-[8px] bg-black/30 border border-white/5">
-                    <span className="font-mono-hud text-[12px] uppercase text-[var(--ink-2)]">{k}</span>
+                    <span className="font-mono-hud text-[12px] uppercase text-ink-2">{k}</span>
                     <span
                       className="font-mono-hud text-[14px]"
                       style={{ color: perStat[k] >= 0.999 ? '#7cd87b' : 'var(--ink-0)' }}
@@ -269,11 +269,11 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
 
             <div className="mono-panel p-3 rounded-[10px]">
               <SectionHead label="NATURE · ABILITY · GENDER" />
-              <div className="flex flex-col gap-1 font-mono-hud text-[14px] text-[var(--ink-1)]">
+              <div className="flex flex-col gap-1 font-mono-hud text-[14px] text-ink-1">
                 <div>
                   NATURE ·{' '}
                   {natures.map((o, i) => (
-                    <span key={i} className="text-[var(--ink-0)]">
+                    <span key={i} className="text-ink-0">
                       {i > 0 && ' / '}
                       {o.nature === 'random' ? 'random (1/25 each)' : `${o.nature} ${pct(o.p)}`}
                     </span>
@@ -290,17 +290,17 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                       </span>
                     ))
                   ) : (
-                    <span className="text-[var(--ink-2)]">set ♀ species + ability</span>
+                    <span className="text-ink-2">set ♀ species + ability</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   GENDER ·
                   {speciesMaleP !== undefined ? (
-                    <span className="text-[var(--ink-0)]">
+                    <span className="text-ink-0">
                       {speciesMaleP === null
                         ? 'genderless'
                         : `♂ ${pct(speciesMaleP)} · ♀ ${pct(1 - speciesMaleP)}`}{' '}
-                      <span className="text-[var(--ink-2)]">({femaleSpecies!.name} data)</span>
+                      <span className="text-ink-2">({femaleSpecies!.name} data)</span>
                     </span>
                   ) : (
                     <>
@@ -315,7 +315,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                           </option>
                         ))}
                       </select>
-                      <span className="text-[var(--ink-2)]">(set ♀ species for exact data)</span>
+                      <span className="text-ink-2">(set ♀ species for exact data)</span>
                     </>
                   )}
                 </div>
@@ -332,7 +332,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
               <span style={{ color: targetP > 0 ? 'var(--hud-accent-2)' : 'var(--hud-danger)' }}>
                 {pct(targetP)}
               </span>{' '}
-              <span className="text-[var(--ink-2)]">
+              <span className="text-ink-2">
                 · {oneIn(targetP)} · {eggsFor90(targetP)} eggs for 90% odds
               </span>
             </div>
@@ -341,7 +341,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
             <div className="grid grid-cols-6 gap-2">
               {STAT_KEYS.map((k) => (
                 <label key={k} className="flex flex-col gap-1 items-stretch">
-                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] text-center">
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 text-center">
                     {k}
                   </span>
                   <select
@@ -360,7 +360,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
             </div>
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 justify-between">
-                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Nature</span>
+                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Nature</span>
                 <select value={targetNature} onChange={(e) => setTargetNature(e.target.value)}>
                   <option value="">Any</option>
                   {Object.keys(NATURES).map((n) => (
@@ -371,7 +371,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                 </select>
               </label>
               <label className="flex items-center gap-2 justify-between">
-                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Ability</span>
+                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Ability</span>
                 <select value={targetAbility} onChange={(e) => setTargetAbility(e.target.value)} disabled={!femaleSpecies}>
                   <option value="">Any</option>
                   {femaleSpecies &&
@@ -386,7 +386,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                 </select>
               </label>
               <label className="flex items-center gap-2 justify-between">
-                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Gender</span>
+                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Gender</span>
                 <select value={targetGender} onChange={(e) => setTargetGender(e.target.value as '' | 'male' | 'female')}>
                   <option value="">Any</option>
                   <option value="male">♂ Male</option>
@@ -437,7 +437,7 @@ function ParentPanel({
         <span className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest" style={{ color: tone }}>
           {label}
         </span>
-        <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase">{perfectCount}×31</span>
+        <span className="font-mono-hud text-[12px] text-ink-2 uppercase">{perfectCount}×31</span>
       </div>
 
       <div className="flex items-center gap-2 mb-2">
@@ -461,7 +461,7 @@ function ParentPanel({
           {species.types.map((t) => (
             <TypeChip key={t} t={t.toLowerCase()} />
           ))}
-          <span className="font-mono-hud text-[12px] text-[var(--ink-2)] uppercase">
+          <span className="font-mono-hud text-[12px] text-ink-2 uppercase">
             {species.eggGroups.join(' · ') || 'no egg groups'}
           </span>
         </div>
@@ -469,7 +469,7 @@ function ParentPanel({
 
       <div className="grid grid-cols-2 gap-2 mb-2">
         <label className="flex flex-col gap-1">
-          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Held item</span>
+          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Held item</span>
           <select value={parent.item} onChange={(e) => set('item', e.target.value as BreedingItem)}>
             {ITEMS.map((i) => (
               <option key={i.id} value={i.id}>
@@ -479,7 +479,7 @@ function ParentPanel({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Nature</span>
+          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Nature</span>
           <select value={parent.nature} onChange={(e) => set('nature', e.target.value)}>
             {Object.keys(NATURES).map((n) => (
               <option key={n} value={n}>
@@ -492,7 +492,7 @@ function ParentPanel({
 
       {showAbility && (
         <label className="flex flex-col gap-1 mb-2">
-          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">Ability</span>
+          <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">Ability</span>
           <select
             value={parent.ability}
             onChange={(e) => set('ability', e.target.value)}
@@ -511,7 +511,7 @@ function ParentPanel({
       )}
 
       <div className="flex items-center justify-between mb-1">
-        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)]">IVs</span>
+        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">IVs</span>
         <div className="flex gap-1">
           <button
             type="button"
@@ -534,7 +534,7 @@ function ParentPanel({
       <div className="grid grid-cols-3 gap-1.5">
         {STAT_KEYS.map((k) => (
           <label key={k} className="flex items-center gap-1.5">
-            <span className="font-mono-hud text-[12px] uppercase text-[var(--ink-2)] w-7">{k}</span>
+            <span className="font-mono-hud text-[12px] uppercase text-ink-2 w-7">{k}</span>
             <input
               type="number"
               min={0}
@@ -551,7 +551,7 @@ function ParentPanel({
         ))}
       </div>
 
-      {note && <div className="font-mono-hud text-[12px] text-[var(--ink-2)] mt-2 leading-snug">{note}</div>}
+      {note && <div className="font-mono-hud text-[12px] text-ink-2 mt-2 leading-snug">{note}</div>}
     </div>
   );
 }

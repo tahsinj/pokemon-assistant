@@ -97,7 +97,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
             {/* Holo sprite + level/nature controls */}
             <div className="flex flex-col gap-2.5">
               <SpriteFrame dex={species.dex} name={species.name} />
-              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-2)]">
+              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                 Level
                 <input
                   type="number"
@@ -105,15 +105,15 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   max={100}
                   value={level}
                   onChange={(e) => setLevel(+e.target.value || 1)}
-                  className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[15px] text-white text-right outline-none focus:border-[var(--hud-accent-2)]"
+                  className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[15px] text-white text-right outline-none focus:border-accent-2"
                 />
               </label>
-              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-[var(--ink-2)]">
+              <label className="flex items-center justify-between gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                 Nature
                 <select
                   value={nature}
                   onChange={(e) => setNature(e.target.value)}
-                  className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[14px] text-[var(--ink-0)] outline-none focus:border-[var(--hud-accent-2)]"
+                  className="flex-1 min-w-0 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[14px] text-ink-0 outline-none focus:border-accent-2"
                 >
                   {Object.entries(NATURES).map(([n, v]) => (
                     <option key={n} value={n}>
@@ -123,7 +123,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   ))}
                 </select>
               </label>
-              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-[var(--ink-1)] leading-snug flex items-center flex-wrap gap-1.5">
+              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-ink-1 leading-snug flex items-center flex-wrap gap-1.5">
                 EV YIELD
                 {formatEvYield(species.evYield).length === 0 ? (
                   <span className="text-white">· none</span>
@@ -131,7 +131,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   formatEvYield(species.evYield).map(({ label, value }) => (
                     <span
                       key={label}
-                      className="font-mono-hud text-[12px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 text-[var(--hud-accent-2)]"
+                      className="font-mono-hud text-[12px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 text-accent-2"
                     >
                       +{value} {label}
                     </span>
@@ -155,7 +155,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   Total EVs exceed 510 - trim values.
                 </div>
               )}
-              <div className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3 font-mono-hud text-[12px] uppercase tracking-wider text-[var(--ink-2)] px-0.5">
+              <div className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-0.5">
                 <span>Stat</span>
                 <span>Base</span>
                 <span>IV</span>
@@ -173,7 +173,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                     key={k}
                     className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3"
                   >
-                    <div className="font-mono-hud text-[14px] uppercase text-[var(--ink-1)]">
+                    <div className="font-mono-hud text-[14px] uppercase text-ink-1">
                       {STAT_LABELS[k]}
                     </div>
                     <div className="font-mono-hud text-[15px] text-white">
@@ -186,7 +186,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                       value={ivs[k]}
                       onChange={(e) => setIv(k, +e.target.value)}
                       aria-label={`${STAT_LABELS[k]} IV`}
-                      className="w-full bg-black/40 border border-white/15 rounded-[8px] px-1.5 py-0.5 font-mono-hud text-[14px] text-[var(--ink-0)] text-right outline-none focus:border-[var(--hud-accent-2)]"
+                      className="w-full bg-black/40 border border-white/15 rounded-[8px] px-1.5 py-0.5 font-mono-hud text-[14px] text-ink-0 text-right outline-none focus:border-accent-2"
                     />
                     <input
                       type="range"
@@ -208,7 +208,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                         })(),
                       }}
                     />
-                    <div className="font-mono-hud text-[14px] text-[var(--hud-accent-2)] text-right">
+                    <div className="font-mono-hud text-[14px] text-accent-2 text-right">
                       {ev} EV
                     </div>
                     <div className="flex items-center gap-2">
