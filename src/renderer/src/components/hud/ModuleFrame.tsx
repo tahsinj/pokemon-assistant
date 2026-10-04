@@ -124,12 +124,12 @@ export function MoveCard({ m, hint }: { m: Move; hint?: string }) {
   );
 }
 
-/** Mono section header used inside module panels. */
+/** Section header inside module panels: a mono label, then optional plain-text detail. */
 export function SectionHead({ label, extra }: { label: ReactNode; extra?: ReactNode }) {
   return (
     <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2 mb-2">
       {label}
-      {extra && <span className="text-ink-2"> · {extra}</span>}
+      {extra && <span className="font-sans normal-case tracking-normal text-[13px] text-ink-2"> · {extra}</span>}
     </div>
   );
 }

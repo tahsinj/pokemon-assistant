@@ -1,5 +1,5 @@
 import { AREAS, TOOL_NAMES } from '../../src/renderer/src/lib/areas';
-import { headerClearOfClose } from './checks';
+import * as checks from './checks';
 import { test, expect, openTool, snap } from './fixtures';
 
 test('the orb shows one hex per area', async ({ app }) => {
@@ -12,7 +12,9 @@ for (const area of AREAS) {
     test(`${area.label} / ${name} opens without errors`, async ({ app }, testInfo) => {
       await openTool(app, area.label, name);
       await expect(app).toHaveTitle(`${name} · ${area.label} · STAB Lab`);
-      expect(await app.evaluate(headerClearOfClose)).toEqual([]);
+      for (const [name, check] of Object.entries(checks)) {
+        expect(await app.evaluate(check), name).toEqual([]);
+      }
       await snap(app, testInfo, `${area.id}-${tool}`);
     });
   }

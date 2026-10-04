@@ -75,7 +75,7 @@ export function DexDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="chunky ghost font-display text-[11px] flex-shrink-0"
+            className="chunky ghost font-display text-[12px] flex-shrink-0"
             style={{ padding: '5px 12px' }}
             aria-label="Close"
           >

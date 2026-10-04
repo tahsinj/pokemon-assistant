@@ -419,7 +419,7 @@ function TopBar({
       }}
     >
       <strong style={{ fontSize: 18 }}>Turn {state.turn || '-'}</strong>
-      <span style={{ color: 'var(--fg-dim)', fontSize: 12 }}>
+      <span style={{ color: 'var(--fg-dim)', fontSize: 13 }}>
         {state.field.weather ? `Weather: ${state.field.weather} (${state.field.weatherTurns}t)` : 'No weather'}
         {' · '}
         {state.field.terrain ? `Terrain: ${state.field.terrain} (${state.field.terrainTurns}t)` : 'No terrain'}
@@ -490,7 +490,7 @@ function SetupPanel({
       <div className="section-head">Setup</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
-          <div style={{ fontSize: 12, color: 'var(--fg-dim)', marginBottom: 6 }}>1. Load your team</div>
+          <div style={{ fontSize: 13, color: 'var(--fg-dim)', marginBottom: 6 }}>1. Load your team</div>
           <textarea
             value={paste}
             onChange={(e) => onPaste(e.target.value)}
@@ -498,20 +498,20 @@ function SetupPanel({
               'Paste a Showdown export…\n\nGarchomp @ Choice Band\nAbility: Rough Skin\nEVs: 4 HP / 252 Atk / 252 Spe\nJolly Nature\n- Earthquake\n- Outrage'
             }
             rows={8}
-            style={{ width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
+            style={{ width: '100%', fontFamily: 'ui-monospace, monospace', fontSize: 13 }}
           />
           <button type="button" className="btn btn-primary" onClick={onLoadPlayerTeam} style={{ marginTop: 6 }}>
             Load player team
           </button>
           {importSources}
           {parseMsg && (
-            <p style={{ marginTop: 6, fontSize: 12, color: 'var(--fg-dim)' }} role="status">
+            <p style={{ marginTop: 6, fontSize: 13, color: 'var(--fg-dim)' }} role="status">
               {parseMsg}
             </p>
           )}
         </div>
         <div>
-          <div style={{ fontSize: 12, color: 'var(--fg-dim)', marginBottom: 6 }}>2. Reveal opponent lead</div>
+          <div style={{ fontSize: 13, color: 'var(--fg-dim)', marginBottom: 6 }}>2. Reveal opponent lead</div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <input
               list="setup-species"
@@ -545,10 +545,10 @@ function SetupPanel({
               <option key={p.id} value={p.name} />
             ))}
           </datalist>
-          <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
+          <div className="text-[13px] text-ink-2">
             More opponent slots can be revealed once they switch in.
           </div>
-          <div style={{ marginTop: 12, fontSize: 12 }}>
+          <div style={{ marginTop: 12, fontSize: 13 }}>
             Player loaded: <strong>{playerLoaded ? 'yes' : 'no'}</strong> · Opponent lead revealed:{' '}
             <strong>{opponentLoaded ? 'yes' : 'no'}</strong>
           </div>
@@ -646,13 +646,13 @@ function SlotCard({
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: 11, color: 'var(--fg-dim)', width: 50 }}>Slot {slot + 1}</span>
+          <span style={{ fontSize: 13, color: 'var(--fg-dim)', width: 50 }}>Slot {slot + 1}</span>
           <input
             list={`reveal-${slot}`}
             placeholder="Reveal species…"
             value={revealName}
             onChange={(e) => setRevealName(e.target.value)}
-            style={{ flex: 1, fontSize: 11, padding: '2px 6px' }}
+            style={{ flex: 1, fontSize: 13, padding: '2px 6px' }}
           />
           <input
             type="number"
@@ -660,7 +660,7 @@ function SlotCard({
             max={100}
             value={revealLevel}
             onChange={(e) => setRevealLevel(Math.max(1, Math.min(100, Number(e.target.value) || 50)))}
-            style={{ width: 50, fontSize: 11, padding: '2px 6px' }}
+            style={{ width: 50, fontSize: 13, padding: '2px 6px' }}
           />
           <button
             type="button"
@@ -670,7 +670,7 @@ function SlotCard({
                 setRevealName('');
               }
             }}
-            style={{ padding: '2px 6px', fontSize: 11 }}
+            style={{ padding: '2px 6px', fontSize: 13 }}
           >
             +
           </button>
@@ -691,7 +691,7 @@ function SlotCard({
           borderRadius: 6,
           border: '1px dashed var(--border)',
           color: 'var(--fg-dim)',
-          fontSize: 11,
+          fontSize: 13,
         }}
       >
         Empty slot {slot + 1}
@@ -724,13 +724,13 @@ function SlotCard({
         <strong className="font-display" style={{ fontSize: 14, color: 'var(--ink-0)' }}>
           {pokemon.identity.species}
         </strong>
-        <span className="font-mono-hud" style={{ fontSize: 12, color: 'var(--ink-2)' }}>
+        <span className="font-mono-hud" style={{ fontSize: 13, color: 'var(--ink-2)' }}>
           L{pokemon.identity.level}
         </span>
         {pokemon.battle.status && (
           <span
             style={{
-              fontSize: 10,
+              fontSize: 13,
               padding: '1px 5px',
               borderRadius: 3,
               background: STATUS_BADGE[pokemon.battle.status].color,
@@ -742,19 +742,19 @@ function SlotCard({
           </span>
         )}
         {pokemon.battle.isTerastallized && (
-          <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: 'var(--accent-alt)' }}>
+          <span style={{ fontSize: 13, padding: '1px 5px', borderRadius: 3, background: 'var(--accent-alt)' }}>
             TERA {pokemon.set.teraType.value || '?'}
           </span>
         )}
         {fainted && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)' }}>FAINTED</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>FAINTED</span>
         )}
         {isActive && (
           <span
             className="font-mono-hud"
             style={{
               marginLeft: 'auto',
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 700,
               textTransform: 'uppercase',
               padding: '0 6px',
@@ -770,7 +770,7 @@ function SlotCard({
           <button
             type="button"
             onClick={() => dispatch({ type: 'Switched', side, toSlot: slot })}
-            style={{ marginLeft: 'auto', fontSize: 10, padding: '2px 6px' }}
+            style={{ marginLeft: 'auto', fontSize: 13, padding: '2px 6px' }}
           >
             Switch in
           </button>
@@ -787,18 +787,18 @@ function SlotCard({
           }}
         />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--fg-dim)', marginTop: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--fg-dim)', marginTop: 2 }}>
         <span>
           {pokemon.battle.currentHP} / {pokemon.battle.maxHP} HP
         </span>
         <span>{pct.toFixed(0)}%</span>
       </div>
       {boostsList && (
-        <div style={{ marginTop: 4, fontSize: 10, color: 'var(--accent)' }}>
+        <div style={{ marginTop: 4, fontSize: 13, color: 'var(--accent)' }}>
           {boostsList}
         </div>
       )}
-      <div style={{ marginTop: 4, fontSize: 10, color: 'var(--fg-dim)' }}>
+      <div style={{ marginTop: 4, fontSize: 13, color: 'var(--fg-dim)' }}>
         {pokemon.set.ability.value ? `${pokemon.set.ability.value}` : '?'}
         {pokemon.set.item.value ? ` · ${pokemon.set.item.value}` : ''}
       </div>
@@ -814,7 +814,7 @@ function PredictedSetsPanel({ pokemon }: { pokemon: BattlePokemon }) {
   const confidencePct = Math.round(pokemon.uncertainty.confidence * 100);
   return (
     <details style={{ marginTop: 6 }}>
-      <summary style={{ fontSize: 10, color: 'var(--fg-dim)', cursor: 'pointer' }}>
+      <summary style={{ fontSize: 13, color: 'var(--fg-dim)', cursor: 'pointer' }}>
         Predicted sets ({top.length} live) · confidence {confidencePct}%
       </summary>
       <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -822,7 +822,7 @@ function PredictedSetsPanel({ pokemon }: { pokemon: BattlePokemon }) {
           <div
             key={c.id}
             style={{
-              fontSize: 10,
+              fontSize: 13,
               background: '#020617',
               border: '1px solid var(--border)',
               borderRadius: 4,
@@ -830,7 +830,7 @@ function PredictedSetsPanel({ pokemon }: { pokemon: BattlePokemon }) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <strong style={{ fontSize: 10 }}>{c.label}</strong>
+              <strong style={{ fontSize: 13 }}>{c.label}</strong>
               <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700 }}>
                 {Math.round(c.weight * 100)}%
               </span>
@@ -854,10 +854,10 @@ function PredictedSetsPanel({ pokemon }: { pokemon: BattlePokemon }) {
         ))}
         {pokemon.uncertainty.evidence.length > 1 && (
           <details>
-            <summary style={{ fontSize: 9, color: 'var(--fg-dim)', cursor: 'pointer' }}>
+            <summary style={{ fontSize: 13, color: 'var(--fg-dim)', cursor: 'pointer' }}>
               Evidence trail ({pokemon.uncertainty.evidence.length})
             </summary>
-            <ul style={{ margin: '4px 0 0 14px', padding: 0, fontSize: 9, color: 'var(--fg-dim)' }}>
+            <ul style={{ margin: '4px 0 0 14px', padding: 0, fontSize: 13, color: 'var(--fg-dim)' }}>
               {pokemon.uncertainty.evidence.slice(-6).map((e, i) => (
                 <li key={i}>
                   <strong>{e.observation}:</strong> {e.effect}
@@ -890,9 +890,9 @@ function FieldStrip({ state, dispatch }: { state: BattleState; dispatch: (e: Bat
 function FieldGlobal({ state, dispatch }: { state: BattleState; dispatch: (e: BattleEvent) => void }) {
   return (
     <div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6, textTransform: 'uppercase' }}>Global</div>
+      <div style={{ fontSize: 13, color: 'var(--fg-dim)', marginBottom: 6, textTransform: 'uppercase' }}>Global</div>
       <label style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 6 }}>
-        <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Weather</span>
+        <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Weather</span>
         <select
           value={state.field.weather}
           onChange={(e) =>
@@ -907,7 +907,7 @@ function FieldGlobal({ state, dispatch }: { state: BattleState; dispatch: (e: Ba
         </select>
       </label>
       <label style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 6 }}>
-        <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Terrain</span>
+        <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Terrain</span>
         <select
           value={state.field.terrain}
           onChange={(e) =>
@@ -921,7 +921,7 @@ function FieldGlobal({ state, dispatch }: { state: BattleState; dispatch: (e: Ba
           ))}
         </select>
       </label>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 13 }}>
         <label>
           <input
             type="checkbox"
@@ -959,8 +959,8 @@ function SideField({
   const s = state.sides[side];
   return (
     <div>
-      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginBottom: 6, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div style={{ fontSize: 13, color: 'var(--fg-dim)', marginBottom: 6, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <label>
           Spikes:{' '}
           <select
@@ -1143,12 +1143,12 @@ function DispatchForm({
   })();
 
   if (!mons.length) {
-    return <div style={{ fontSize: 12, color: 'var(--fg-dim)' }}>Reveal Pokémon to enable events.</div>;
+    return <div style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Reveal Pokémon to enable events.</div>;
   }
 
   const targetPicker = (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Target</span>
+      <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Target</span>
       <select value={target} onChange={(e) => setTarget(e.target.value as PokemonId)}>
         {mons.map((m) => (
           <option key={m.id} value={m.id}>
@@ -1171,7 +1171,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{kind === 'damage' ? 'Damage' : 'Heal'}</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>{kind === 'damage' ? 'Damage' : 'Heal'}</span>
             <input
               type="number"
               min={0}
@@ -1180,7 +1180,7 @@ function DispatchForm({
             />
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Unit</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Unit</span>
             <select value={pctMode ? 'pct' : 'hp'} onChange={(e) => setPctMode(e.target.value === 'pct')}>
               <option value="pct">% of max</option>
               <option value="hp">raw HP</option>
@@ -1210,7 +1210,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Status</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Status</span>
             <select value={status ?? ''} onChange={(e) => setStatus((e.target.value || null) as StatusCondition)}>
               {STATUSES.map((s) => (
                 <option key={s.id ?? 'none'} value={s.id ?? ''}>
@@ -1238,7 +1238,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Stat</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Stat</span>
             <select value={boostStat} onChange={(e) => setBoostStat(e.target.value as typeof boostStat)}>
               {BOOST_STATS.map((b) => (
                 <option key={b} value={b}>
@@ -1248,7 +1248,7 @@ function DispatchForm({
             </select>
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Delta</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Delta</span>
             <input
               type="number"
               min={-6}
@@ -1273,7 +1273,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Move</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Move</span>
             <input
               list={`move-known-${target}`}
               value={moveName}
@@ -1309,7 +1309,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Tera type</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Tera type</span>
             <select value={teraType} onChange={(e) => setTeraType(e.target.value)}>
               {TERA_TYPES.map((t) => (
                 <option key={t || 'none'} value={t}>
@@ -1338,7 +1338,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Item</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Item</span>
             <input
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
@@ -1371,7 +1371,7 @@ function DispatchForm({
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr', gap: 8, alignItems: 'end' }}>
           {targetPicker}
           <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>Ability</span>
+            <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>Ability</span>
             <input
               value={abilityName}
               onChange={(e) => setAbilityName(e.target.value)}
@@ -1427,7 +1427,7 @@ function DamageMatrix({
       <div className="section-head">
         Damage vs {opp.identity.species} ({((opp.battle.currentHP / opp.battle.maxHP) * 100).toFixed(0)}% HP)
       </div>
-      <p style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 0 }}>
+      <p style={{ fontSize: 13, color: 'var(--fg-dim)', marginTop: 0 }}>
         Live calculation - reflects current boosts, status, hazards, screens, weather, and HP from the tracked state.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1449,12 +1449,12 @@ function DamageMatrix({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <strong>{pokemon.identity.species}</strong>
-                <span style={{ fontSize: 10, color: 'var(--fg-dim)' }}>
+                <span style={{ fontSize: 13, color: 'var(--fg-dim)' }}>
                   L{pokemon.identity.level} {pokemon.set.nature}
                   {pokemon.set.item.value ? ` · ${pokemon.set.item.value}` : ''}
                   {pokemon.set.ability.value ? ` · ${pokemon.set.ability.value}` : ''}
                 </span>
-                {fainted && <span style={{ fontSize: 10, color: 'var(--danger)', fontWeight: 700 }}>FAINTED</span>}
+                {fainted && <span style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 700 }}>FAINTED</span>}
               </div>
               <div>
                 {sorted.map((o, i) => (
@@ -1488,7 +1488,7 @@ function DamageRow({ d }: { d: DamageOutcome }) {
         alignItems: 'center',
         padding: '4px 6px',
         borderBottom: '1px solid var(--border)',
-        fontSize: 12,
+        fontSize: 13,
       }}
     >
       <span style={{ fontWeight: 600 }}>{d.moveName}</span>
@@ -1626,7 +1626,7 @@ function RecommendationsPanel({
     <div className="panel" style={{ marginTop: 16 }}>
       <div className="section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span>Recommendations</span>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
           <label style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
             Depth
             <select
@@ -1715,7 +1715,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 15, fontWeight: 600 }}>{rec.summary}</span>
           {rec.action.kind === 'move' && rec.action.tera && (
-            <span style={{ fontSize: 11, color: 'var(--accent)' }}>(Tera)</span>
+            <span style={{ fontSize: 13, color: 'var(--accent)' }}>(Tera)</span>
           )}
         </div>
 
@@ -1728,7 +1728,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid var(--border)',
               borderRadius: 4,
-              fontSize: 12,
+              fontSize: 13,
               display: 'grid',
               gap: 2,
             }}
@@ -1752,14 +1752,14 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
         )}
 
         {rec.reasoning.length > 0 && (
-          <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--fg-dim)', display: 'grid', gap: 2 }}>
+          <ul style={{ margin: '6px 0 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--fg-dim)', display: 'grid', gap: 2 }}>
             {rec.reasoning.map((r, i) => (
               <li key={i}>{r}</li>
             ))}
           </ul>
         )}
         {rec.risks.length > 0 && (
-          <ul style={{ margin: '4px 0 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--warn)', display: 'grid', gap: 2 }}>
+          <ul style={{ margin: '4px 0 0 0', paddingLeft: 18, fontSize: 13, color: 'var(--warn)', display: 'grid', gap: 2 }}>
             {rec.risks.map((r, i) => (
               <li key={i}>{r}</li>
             ))}
@@ -1767,7 +1767,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
         )}
 
         {/* Disclosure toggles */}
-        <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 11 }}>
+        <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 13 }}>
           {rec.principalVariation.length > 0 && (
             <DiscButton on={showPV} onClick={() => setShowPV((v) => !v)}>
               {showPV ? 'Hide' : 'Show'} projection ({rec.principalVariation.length})
@@ -1790,7 +1790,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
             style={{
               margin: '6px 0 0 0',
               paddingLeft: 20,
-              fontSize: 12,
+              fontSize: 13,
               color: 'var(--fg-dim)',
               display: 'grid',
               gap: 2,
@@ -1818,7 +1818,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
             style={{
               margin: '6px 0 0 0',
               paddingLeft: 18,
-              fontSize: 11,
+              fontSize: 13,
               color: 'var(--fg-dim)',
               display: 'grid',
               gap: 2,
@@ -1843,7 +1843,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
               <div
                 key={i}
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   padding: '4px 8px',
                   background: 'rgba(255,255,255,0.02)',
                   border: '1px dashed var(--border)',
@@ -1862,7 +1862,7 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
       </div>
 
       {/* EV column */}
-      <div style={{ textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
+      <div style={{ textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 13 }}>
         <div style={{ fontWeight: 700, fontSize: 14 }}>EV {rec.expectedValue.toFixed(2)}</div>
         {rec.rank > 1 ? (
           <div style={{ color: 'var(--fg-dim)' }}>Δ {rec.margin.toFixed(2)}</div>
@@ -1893,7 +1893,7 @@ function DiscButton({
         color: 'var(--fg-dim)',
         padding: '2px 8px',
         borderRadius: 3,
-        fontSize: 11,
+        fontSize: 13,
         cursor: 'pointer',
       }}
     >
@@ -1907,7 +1907,7 @@ function ConfidenceMeter({ value }: { value: number }) {
   const color = value >= 0.8 ? 'var(--ok)' : value >= 0.6 ? 'var(--warn)' : 'var(--fg-dim)';
   return (
     <div style={{ marginTop: 4, textAlign: 'right' }}>
-      <div style={{ fontSize: 10, color: 'var(--fg-dim)' }}>confidence</div>
+      <div style={{ fontSize: 13, color: 'var(--fg-dim)' }}>confidence</div>
       <div style={{ fontWeight: 700, color, fontSize: 13 }}>{pct}%</div>
       <div
         style={{

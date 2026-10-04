@@ -6,7 +6,12 @@ export interface BaseStats {
 
 export interface Pokemon {
   id: string;
+  /** Showdown name, form included ("Venusaur-Mega"). */
   name: string;
+  /** Set on alternate forms: the species name without the form ("Venusaur"). */
+  baseSpecies?: string;
+  /** Set on alternate forms: the form part of the name ("Mega", "Rapid-Strike"). */
+  forme?: string;
   dex: number;
   types: string[];
   abilities: string[];

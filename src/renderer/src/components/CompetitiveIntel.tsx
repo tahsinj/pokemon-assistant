@@ -34,7 +34,7 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
       <div className="flex flex-col gap-0.5 mt-0.5">
         {set.moves.map((slot, i) => (
           <div key={i} className="font-display text-[14px] font-semibold text-ink-0 truncate">
-            <span className="font-mono-hud text-[11px] text-ink-2 mr-1.5">{i + 1}</span>
+            <span className="font-mono-hud text-[12px] text-ink-2 mr-1.5">{i + 1}</span>
             {slot.join(' / ')}
           </div>
         ))}
@@ -43,24 +43,25 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
   );
 }
 
-function PctRow({ name, pct }: { name: string; pct: number }) {
+/** A name with its usage share as a faint bar behind it. `wrap` lets long names (spreads) take two lines. */
+function PctRow({ name, pct, wrap }: { name: string; pct: number; wrap?: boolean }) {
   return (
-    <div className="relative flex items-center justify-between gap-2 px-1.5 -mx-1.5 py-0.5 rounded-[4px] overflow-hidden">
+    <div className="relative flex items-center justify-between gap-2 px-1.5 py-0.5 rounded-[4px] overflow-hidden">
       <div
         className="absolute inset-y-0 left-0 rounded-[4px] bg-accent-2 opacity-[.08]"
         style={{ width: `${Math.min(100, pct)}%` }}
       />
-      <span className="relative font-display text-[13px] font-semibold text-ink-0 truncate">
+      <span className={`relative font-display text-[13px] font-semibold text-ink-0 min-w-0 ${wrap ? '' : 'truncate'}`}>
         {name}
       </span>
-      <span className="relative font-mono-hud text-[12px] tabular-nums text-ink-1 flex-shrink-0">
+      <span className="relative font-mono-hud text-[13px] tabular-nums text-ink-1 flex-shrink-0">
         {pct.toFixed(1)}%
       </span>
     </div>
   );
 }
 
-const INTEL_HEADER = 'font-mono-hud text-[11px] uppercase tracking-[0.16em] text-accent-2 opacity-70 mb-1.5';
+const INTEL_HEADER = 'font-mono-hud text-[13px] uppercase tracking-[0.16em] text-accent-2 opacity-70 mb-1.5';
 
 export function CompetitiveIntel({
   intel,
@@ -91,14 +92,14 @@ export function CompetitiveIntel({
       </div>
 
       {sets.length > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2.5 mb-3">
           {sets.map(([name, set]) => (
             <SmogonSetCard key={name} name={name} set={set} />
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_1fr_1fr_1.3fr] gap-2.5 mb-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2.5 mb-3">
         <div className="mono-panel p-3 rounded-[10px]">
           <div className={INTEL_HEADER}>
             Top moves
@@ -135,13 +136,13 @@ export function CompetitiveIntel({
           </div>
           <div className="flex flex-col gap-0.5">
             {intel.spreads.slice(0, 4).map((s, i) => (
-              <PctRow key={i} name={`${s.nature} ${evLine(s.evs)}`} pct={s.pct} />
+              <PctRow key={i} name={`${s.nature} ${evLine(s.evs)}`} pct={s.pct} wrap />
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2.5">
         {intel.teammates.length > 0 && (
           <div className="mono-panel p-3 rounded-[10px]">
             <div className={INTEL_HEADER}>
@@ -165,7 +166,7 @@ export function CompetitiveIntel({
                       selectable ? 'hover:border-accent-2' : 'opacity-50 cursor-default'
                     }`}
                   >
-                    {t.name} <span className="font-mono-hud text-[11px] text-ink-2">{Math.round(t.pct)}%</span>
+                    {t.name} <span className="font-mono-hud text-[12px] text-ink-2">{Math.round(t.pct)}%</span>
                   </button>
                 );
               })}
@@ -186,7 +187,7 @@ export function CompetitiveIntel({
                   type="button"
                   disabled={!selectable}
                   onClick={() => selectable && onSelectSpecies(c.id)}
-                  className={`relative flex items-center justify-between gap-2 text-left rounded-[4px] px-1.5 -mx-1.5 py-0.5 overflow-hidden transition ${
+                  className={`relative flex items-center justify-between gap-2 text-left rounded-[4px] px-1.5 py-0.5 overflow-hidden transition ${
                     selectable ? 'hover:bg-white/[.05]' : 'opacity-50 cursor-default'
                   }`}
                   title="Matchup rating - fraction of encounters this check KOs or forces out. Click to open."

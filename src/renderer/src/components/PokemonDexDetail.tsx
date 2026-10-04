@@ -9,6 +9,7 @@ import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recomme
 import { defensiveProfile } from '../lib/typechart';
 import { MoveCard, SpriteFrame } from './hud/ModuleFrame';
 import { StatBar, TypeChip } from './hud/HudPrimitives';
+import { abilityName } from '../lib/displayNames';
 
 export function PokemonDexDetail({
   p,
@@ -134,17 +135,20 @@ export function PokemonDexDetail({
                   .map((a) => (
                     <span
                       key={a}
+                      data-ui="ability"
                       className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-white/15 bg-black/30 text-ink-0"
                     >
-                      {a}
+                      {abilityName(a)}
                     </span>
                   ))}
                 {p.hiddenAbilities.map((a) => (
                   <span
                     key={a}
+                    data-ui="ability"
+                    title="Hidden ability"
                     className="font-display text-[13px] font-semibold px-2 py-0.5 rounded-full border border-accent/50 bg-black/30 text-accent"
                   >
-                    {a} (H)
+                    {abilityName(a)} (H)
                   </span>
                 ))}
               </div>
@@ -255,7 +259,7 @@ export function PokemonDexDetail({
                     <div className="font-display text-[14px] font-semibold truncate text-ink-0">
                       {move.name}
                     </div>
-                    <div className="font-mono-hud text-[11px] text-ink-2 truncate">
+                    <div className="font-mono-hud text-[12px] text-ink-2 truncate">
                       {reasons.join(' · ')}
                     </div>
                   </div>
@@ -299,15 +303,11 @@ export function PokemonDexDetail({
           {learnable.map(({ learn, mv }) => (
             <div
               key={`${learn}-${mv.id}`}
-              className="grid grid-cols-[1fr,auto,52px,56px,56px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
+              className="grid grid-cols-[minmax(0,1fr),auto,auto,52px,64px,64px] items-center gap-3 px-3 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03] hover:bg-white/[.06] transition"
               title={mv.desc}
             >
-              <div className="font-display text-[14px] font-semibold truncate text-ink-0">
-                {mv.name}{' '}
-                <span className="font-mono-hud text-[12px] text-ink-2 uppercase">
-                  {learn}
-                </span>
-              </div>
+              <div className="font-display text-[14px] font-semibold truncate text-ink-0">{mv.name}</div>
+              <span className="font-mono-hud text-[13px] text-ink-2 whitespace-nowrap">{learnLabel(learn)}</span>
               <TypeChip t={mv.type.toLowerCase()} />
               <span className="font-mono-hud text-[13px] text-ink-1">{mv.category[0]}</span>
               <span className="font-mono-hud text-[13px] text-ink-1">
@@ -324,3 +324,10 @@ export function PokemonDexDetail({
   );
 }
 
+/** How a move is learned, as shown in the learnset: "Lv 12", "TM", "Egg", "Past gen". */
+function learnLabel(learn: string): string {
+  if (/^\d+$/.test(learn)) return `Lv ${learn}`;
+  if (learn === 'tm') return 'TM';
+  if (learn === 'legacy') return 'Past gen';
+  return learn[0].toUpperCase() + learn.slice(1);
+}

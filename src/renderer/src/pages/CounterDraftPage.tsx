@@ -269,7 +269,7 @@ export function CounterDraftPage({
               ))}
             </div>
           </div>
-          <div className="font-mono-hud text-[11px] text-ink-2 leading-snug max-w-[220px]">
+          <div className="text-[13px] text-ink-2 leading-snug max-w-[240px]">
             Tera &amp; Dynamax are per-opponent - toggle them on each mon below.
           </div>
         </div>
@@ -323,7 +323,7 @@ export function CounterDraftPage({
                   onClick={() => toggleTeraFor(i)}
                   aria-pressed={!!o.tera}
                   title={`Whether ${o.p.name} terastallizes (change type)`}
-                  className={`font-mono-hud text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
                     o.tera
                       ? 'bg-accent border-transparent text-[#100b06]'
                       : 'border-white/15 text-ink-2 hover:border-accent-2'
@@ -336,7 +336,7 @@ export function CounterDraftPage({
                   onClick={() => toggleDynamaxFor(i)}
                   aria-pressed={!!o.dynamax}
                   title={`Whether ${o.p.name} Dynamaxes (doubles its HP for the matchup math)`}
-                  className={`font-mono-hud text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
                     o.dynamax
                       ? 'bg-accent border-transparent text-[#100b06]'
                       : 'border-white/15 text-ink-2 hover:border-accent-2'
@@ -442,7 +442,7 @@ export function CounterDraftPage({
                 {result.oppOrder.map((o, oi) => (
                   <div key={`${o.p.id}-${oi}`} className="flex flex-col items-center gap-0.5">
                     <PokemonSprite dex={o.p.dex} name={o.p.name} size="xs" />
-                    <div className="font-mono-hud text-[11px] text-ink-1 truncate max-w-full">{o.p.name}</div>
+                    <div className="font-mono-hud text-[12px] text-ink-1 truncate max-w-full">{o.p.name}</div>
                   </div>
                 ))}
               </div>
@@ -458,8 +458,8 @@ export function CounterDraftPage({
                       title={cell.moveName ? `${cell.moveName} · ${cell.label} ${cell.sub}` : cell.label}
                       className={`h-[46px] rounded-[7px] border flex flex-col items-center justify-center font-mono-hud leading-none gap-0.5 px-1 ${VERDICT_CLASS[cell.verdict]}`}
                     >
-                      <span className="text-[14px]">{cell.label} <span className="opacity-85 text-[11px]">{cell.sub}</span></span>
-                      <span className="text-[10px] opacity-70 truncate max-w-full">{cell.moveName ?? '-'}</span>
+                      <span className="text-[14px]">{cell.label} <span className="opacity-85 text-[12px]">{cell.sub}</span></span>
+                      <span className="text-[12px] opacity-70 truncate max-w-full">{cell.moveName ?? '-'}</span>
                     </div>
                   ))}
                 </div>

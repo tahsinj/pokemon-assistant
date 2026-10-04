@@ -53,6 +53,7 @@ import { assignTr, type TrAssignResult, type TrAssignCandidate } from '../lib/pc
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import { usePersistentState } from '../lib/usePersistentState';
 import type { StatKey } from '../lib/types';
+import { abilityName } from '../lib/displayNames';
 
 type EditorMode = 'closed' | 'pick-species' | 'view' | 'edit';
 
@@ -616,16 +617,16 @@ export function PcPage({
       }
       side={
         <div className="flex flex-wrap items-center gap-1.5 justify-end">
-          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxMd} disabled={!activeBox}>
+          <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxMd} disabled={!activeBox}>
             MD
           </button>
-          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxTxt} disabled={!activeBox}>
+          <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxTxt} disabled={!activeBox}>
             TXT
           </button>
-          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxShowdown} disabled={!activeBox}>
+          <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '5px 10px' }} onClick={exportCurrentBoxShowdown} disabled={!activeBox}>
             SHOWDOWN
           </button>
-          <button type="button" className="chunky ghost font-display text-[11px]" style={{ padding: '5px 10px' }} onClick={() => void exportAllMd()} disabled={!boxes.length}>
+          <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '5px 10px' }} onClick={() => void exportAllMd()} disabled={!boxes.length}>
             ALL · MD
           </button>
         </div>
@@ -830,7 +831,7 @@ export function PcPage({
             )}
             <div className="flex items-center gap-3">
               {smogon && occupants.length > 0 && <ReadinessLegend />}
-              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-dim)' }}>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-dim)' }}>
                 {occupants.length} / {PC_SLOTS_PER_BOX}
               </span>
             </div>
@@ -955,7 +956,7 @@ export function PcPage({
 
           <div style={{ marginTop: 14 }}>
             <div className="section-head">Showdown round-trip</div>
-            <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '0 0 8px' }}>
+            <p className="text-[13px] text-ink-2 mt-0 mb-2">
               Export and re-import the same Showdown file to restore a full box (up to {PC_SLOTS_PER_BOX} Pokémon).
             </p>
             <input
@@ -1048,7 +1049,7 @@ export function PcPage({
                 )}
                 <button
                   type="button"
-                  className="chunky font-display text-[11px]"
+                  className="chunky font-display text-[12px]"
                   style={{ padding: '4px 12px', marginLeft: 'auto' }}
                   onClick={() => setEditorMode('edit')}
                   title="Edit this Pokémon"
@@ -1057,7 +1058,7 @@ export function PcPage({
                 </button>
                 <button
                   type="button"
-                  className="chunky ghost font-display text-[11px]"
+                  className="chunky ghost font-display text-[12px]"
                   style={{ padding: '4px 10px' }}
                   onClick={() => editor.species && setDexSpecies(editor.species)}
                   title={`Open the Pokédex entry for ${editor.species.name}`}
@@ -1324,7 +1325,7 @@ function PcEditor({
           <div className="pc-edit-head-actions">
             <button
               type="button"
-              className="chunky font-display text-[11px]"
+              className="chunky font-display text-[12px]"
               aria-pressed={local.shiny}
               style={{
                 padding: '4px 10px',
@@ -1338,7 +1339,7 @@ function PcEditor({
             </button>
             <button
               type="button"
-              className="chunky ghost font-display text-[11px]"
+              className="chunky ghost font-display text-[12px]"
               style={{ padding: '4px 10px' }}
               onClick={onViewDex}
               title={`Open the Pokédex entry for ${species.name}`}
@@ -1396,14 +1397,14 @@ function PcEditor({
         <label>
           Ability
           <select value={local.ability} onChange={(e) => set('ability', e.target.value)} style={{ width: '100%' }}>
-            {species.abilities.map((a) => (
+            {species.abilities.filter((a) => !species.hiddenAbilities.includes(a)).map((a) => (
               <option key={a} value={a}>
-                {a}
+                {abilityName(a)}
               </option>
             ))}
             {species.hiddenAbilities.map((a) => (
               <option key={`h-${a}`} value={a}>
-                {a} (H)
+                {abilityName(a)} (H)
               </option>
             ))}
           </select>
@@ -1532,7 +1533,7 @@ function ReadinessLegend() {
   return (
     <div
       className="flex items-center gap-2 mono"
-      style={{ fontSize: 10, color: 'var(--fg-dim)' }}
+      style={{ fontSize: 12, color: 'var(--fg-dim)' }}
       title="Competitive readiness vs Smogon usage - open a Pokémon for the full set review"
     >
       {items.map(({ level, label }) => (
@@ -1622,7 +1623,7 @@ function CoachPanel({
           SET REVIEW{metaLabel ? <span className="text-ink-2"> · vs {metaLabel} usage</span> : null}
         </span>
         <span
-          className="ml-auto font-mono-hud text-[11px] px-1.5 py-0.5 rounded-[4px]"
+          className="ml-auto font-mono-hud text-[12px] px-1.5 py-0.5 rounded-[4px]"
           style={{
             background: review.length === 0 ? 'rgba(124,216,123,0.15)' : 'rgba(255,255,255,0.06)',
             color: review.length === 0 ? '#7cd87b' : 'var(--ink-2)',
@@ -1661,7 +1662,7 @@ function CoachPanel({
                 className="flex items-start gap-2 px-2 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03]"
               >
                 <span
-                  className="font-mono-hud text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 mt-0.5"
+                  className="font-mono-hud text-[12px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 mt-0.5"
                   style={{ background: sev.dot, color: '#100b06' }}
                   title={s.severity}
                 >
@@ -1674,7 +1675,7 @@ function CoachPanel({
                 {fixLabel && (
                   <button
                     type="button"
-                    className="chunky ghost font-display text-[11px] flex-shrink-0"
+                    className="chunky ghost font-display text-[12px] flex-shrink-0"
                     style={{ padding: '4px 9px' }}
                     onClick={() => onApply(s)}
                     title={fixLabel}
@@ -1702,7 +1703,7 @@ function CoachPanel({
           <button
             type="button"
             onClick={() => setShowHidden((v) => !v)}
-            className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 hover:text-ink-1 transition-colors"
+            className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 hover:text-ink-1 transition-colors"
             aria-expanded={showHidden}
           >
             {showHidden ? '▾' : '▸'} {hidden.length} dismissed
@@ -1719,7 +1720,7 @@ function CoachPanel({
                   </span>
                   <button
                     type="button"
-                    className="chunky ghost font-display text-[11px] flex-shrink-0"
+                    className="chunky ghost font-display text-[12px] flex-shrink-0"
                     style={{ padding: '3px 8px' }}
                     onClick={() => onDismiss(s.key)}
                     title="Restore this tip"
@@ -1793,7 +1794,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
       >
         TM Priorities
         <span style={{ color: 'var(--fg-dim)', fontWeight: 400 }}>({entries.length})</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
+        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 12 }}>
           {open ? '▾' : '▸'}
         </span>
       </button>
@@ -1831,19 +1832,19 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 11, minWidth: 16 }}>
+                    <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 12, minWidth: 16 }}>
                       {i + 1}
                     </span>
                     <strong style={{ fontSize: 13, color: 'var(--ink-0)' }}>{e.moveName}</strong>
                     <TypeChip t={e.type} />
-                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>
+                    <span className="mono" style={{ fontSize: 12, color: 'var(--fg-dim)', textTransform: 'uppercase' }}>
                       {e.category}
                     </span>
-                    <span className="mono" style={{ marginLeft: 'auto', fontSize: 11, color: ts.color }}>
+                    <span className="mono" style={{ marginLeft: 'auto', fontSize: 12, color: ts.color }}>
                       {ts.label} · {Math.round(e.score)}
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+                  <div style={{ fontSize: 12, color: 'var(--fg-dim)', paddingLeft: 24 }}>
                     {e.wantedBy.map((w, j) => (
                       <span key={w.speciesId + j}>
                         {j > 0 && ' · '}
@@ -1855,7 +1856,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
               );
             })}
             {entries.length > shown.length && (
-              <li style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+              <li style={{ fontSize: 12, color: 'var(--fg-dim)', paddingLeft: 24 }}>
                 +{entries.length - shown.length} more…
               </li>
             )}
@@ -1909,7 +1910,7 @@ function TrAssignPanel({
         }}
       >
         Who gets this TM?
-        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 11 }}>
+        <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 12 }}>
           {open ? '▾' : '▸'}
         </span>
       </button>
@@ -1941,7 +1942,7 @@ function TrAssignPanel({
           </datalist>
 
           {!value.trim() ? (
-            <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
+            <p className="text-[13px] text-ink-2 mt-2 mb-0">
               {hasMons
                 ? `Pick from ${options.length} ${options.length === 1 ? 'move' : 'moves'} the mons in this box can be taught.`
                 : 'Add Pokémon to this box to match a TM to a recipient.'}
@@ -1999,21 +2000,21 @@ function TrAssignResults({ result }: { result: TrAssignResult }) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 11, minWidth: 16 }}>
+                <span className="mono" style={{ color: 'var(--fg-dim)', fontSize: 12, minWidth: 16 }}>
                   {i + 1}
                 </span>
                 <strong style={{ fontSize: 13, color: 'var(--ink-0)' }}>
                   {c.nickname || c.speciesName}
                 </strong>
                 {c.nickname && (
-                  <span style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{c.speciesName}</span>
+                  <span style={{ fontSize: 12, color: 'var(--fg-dim)' }}>{c.speciesName}</span>
                 )}
                 {c.onTeam && <span title="On a saved team">★</span>}
-                <span className="mono" style={{ marginLeft: 'auto', fontSize: 11, color: ts.color }}>
+                <span className="mono" style={{ marginLeft: 'auto', fontSize: 12, color: ts.color }}>
                   {ts.label} · {Math.round(c.score)}
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--fg-dim)', paddingLeft: 24 }}>
+              <div style={{ fontSize: 12, color: 'var(--fg-dim)', paddingLeft: 24 }}>
                 Box slot {c.slot + 1} · {c.reason}
               </div>
             </li>
@@ -2021,7 +2022,7 @@ function TrAssignResults({ result }: { result: TrAssignResult }) {
         })}
       </ol>
       {(result.alreadyKnow.length > 0 || result.cannotLearnCount > 0) && (
-        <p style={{ fontSize: 11, color: 'var(--fg-dim)', margin: '6px 0 0', paddingLeft: 24 }}>
+        <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '6px 0 0', paddingLeft: 24 }}>
           {result.alreadyKnow.length > 0 &&
             `${result.alreadyKnow.length} already ${result.alreadyKnow.length === 1 ? 'runs' : 'run'} it`}
           {result.alreadyKnow.length > 0 && result.cannotLearnCount > 0 && ' · '}

@@ -739,7 +739,7 @@ function PlayerPanel({
       {/* Identity + roster top bar */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex flex-col w-[118px] flex-shrink-0 min-w-0">
-          <span className="hud-mark font-mono-hud text-[10px] uppercase tracking-[.2em] leading-none" style={{ color: accent }}>
+          <span className="hud-mark font-mono-hud text-[12px] uppercase tracking-[.2em] leading-none" style={{ color: accent }}>
             {side === 'p1' ? 'Your side' : 'Their side'}
           </span>
           <input
@@ -818,7 +818,7 @@ function PlayerPanel({
         <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
           <button
             type="button"
-            className="chunky ghost font-display text-[11px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ padding: '3px 9px' }}
             onClick={() => setImportOpen((v) => !v)}
             aria-expanded={importOpen}
@@ -827,7 +827,7 @@ function PlayerPanel({
           </button>
           <button
             type="button"
-            className="chunky ghost font-display text-[11px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ padding: '3px 9px' }}
             onClick={() => void onExportTeam()}
             disabled={!filled.length}
@@ -836,7 +836,7 @@ function PlayerPanel({
           </button>
           <button
             type="button"
-            className="chunky font-display text-[11px]"
+            className="chunky font-display text-[12px]"
             style={{ '--c': accent, padding: '3px 9px' } as React.CSSProperties}
             onClick={() => void onSaveTeam()}
             disabled={!filled.length}
@@ -851,7 +851,7 @@ function PlayerPanel({
       {importOpen && (
         <div className="mt-2 rounded-[10px] border border-white/10 bg-black/25 p-2.5 grid grid-cols-[200px,1fr] gap-3">
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-ink-2">
+            <span className="font-mono-hud text-[12px] uppercase tracking-widest text-ink-2">
               Load a team
             </span>
             {savedTeams.length > 0 && (
@@ -889,7 +889,7 @@ function PlayerPanel({
             )}
             <button
               type="button"
-              className="chunky ghost font-display text-[11px]"
+              className="chunky ghost font-display text-[12px]"
               style={{ padding: '4px 10px' }}
               onClick={onImportDraft}
             >
@@ -897,7 +897,7 @@ function PlayerPanel({
             </button>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono-hud text-[11px] uppercase tracking-widest text-ink-2">
+            <span className="font-mono-hud text-[12px] uppercase tracking-widest text-ink-2">
               Or paste a Showdown export
             </span>
             <textarea
@@ -908,7 +908,7 @@ function PlayerPanel({
             />
             <button
               type="button"
-              className="chunky font-display text-[11px] self-start"
+              className="chunky font-display text-[12px] self-start"
               style={{ '--c': 'var(--hud-accent-2)', padding: '4px 10px' } as React.CSSProperties}
               onClick={onImportPaste}
               disabled={!paste.trim()}
@@ -1051,7 +1051,7 @@ function ActiveDashboard({
                 {mon.species.name}
               </span>
               <label
-                className="flex items-center gap-1 font-mono-hud text-[10px] uppercase text-ink-2 flex-shrink-0"
+                className="flex items-center gap-1 font-mono-hud text-[12px] uppercase text-ink-2 flex-shrink-0"
                 title="Level"
               >
                 LV
@@ -1072,7 +1072,7 @@ function ActiveDashboard({
               ))}
               {mon.teraType && (
                 <span
-                  className={`font-mono-hud text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${
+                  className={`font-mono-hud text-[12px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${
                     mon.isTera ? 'text-black' : 'text-ink-1'
                   }`}
                   style={{
@@ -1143,7 +1143,7 @@ function ActiveDashboard({
             </select>
             <button
               type="button"
-              className="chunky ghost font-display text-[10px] flex-shrink-0"
+              className="chunky ghost font-display text-[12px] flex-shrink-0"
               style={{ padding: '3px 8px' }}
               onClick={() => void onCopySet()}
               title="Copy this set as a Showdown paste block"
@@ -1219,7 +1219,7 @@ function ActiveDashboard({
               aria-pressed={mon.isTera}
               disabled={!mon.teraType}
               onClick={() => update({ isTera: !mon.isTera }, true)}
-              className="font-mono-hud text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full border transition flex-shrink-0 disabled:opacity-40"
+              className="font-mono-hud text-[12px] uppercase tracking-wider px-2.5 py-1 rounded-full border transition flex-shrink-0 disabled:opacity-40"
               style={{
                 borderColor: mon.isTera ? `var(--t-${(mon.teraType || 'normal').toLowerCase()})` : 'rgba(255,255,255,.18)',
                 background: mon.isTera ? `var(--t-${(mon.teraType || 'normal').toLowerCase()})` : 'transparent',
@@ -1234,10 +1234,10 @@ function ActiveDashboard({
         {/* Move matrix */}
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-baseline justify-between px-0.5">
-            <span className="hud-mark font-mono-hud text-[11px] uppercase tracking-widest" style={{ color: accent }}>
+            <span className="hud-mark font-mono-hud text-[12px] uppercase tracking-widest" style={{ color: accent }}>
               Moves
             </span>
-            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 truncate">
+            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 truncate">
               {opposing ? `vs ${opposing.species.name} · ${opposing.hpPercent}% HP` : 'no target - add an opposing active'}
             </span>
           </div>
@@ -1344,7 +1344,7 @@ function ActiveDashboard({
             return (
               <div key={k} className="flex items-center justify-center gap-2">
                 <div className="flex flex-col items-center leading-tight">
-                  <span className="font-mono-hud text-[10px] uppercase tracking-wider" style={{ color: labelColor }}>
+                  <span className="font-mono-hud text-[12px] uppercase tracking-wider" style={{ color: labelColor }}>
                     {STAT_LABELS[k]}
                     {nature.plus === k ? '+' : nature.minus === k ? '−' : ''}
                   </span>
@@ -1373,7 +1373,7 @@ function ActiveDashboard({
                       +
                     </button>
                     <span
-                      className="font-mono-hud text-[10px] tabular-nums leading-none cursor-pointer"
+                      className="font-mono-hud text-[12px] tabular-nums leading-none cursor-pointer"
                       style={{ color: v > 0 ? 'var(--hud-danger)' : v < 0 ? '#5ea7ff' : 'var(--ink-2)' }}
                       title="Stage - click to reset"
                       onClick={() => update({ boosts: { ...mon.boosts, [k]: 0 } }, true)}
@@ -1396,7 +1396,7 @@ function ActiveDashboard({
 
           <button
             type="button"
-            className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-1 hover:text-white transition whitespace-nowrap justify-self-end"
+            className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-1 hover:text-white transition whitespace-nowrap justify-self-end"
             onClick={() => setShowSpread((v) => !v)}
           >
             {showSpread ? '▾' : '▸'} IV / EV
@@ -1417,7 +1417,7 @@ function ActiveDashboard({
                   style={NUM_INPUT}
                 />
               ))}
-              <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 justify-self-end">
+              <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 justify-self-end">
                 IV
               </span>
               {STAT_KEYS.map((k) => (
@@ -1435,7 +1435,7 @@ function ActiveDashboard({
                 />
               ))}
               <span
-                className="font-mono-hud text-[11px] uppercase tracking-wider justify-self-end whitespace-nowrap"
+                className="font-mono-hud text-[12px] uppercase tracking-wider justify-self-end whitespace-nowrap"
                 style={{ color: evTotal > 510 ? 'var(--hud-danger)' : 'var(--ink-2)' }}
               >
                 EV {evTotal}/510

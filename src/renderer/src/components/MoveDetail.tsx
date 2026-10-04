@@ -18,7 +18,7 @@ const RESIST_GREEN = '#7cd87b';
 function StatTile({ k, v, hint }: { k: string; v: string; hint?: string }) {
   return (
     <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04] text-center" title={hint}>
-      <div className="font-mono-hud text-[11px] uppercase tracking-widest text-ink-2">{k}</div>
+      <div className="font-mono-hud text-[12px] uppercase tracking-widest text-ink-2">{k}</div>
       <div className="font-display text-[19px] font-bold text-ink-0 leading-tight mt-0.5">{v}</div>
     </div>
   );
@@ -157,7 +157,7 @@ export function MoveDetail({ m, learners }: { m: Move; learners: MoveLearner[] }
                 <span className="font-display text-[14px] font-semibold truncate flex-1 min-w-0 text-ink-0">
                   {l.name}
                 </span>
-                <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                   {l.methods.includes('level') && l.level != null ? `Lv ${l.level}` : METHOD_LABEL[l.methods[0]]}
                 </span>
               </div>

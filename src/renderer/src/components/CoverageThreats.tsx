@@ -56,7 +56,7 @@ export function CoverageThreats({
     <div className="flex flex-col gap-3">
       <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-widest text-accent-2">
         COVERAGE & THREATS ·{' '}
-        <span className="text-ink-2">
+        <span className="font-sans normal-case tracking-normal text-[13px] text-ink-2">
           {coverage.hasUsage ? 'from popular movesets' : 'from recommended set (no usage data)'}
         </span>
       </div>
@@ -82,7 +82,7 @@ export function CoverageThreats({
               )}
             </div>
           )}
-          <div className="font-mono-hud text-[11px] text-ink-2 leading-snug mt-0.5">
+          <div className="text-[13px] text-ink-2 leading-snug mt-0.5">
             {coverage.hasUsage
               ? '% = how often its sets carry a move that hits this type for 2×+.'
               : 'Super-effective coverage from its recommended STAB + coverage set.'}
@@ -111,7 +111,7 @@ export function CoverageThreats({
                   title={`Often carried by: ${r.examples.map((e) => e.name).join(', ')}`}
                 >
                   <TypeChip t={r.type} />
-                  {r.mult >= 4 && <span className="font-mono-hud text-[11px]" style={{ color: 'var(--hud-danger)' }}>×4</span>}
+                  {r.mult >= 4 && <span className="font-mono-hud text-[12px]" style={{ color: 'var(--hud-danger)' }}>×4</span>}
                 </span>
               ))}
             </div>
@@ -119,7 +119,7 @@ export function CoverageThreats({
 
           {fastTop.length > 0 && (
             <>
-              <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 mt-1">
+              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mt-1">
                 ⚠ Outspeed you & hit super-effectively
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -166,14 +166,14 @@ function CoverageRow({
   if (entries.length === 0) return null;
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${dim ? 'opacity-75' : ''}`}>
-      <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 w-[68px] shrink-0">
+      <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 w-[68px] shrink-0">
         {label}
       </span>
       {entries.map((e) => (
         <span key={e.type} className="inline-flex items-center gap-0.5" title={`via ${e.via}${e.stab ? ' (STAB)' : ''}`}>
           <TypeChip t={e.type} />
           {hasUsage && e.prob !== null && (
-            <span className="font-mono-hud text-[11px] text-ink-2">{Math.round(e.prob * 100)}%</span>
+            <span className="font-mono-hud text-[12px] text-ink-2">{Math.round(e.prob * 100)}%</span>
           )}
         </span>
       ))}
@@ -212,7 +212,7 @@ function QuickCheck({
 
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
-      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-accent-2">
+      <div className="font-display text-[14px] font-semibold text-accent-2">
         Should I send {p.name} in vs…?
       </div>
       <input
@@ -264,7 +264,7 @@ function VerdictCard({ opp, cell }: { opp: Pokemon; cell: MatchupCell }) {
           : <>You can’t damage {opp.name} meaningfully.</>}{' '}
         They hit back for up to <b>{backLabel}</b>.
       </div>
-      <div className="font-mono-hud text-[11px] opacity-70">
+      <div className="font-mono-hud text-[12px] opacity-70">
         Assumes standard competitive sets, both at Lv 50.
       </div>
     </div>

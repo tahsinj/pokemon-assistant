@@ -13,7 +13,15 @@ export interface TeamDraftMember {
   detail: MemberDetail | null;
 }
 
+/** Which saved team the builder is editing, so reopening it restores the same team. */
+export interface TeamDraftMeta {
+  teamId?: string;
+  name: string;
+  tag: string;
+}
+
 let draft: (TeamDraftMember | null)[] = [null, null, null, null, null, null];
+let meta: TeamDraftMeta | null = null;
 
 export function setTeamDraft(members: (TeamDraftMember | null)[]): void {
   draft = members.slice(0, 6);
@@ -21,4 +29,13 @@ export function setTeamDraft(members: (TeamDraftMember | null)[]): void {
 
 export function getTeamDraft(): (TeamDraftMember | null)[] {
   return draft;
+}
+
+export function setTeamDraftMeta(next: TeamDraftMeta): void {
+  meta = next;
+}
+
+/** Null until the Team Builder has been opened this session. */
+export function getTeamDraftMeta(): TeamDraftMeta | null {
+  return meta;
 }

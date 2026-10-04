@@ -20,9 +20,9 @@ export function headerClearOfClose(): string[] {
 }
 
 /**
- * Content cut off by a clipping ancestor: an element that sticks out past the
- * right edge of the nearest ancestor with overflow hidden. Scrollable
- * ancestors are fine, that overflow is reachable.
+ * Content cut off: an element that sticks out past the right edge of the
+ * nearest ancestor with overflow hidden, or text clipped inside its own box
+ * with no ellipsis. Scrollable ancestors are fine, that overflow is reachable.
  */
 export function clippedContent(): string[] {
   const root = document.querySelector('.dive-content');
@@ -49,6 +49,17 @@ export function clippedContent(): string[] {
         break;
       }
       a = a.parentElement;
+    }
+    // Text cut off inside its own box without an ellipsis to say so.
+    const cs = getComputedStyle(el);
+    const ownText = Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim());
+    if (
+      ownText &&
+      (cs.overflowX === 'hidden' || cs.overflowX === 'clip') &&
+      cs.textOverflow !== 'ellipsis' &&
+      el.scrollWidth > el.clientWidth + 1
+    ) {
+      out.push(`"${(el.textContent ?? '').trim().slice(0, 40)}" is cut off by ${el.scrollWidth - el.clientWidth}px`);
     }
   }
   return [...new Set(out)];

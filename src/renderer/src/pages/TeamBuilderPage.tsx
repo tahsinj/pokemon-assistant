@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Move, Pokemon, HeldItem } from '../lib/types';
 import { buildBestTeams, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
 import type { LoadedTeamRecord, MemberDetail, TeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
-import { setTeamDraft } from '../lib/teamDraft';
+import { getTeamDraft, getTeamDraftMeta, setTeamDraft, setTeamDraftMeta } from '../lib/teamDraft';
 import { SpeciesList } from '../components/SpeciesList';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { TYPES, effectiveness } from '../lib/typechart';
@@ -77,15 +77,20 @@ export function TeamBuilderPage({
   smogon,
 }: { pokemon: Pokemon[]; moves: Record<string, Move>; items: HeldItem[]; smogon: SmogonBundle | null }) {
   const format = useFormat();
-  const [team, setTeam] = useState<(TeamSlot | null)[]>(EMPTY_TEAM);
+  // Reopening the builder in the same session restores what was on screen;
+  // the first open loads the most recently saved team instead (see below).
+  const [restored] = useState(getTeamDraftMeta);
+  const [team, setTeam] = useState<(TeamSlot | null)[]>(() => (restored ? draftSlots(pokemon) : EMPTY_TEAM));
   const [pickingSlot, setPickingSlot] = useState<number | null>(null);
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<'species' | 'pc' | 'suggested'>('species');
   const [pcQuery, setPcQuery] = useState('');
   const pc = usePcCollection();
-  const [teamTag, setTeamTag] = useState<TeamTag>('general');
-  const [teamName, setTeamName] = useState('My team');
-  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(undefined);
+  const [teamTag, setTeamTag] = useState<TeamTag>(() =>
+    restored && TEAM_TAGS.some((t) => t.id === restored.tag) ? (restored.tag as TeamTag) : 'general',
+  );
+  const [teamName, setTeamName] = useState(restored?.name ?? 'My team');
+  const [currentTeamId, setCurrentTeamId] = useState<string | undefined>(restored?.teamId);
   const [paste, setPaste] = useState('');
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -150,10 +155,12 @@ export function TeamBuilderPage({
 
   const teamMembers = team.filter((x): x is TeamSlot => !!x).map((s) => s.p);
 
-  // Mirror the squad for other pages (damage calc / battle session imports).
+  // Mirror the squad for other pages (damage calc and battle tracker imports)
+  // and for the next time this page opens.
   useEffect(() => {
     setTeamDraft(team.map((s) => (s ? { speciesId: s.p.id, detail: s.detail } : null)));
-  }, [team]);
+    setTeamDraftMeta({ teamId: currentTeamId, name: teamName, tag: teamTag });
+  }, [team, currentTeamId, teamName, teamTag]);
 
   const defensive = useMemo(() => {
     const rows: { type: string; weakCount: number; resistCount: number }[] = [];
@@ -382,7 +389,7 @@ export function TeamBuilderPage({
     }
   };
 
-  const onLoad = async (id: string) => {
+  const onLoad = useCallback(async (id: string) => {
     if (!bridge?.teamsLoad) return;
     const rec = (await bridge.teamsLoad(id)) as LoadedTeamRecord | null;
     if (!rec) return;
@@ -406,7 +413,16 @@ export function TeamBuilderPage({
     }
     setTeam(next);
     setImportMsg(`Loaded “${rec.name}”.`);
-  };
+  }, [bridge, pokemonById]);
+
+  // First open this session: show the newest saved team, as the home screen does.
+  const autoLoaded = useRef(!!restored);
+  useEffect(() => {
+    if (autoLoaded.current || !savedTeams.length) return;
+    autoLoaded.current = true;
+    const newest = savedTeams.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a));
+    void onLoad(newest.id);
+  }, [savedTeams, onLoad]);
 
   const onDelete = async (id: string) => {
     if (!bridge?.teamsDelete) return;
@@ -793,7 +809,7 @@ export function TeamBuilderPage({
                             <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                               {rec.nickname || sp.name}
                               {rec.nickname && (
-                                <span className="font-mono-hud text-[11px] text-ink-2 ml-1.5">{sp.name}</span>
+                                <span className="font-mono-hud text-[12px] text-ink-2 ml-1.5">{sp.name}</span>
                               )}
                             </span>
                             <span className="flex gap-1 flex-shrink-0">
@@ -804,7 +820,7 @@ export function TeamBuilderPage({
                             <span className="font-mono-hud text-[12px] text-ink-1 flex-shrink-0 w-12 text-right">
                               Lv {rec.level}
                             </span>
-                            <span className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                               {pc.boxNameById[rec.boxId] ?? 'Box'}
                             </span>
                           </button>
@@ -824,7 +840,7 @@ export function TeamBuilderPage({
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
-                    <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 px-1 pb-1">
+                    <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-1 pb-1">
                       {teamMembers.length === 0
                         ? 'Owned species - add some to your team to rank these by synergy'
                         : 'Owned species ranked for this team · Smogon co-usage + coverage'}
@@ -841,7 +857,7 @@ export function TeamBuilderPage({
                           <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                             {p.name}
                           </span>
-                          <span className="block font-mono-hud text-[11px] text-ink-2 truncate">
+                          <span className="block font-mono-hud text-[12px] text-ink-2 truncate">
                             {reasons[0] ?? ''}
                           </span>
                         </span>
@@ -872,7 +888,7 @@ export function TeamBuilderPage({
         <div className="grid grid-cols-2 gap-4">
           <div className="mono-panel p-3 rounded-[10px]">
             {sectionHead('DEFENSIVE COVERAGE', 'resists − weaknesses per attacking type')}
-            <div className="grid grid-cols-9 gap-1.5">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(66px,1fr))] gap-1.5">
               {defensive.map((d) => {
                 const score = d.resistCount - d.weakCount;
                 const c = score > 0 ? '#7cd87b' : score < 0 ? 'var(--hud-danger)' : 'var(--ink-1)';
@@ -898,7 +914,7 @@ export function TeamBuilderPage({
                 Add Pokémon to see STAB coverage.
               </div>
             ) : (
-              <div className="grid grid-cols-9 gap-1.5">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(66px,1fr))] gap-1.5">
                 {offensive.map((o) => {
                   const c =
                     o.bestMult >= 2 ? '#7cd87b' : o.bestMult >= 1 ? 'var(--ink-1)' : 'var(--hud-danger)';
@@ -962,7 +978,7 @@ export function TeamBuilderPage({
                     <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                       {p.name}
                     </span>
-                    <span className="block font-mono-hud text-[11px] text-ink-2 truncate">
+                    <span className="block font-mono-hud text-[12px] text-ink-2 truncate">
                       {reasons[0] ?? ''}
                     </span>
                   </span>
@@ -1053,7 +1069,7 @@ export function TeamBuilderPage({
                       );
                     })}
                 </div>
-                <div className="mt-1.5 font-mono-hud text-[11px] text-ink-2">
+                <div className="mt-1.5 font-mono-hud text-[12px] text-ink-2">
                   Re-analyze to apply your owned items.
                 </div>
               </div>
@@ -1106,7 +1122,7 @@ export function TeamBuilderPage({
                       </span>
                     </div>
                     <div
-                      className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2"
+                      className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2"
                       title="quality · chemistry · defense · offense · roles"
                     >
                       Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
@@ -1129,12 +1145,12 @@ export function TeamBuilderPage({
                               <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                                 {a.rec.nickname || a.p.name}
                               </span>
-                              <span className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                              <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                                 {a.role} · Lv {a.rec.level}
                               </span>
                               {lines.length > 0 && (
                                 <span
-                                  className="font-mono-hud text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                  className="font-mono-hud text-[12px] px-1.5 py-0.5 rounded-full flex-shrink-0"
                                   style={{
                                     color: lines.some((l) => l.danger) ? 'var(--hud-danger)' : 'var(--hud-accent-2)',
                                     background: 'rgba(0,0,0,.45)',
@@ -1147,7 +1163,7 @@ export function TeamBuilderPage({
                             {expandedAdvice === key && lines.length > 0 && (
                               <div className="px-2 pb-1.5 flex flex-col gap-0.5">
                                 {a.matchedSetName && (
-                                  <div className="font-mono-hud text-[10px] uppercase tracking-wider text-ink-2">
+                                  <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
                                     vs {a.matchedSetName}
                                   </div>
                                 )}
@@ -1167,7 +1183,7 @@ export function TeamBuilderPage({
                       })}
                     </div>
                     {c.stackedWeaknesses.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[11px] uppercase tracking-wider text-ink-2">
+                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
                         weak:
                         {c.stackedWeaknesses.map((t) => (
                           <TypeChip key={t} t={t.toLowerCase()} />
@@ -1176,7 +1192,7 @@ export function TeamBuilderPage({
                     )}
                     <button
                       type="button"
-                      className="chunky font-display text-[11px] mt-auto"
+                      className="chunky font-display text-[12px] mt-auto"
                       style={{ '--c': 'var(--hud-accent-2)', padding: '5px 10px' } as React.CSSProperties}
                       onClick={() => applyCandidate(c)}
                     >
@@ -1197,7 +1213,7 @@ export function TeamBuilderPage({
             <div className="flex items-center gap-1.5 mb-2">
               <button
                 type="button"
-                className="chunky ghost font-display text-[11px]"
+                className="chunky ghost font-display text-[12px]"
                 style={{ padding: '4px 10px' }}
                 onClick={onNew}
               >
@@ -1205,7 +1221,7 @@ export function TeamBuilderPage({
               </button>
               <button
                 type="button"
-                className="chunky ghost font-display text-[11px]"
+                className="chunky ghost font-display text-[12px]"
                 style={{ padding: '4px 10px' }}
                 onClick={() => void onSaveAs()}
                 disabled={teamMembers.length === 0}
@@ -1259,7 +1275,7 @@ export function TeamBuilderPage({
                     >
                       {t.name}
                       {t.id === currentTeamId && (
-                        <span className="font-mono-hud text-[10px] uppercase tracking-wider text-accent-2 ml-2">
+                        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-accent-2 ml-2">
                           loaded
                         </span>
                       )}
@@ -1273,7 +1289,7 @@ export function TeamBuilderPage({
                   </span>
                   <button
                     type="button"
-                    className="chunky ghost font-display text-[11px]"
+                    className="chunky ghost font-display text-[12px]"
                     style={{ padding: '3px 8px' }}
                     onClick={() => void onLoad(t.id)}
                   >
@@ -1281,7 +1297,7 @@ export function TeamBuilderPage({
                   </button>
                   <button
                     type="button"
-                    className="chunky ghost font-display text-[11px]"
+                    className="chunky ghost font-display text-[12px]"
                     style={{ '--c': 'var(--hud-danger)', padding: '3px 8px' } as React.CSSProperties}
                     onClick={() => void onDelete(t.id)}
                   >
@@ -1295,4 +1311,15 @@ export function TeamBuilderPage({
       </div>
     </ModuleFrame>
   );
+}
+
+/** The session's team draft as builder slots; species missing from this format are dropped. */
+function draftSlots(pokemon: Pokemon[]): (TeamSlot | null)[] {
+  const byId = new Map(pokemon.map((p) => [p.id, p]));
+  const slots = getTeamDraft().map((d) => {
+    const p = d && byId.get(d.speciesId);
+    return p ? { p, detail: d.detail } : null;
+  });
+  while (slots.length < 6) slots.push(null);
+  return slots;
 }

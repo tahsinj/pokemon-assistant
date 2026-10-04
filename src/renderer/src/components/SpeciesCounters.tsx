@@ -149,7 +149,7 @@ export function SpeciesCounters({
                       {label}
                     </div>
                     {sub && (
-                      <div className="font-mono-hud text-[11px] uppercase tracking-wider text-ink-2 truncate">
+                      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 truncate">
                         {sub}
                       </div>
                     )}

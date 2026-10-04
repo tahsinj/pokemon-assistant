@@ -87,7 +87,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
         </div>
       }
     >
-      <div className="grid grid-cols-[minmax(280px,330px),200px,1fr] gap-5 items-start">
+      <div className="grid grid-cols-[minmax(240px,320px),180px,minmax(0,1fr)] gap-5 items-start">
         <div className="h-[62vh] min-h-[320px] overflow-hidden">
           <SpeciesList pokemon={pokemon} selectedId={species?.id} onSelect={setSpecies} compact />
         </div>
@@ -155,7 +155,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   Total EVs exceed 510 - trim values.
                 </div>
               )}
-              <div className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-0.5">
+              <div className="grid grid-cols-[40px,36px,52px,minmax(56px,1fr),60px,minmax(64px,110px)] items-center gap-2 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-0.5">
                 <span>Stat</span>
                 <span>Base</span>
                 <span>IV</span>
@@ -171,7 +171,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                 return (
                   <div
                     key={k}
-                    className="grid grid-cols-[44px,44px,56px,1fr,64px,110px] items-center gap-3"
+                    className="grid grid-cols-[40px,36px,52px,minmax(56px,1fr),60px,minmax(64px,110px)] items-center gap-2"
                   >
                     <div className="font-mono-hud text-[14px] uppercase text-ink-1">
                       {STAT_LABELS[k]}
@@ -196,7 +196,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                       value={ev}
                       onChange={(e) => setEv(k, +e.target.value)}
                       aria-label={`${STAT_LABELS[k]} EV`}
-                      className="ev-slider w-full"
+                      className="ev-slider w-full min-w-0"
                       style={{
                         // The 16px thumb is contained in the track, so its
                         // center travels 8px..(100%-8px). Shift the fill stop

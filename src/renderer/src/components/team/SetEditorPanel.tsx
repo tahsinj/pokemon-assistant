@@ -167,7 +167,7 @@ export function SetEditorPanel({
         <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"
-            className="chunky ghost font-display text-[11px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ padding: '4px 10px' }}
             onClick={onSwapSpecies}
           >
@@ -175,7 +175,7 @@ export function SetEditorPanel({
           </button>
           <button
             type="button"
-            className="chunky ghost font-display text-[11px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ '--c': 'var(--hud-danger)', padding: '4px 10px' } as React.CSSProperties}
             onClick={onRemove}
           >
@@ -183,7 +183,7 @@ export function SetEditorPanel({
           </button>
           <button
             type="button"
-            className="chunky font-display text-[11px]"
+            className="chunky font-display text-[12px]"
             style={{ padding: '4px 10px' }}
             onClick={onClose}
           >

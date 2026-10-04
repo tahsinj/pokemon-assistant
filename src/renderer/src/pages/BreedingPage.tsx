@@ -17,6 +17,7 @@ import {
 import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { PokemonSprite } from '../components/PokemonSprite';
+import { abilityName } from '../lib/displayNames';
 
 const ITEMS: { id: BreedingItem; label: string }[] = [
   { id: 'none', label: 'No item' },
@@ -285,7 +286,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                     abilities.map((a, i) => (
                       <span key={a.ability} style={{ color: a.hidden ? 'var(--hud-accent)' : 'var(--ink-0)' }}>
                         {i > 0 && ' / '}
-                        {a.ability}
+                        {abilityName(a.ability)}
                         {a.hidden ? ' (HA)' : ''} {pct(a.p)}
                       </span>
                     ))
@@ -378,7 +379,7 @@ export function BreedingPage({ pokemon }: { pokemon: Pokemon[] }) {
                     [...femaleSpecies.abilities, ...femaleSpecies.hiddenAbilities.filter((h) => !femaleSpecies.abilities.includes(h))].map(
                       (a) => (
                         <option key={a} value={a}>
-                          {a}
+                          {abilityName(a)}
                           {femaleSpecies.hiddenAbilities.includes(a) ? ' (HA)' : ''}
                         </option>
                       ),
@@ -502,7 +503,7 @@ function ParentPanel({
             {species &&
               [...species.abilities, ...species.hiddenAbilities.filter((h) => !species.abilities.includes(h))].map((a) => (
                 <option key={a} value={a}>
-                  {a}
+                  {abilityName(a)}
                   {species.hiddenAbilities.includes(a) ? ' (HA)' : ''}
                 </option>
               ))}
@@ -515,7 +516,7 @@ function ParentPanel({
         <div className="flex gap-1">
           <button
             type="button"
-            className="chunky ghost font-display text-[10px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ padding: '2px 8px' }}
             onClick={() => onChange({ ...parent, ivs: { ...IVS_31 } })}
           >
@@ -523,7 +524,7 @@ function ParentPanel({
           </button>
           <button
             type="button"
-            className="chunky ghost font-display text-[10px]"
+            className="chunky ghost font-display text-[12px]"
             style={{ padding: '2px 8px' }}
             onClick={() => onChange({ ...parent, ivs: { ...IVS_0 } })}
           >
@@ -551,7 +552,7 @@ function ParentPanel({
         ))}
       </div>
 
-      {note && <div className="font-mono-hud text-[12px] text-ink-2 mt-2 leading-snug">{note}</div>}
+      {note && <div className="text-[13px] text-ink-2 mt-2 leading-snug">{note}</div>}
     </div>
   );
 }

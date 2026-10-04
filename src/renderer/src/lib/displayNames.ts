@@ -4,7 +4,7 @@
  * as Showdown ids; anything user-facing should go through here.
  */
 import { ABILITIES } from '@smogon/calc';
-import type { Move } from './types';
+import type { Move, Pokemon } from './types';
 
 const normId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -35,4 +35,10 @@ export function moveName(raw: string, moves: Record<string, Move>): string {
 export function findMove(raw: string, moves: Record<string, Move>): Move | undefined {
   if (!raw) return undefined;
   return moves[normId(raw)];
+}
+
+/** A species name split for lists: the base name, plus a label for alternate forms. */
+export function speciesParts(p: Pick<Pokemon, 'name' | 'baseSpecies' | 'forme'>): { base: string; form: string | null } {
+  if (!p.forme) return { base: p.name, form: null };
+  return { base: p.baseSpecies ?? p.name, form: p.forme.replace(/-/g, ' ') };
 }

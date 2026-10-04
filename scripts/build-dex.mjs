@@ -229,6 +229,7 @@ async function main() {
     species.push({
       id: s.id,
       name: s.name,
+      ...(s.forme ? { baseSpecies: s.baseSpecies, forme: s.forme } : {}),
       dex: s.num,
       types: s.types.map((t) => t.toLowerCase()),
       abilities: [...new Set(Object.values(s.abilities).map(toID))],

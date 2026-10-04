@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Pokemon } from '../lib/types';
+import { speciesParts } from '../lib/displayNames';
 import { buildSpeciesFuse } from '../lib/fuzzySpecies';
 import { bst } from '../lib/stats';
 import { TYPES } from '../lib/typechart';
@@ -16,7 +17,7 @@ export function SpeciesList({
   pokemon: Pokemon[];
   selectedId?: string;
   onSelect: (p: Pokemon) => void;
-  /** Narrow columns: drop the dex number so the name has room (avoids clipping). */
+  /** Narrow columns: drop the dex number from the second line. */
   compact?: boolean;
 }) {
   const [q, setQ] = useState('');
@@ -84,34 +85,39 @@ export function SpeciesList({
         ) : (
           filtered.map((p) => {
             const isSel = selectedId === p.id;
+            const { base, form } = speciesParts(p);
             return (
               <button
                 key={p.id}
                 type="button"
+                data-ui="species-row"
                 aria-pressed={isSel}
                 onClick={() => onSelect(p)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-[10px] text-left transition border ${
+                className={`flex items-center gap-3 px-3 py-1.5 rounded-[10px] text-left transition border ${
                   isSel
                     ? 'bg-white/10 border-accent-2/40'
                     : 'bg-white/[.03] border-white/5 hover:bg-white/[.06]'
                 }`}
               >
                 <PokemonSprite dex={p.dex} name={p.name} size="xs" />
-                {!compact && (
-                  <span className="font-mono-hud text-[14px] text-ink-2 w-12 flex-shrink-0">
-                    #{String(p.dex).padStart(4, '0')}
+                <span className="flex-1 min-w-0 flex flex-col gap-1">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span data-ui="species-name" className="font-display text-[15px] font-semibold text-ink-0 truncate">
+                      {base}
+                    </span>
+                    {form && <FormTag form={form} />}
                   </span>
-                )}
-                <span className="font-display text-[15px] font-semibold flex-1 min-w-0 truncate text-ink-0">
-                  {p.name}
-                </span>
-                <span className="flex gap-1 flex-shrink-0">
-                  {p.types.map((t) => (
-                    <TypeChip key={t} t={t.toLowerCase()} />
-                  ))}
-                </span>
-                <span className="font-mono-hud text-[13px] text-ink-1 w-10 text-right flex-shrink-0">
-                  {bst(p.baseStats)}
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    {!compact && (
+                      <span className="font-mono-hud text-[13px] text-ink-2">#{String(p.dex).padStart(4, '0')}</span>
+                    )}
+                    {p.types.map((t) => (
+                      <TypeChip key={t} t={t.toLowerCase()} />
+                    ))}
+                    <span className="font-mono-hud text-[13px] text-ink-2 ml-auto whitespace-nowrap" title="Base stat total">
+                      BST {bst(p.baseStats)}
+                    </span>
+                  </span>
                 </span>
               </button>
             );
@@ -119,5 +125,17 @@ export function SpeciesList({
         )}
       </div>
     </div>
+  );
+}
+
+/** Small label for an alternate form ("Mega", "Galar"). */
+export function FormTag({ form }: { form: string }) {
+  return (
+    <span
+      data-ui="form-tag"
+      className="flex-shrink-0 whitespace-nowrap rounded-full border border-accent-2/40 px-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-accent-2"
+    >
+      {form}
+    </span>
   );
 }
