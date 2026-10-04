@@ -52,6 +52,9 @@ function gen(generation: Generation) {
 
 function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPokemon {
   const g = gen(generation);
+  // The calc checks some effects by species name (Soul Dew, Thick Club, Light
+  // Ball, the legendary orbs), so ids like "latios" must become "Latios".
+  const speciesName = g.species.get(toId(spec.speciesName) as never)?.name ?? spec.speciesName;
   // @smogon/calc treats teraType being set as "this mon is terastallized" - there
   // is no separate boolean. Only forward it when the caller explicitly opted in.
   const teraType = spec.isTerastallized && spec.teraType ? spec.teraType : undefined;
@@ -71,13 +74,13 @@ function buildPokemon(generation: Generation, spec: BattlePokemonSpec): CalcPoke
   // probe maxHP first then re-instantiate with the absolute curHP so the calc's
   // kochance() reflects "from this HP" rather than "from full".
   if (spec.currentHPPercent != null && spec.currentHPPercent < 100) {
-    const probe = new CalcPokemon(g, spec.speciesName, baseOpts);
+    const probe = new CalcPokemon(g, speciesName, baseOpts);
     const maxHP = probe.maxHP();
     const pct = Math.max(0, Math.min(100, spec.currentHPPercent));
     const curHP = Math.max(1, Math.round((maxHP * pct) / 100));
-    return new CalcPokemon(g, spec.speciesName, { ...baseOpts, curHP });
+    return new CalcPokemon(g, speciesName, { ...baseOpts, curHP });
   }
-  return new CalcPokemon(g, spec.speciesName, baseOpts);
+  return new CalcPokemon(g, speciesName, baseOpts);
 }
 
 function buildField(spec: FieldSpec): CalcField {
