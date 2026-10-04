@@ -9,3 +9,11 @@ describe('bots', () => {
     expect(score / games).toBeGreaterThanOrEqual(0.85);
   }, 120_000);
 });
+
+describe('search bot', () => {
+  it('beats random (strength against greedy is measured by npm run bots:gauntlet)', async () => {
+    const { searchBot } = await import('./search');
+    const { score, games } = series(searchBot({ samples: 1, replies: 2 }), randomBot(7), 6);
+    expect(score / games).toBeGreaterThanOrEqual(5 / 6);
+  }, 120_000);
+});

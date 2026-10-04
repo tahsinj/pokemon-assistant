@@ -3,15 +3,16 @@
  * thinking never blocks the UI; if the worker can't start, it runs in this
  * thread instead.
  */
-import { PracticeSession, type SessionOptions, type SessionView } from './session';
+import { PracticeSession, type Hint, type SessionOptions, type SessionView } from './session';
 
 export type PracticeRequest =
   | { id: number; type: 'start'; options: SessionOptions }
   | { id: number; type: 'choose'; choice: string }
   | { id: number; type: 'undo' }
-  | { id: number; type: 'export' };
+  | { id: number; type: 'export' }
+  | { id: number; type: 'hint' };
 
-export type PracticeResponse = { id: number; ok: true; result: SessionView | string } | { id: number; ok: false; error: string };
+export type PracticeResponse = { id: number; ok: true; result: SessionView | string | Hint[] } | { id: number; ok: false; error: string };
 
 type Body = PracticeRequest extends infer R ? (R extends { id: number } ? Omit<R, 'id'> : never) : never;
 
@@ -20,6 +21,7 @@ export interface PracticeClient {
   choose(choice: string): Promise<SessionView>;
   undo(): Promise<SessionView>;
   exportLog(): Promise<string>;
+  hint(): Promise<Hint[]>;
   dispose(): void;
 }
 
@@ -35,6 +37,7 @@ export function createPracticeClient(): PracticeClient {
     if (body.type === 'choose') return localSession.choose(body.choice);
     if (body.type === 'undo') return localSession.undo();
     if (body.type === 'export') return localSession.exportLog();
+    if (body.type === 'hint') return localSession.hint();
     return localSession.view();
   };
 
@@ -75,6 +78,7 @@ export function createPracticeClient(): PracticeClient {
     choose: (choice) => call<SessionView>({ type: 'choose', choice }),
     undo: () => call<SessionView>({ type: 'undo' }),
     exportLog: () => call<string>({ type: 'export' }),
+    hint: () => call<Hint[]>({ type: 'hint' }),
     dispose: () => worker?.terminate(),
   };
 }

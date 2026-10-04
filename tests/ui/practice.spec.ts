@@ -18,6 +18,12 @@ test('a practice battle against the random bot plays to the end', async ({ app }
       await choice.click();
       await expect(app.locator('[data-ui="practice-battle"]')).toBeVisible();
     }
+    if (i === 2 && (await app.getByRole('button', { name: 'HINT' }).isEnabled())) {
+      await app.getByRole('button', { name: 'HINT' }).click();
+      const hints = app.locator('[data-ui="hints"]');
+      await expect(hints).toBeVisible({ timeout: 20_000 });
+      await hints.locator('[data-ui="choice"]').first().click();
+    }
     if (i === 3) {
       for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
       await snap(app, testInfo, 'practice-midgame');

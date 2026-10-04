@@ -15,3 +15,8 @@ export function clientBattle(lines: readonly string[]): ClientBattle {
 }
 
 export type { ClientBattle };
+
+/** National dex number for any species or form name the simulator knows; 0 when unknown. */
+export function dexNumber(species: string): number {
+  return Dex.species.get(species).num || 0;
+}

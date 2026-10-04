@@ -1,0 +1,29 @@
+name: Bot gauntlet
+
+# Bot games take minutes, so this runs when bot or engine code changes, once a
+# week, and on demand, instead of on every push.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/renderer/src/engine/**'
+      - 'src/renderer/src/lib/battle/damage.ts'
+      - 'scripts/bots-gauntlet.mjs'
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  gauntlet:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Fails if Greedy stops beating Random or Search stops beating Greedy.
+      - run: npm run bots:gauntlet -- --ci --games 60

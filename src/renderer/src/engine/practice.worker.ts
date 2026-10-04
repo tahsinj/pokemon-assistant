@@ -21,7 +21,9 @@ scope.onmessage = (e) => {
           ? session.undo()
           : msg.type === 'export'
             ? session.exportLog()
-            : session.view();
+            : msg.type === 'hint'
+              ? session.hint()
+              : session.view();
     scope.postMessage({ id: msg.id, ok: true, result });
   } catch (err) {
     scope.postMessage({ id: msg.id, ok: false, error: err instanceof Error ? err.message : String(err) });

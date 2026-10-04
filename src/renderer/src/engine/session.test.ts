@@ -44,3 +44,17 @@ describe('practice session', () => {
     expect(s.choose('move 1').lines.filter((l) => !l.startsWith('|t:|'))).toEqual(after.lines.filter((l) => !l.startsWith('|t:|')));
   });
 });
+
+describe('practice session hints', () => {
+  it('suggests up to three legal actions and records a value per turn', () => {
+    const s = new PracticeSession({ format: 'gen9ou', botLevel: 2, seed: 33 });
+    s.choose('default');
+    const hints = s.hint();
+    expect(hints.length).toBeGreaterThan(0);
+    expect(hints.length).toBeLessThanOrEqual(3);
+    expect(hints[0].label.length).toBeGreaterThan(0);
+    const v = s.choose(hints[0].choice);
+    expect(v.error).toBeUndefined();
+    expect(v.evals.length).toBe(v.turn);
+  }, 60_000);
+});

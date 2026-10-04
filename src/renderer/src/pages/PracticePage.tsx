@@ -14,9 +14,9 @@ import { Segmented } from '../components/hud/Segmented';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { hpColorFor } from '../lib/battle/koText';
-import { BOT_NAMES, type BotLevel, type SessionOptions, type SessionView } from '../engine/session';
+import { BOT_NAMES, type BotLevel, type Hint, type SessionOptions, type SessionView } from '../engine/session';
 import { createPracticeClient, type PracticeClient } from '../engine/practiceClient';
-import { clientBattle, type ClientBattle } from '../engine/clientState';
+import { clientBattle, dexNumber, type ClientBattle } from '../engine/clientState';
 import { describeLine } from '../engine/describe';
 import { sampleMetaTeam } from '../engine/metaTeam';
 import { membersToShowdown } from '../engine/teamText';
@@ -68,6 +68,7 @@ export function PracticePage({
   const [problem, setProblem] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [lastOptions, setLastOptions] = useState<SessionOptions | null>(null);
+  const [hints, setHints] = useState<Hint[] | null>(null);
   const client = useRef<PracticeClient | null>(null);
 
   useEffect(() => () => client.current?.dispose(), []);
@@ -156,10 +157,21 @@ export function PracticePage({
   const act = async (fn: (c: PracticeClient) => Promise<SessionView>) => {
     if (!client.current || busy) return;
     setBusy(true);
+    setHints(null);
     try {
       setView(await fn(client.current));
     } catch (e) {
       setProblem(e instanceof Error ? e.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const askHint = async () => {
+    if (!client.current || busy) return;
+    setBusy(true);
+    try {
+      setHints(await client.current.hint());
     } finally {
       setBusy(false);
     }
@@ -234,12 +246,16 @@ export function PracticePage({
       busy={busy}
       warnings={warnings}
       problem={problem}
-      pokemon={pokemon}
       moves={moves}
+      hints={hints}
+      onHint={() => void askHint()}
       onChoose={(c) => void act((cl) => cl.choose(c))}
       onUndo={() => void act((cl) => cl.undo())}
       onExport={() => void exportLog()}
-      onRematch={() => lastOptions && void run({ ...lastOptions, seed: undefined })}
+      onRematch={() => {
+        setHints(null);
+        if (lastOptions) void run({ ...lastOptions, seed: undefined });
+      }}
       onNew={() => {
         client.current?.dispose();
         client.current = null;
@@ -261,6 +277,7 @@ const SOURCE_HINT: Record<MySource, string> = {
 const BOT_HINT: Record<BotLevel, string> = {
   0: 'Picks any legal move or switch at random.',
   1: 'Picks the move that does the most damage and switches out of a sure KO.',
+  2: 'Plays each option against your likely replies on the simulator and picks the best. Thinks for a moment each turn.',
 };
 
 function TeamSelect({
@@ -298,8 +315,9 @@ function BattleView({
   busy,
   warnings,
   problem,
-  pokemon,
   moves,
+  hints,
+  onHint,
   onChoose,
   onUndo,
   onExport,
@@ -310,8 +328,9 @@ function BattleView({
   busy: boolean;
   warnings: string[];
   problem: string | null;
-  pokemon: Pokemon[];
   moves: Record<string, Move>;
+  hints: Hint[] | null;
+  onHint: () => void;
   onChoose: (choice: string) => void;
   onUndo: () => void;
   onExport: () => void;
@@ -330,8 +349,6 @@ function BattleView({
   useEffect(() => {
     if (logBox.current) logBox.current.scrollTop = logBox.current.scrollHeight;
   }, [log.length]);
-  const dexByName = useMemo(() => new Map(pokemon.map((p) => [p.name.toLowerCase(), p.dex])), [pokemon]);
-  const dexOf = (species: string) => dexByName.get(species.toLowerCase()) ?? 0;
 
   const resultText = view.result === 'player' ? 'You won!' : view.result === 'bot' ? `${view.botName} won.` : 'Tie.';
 
@@ -340,6 +357,16 @@ function BattleView({
       subtitle={`${view.ended ? 'Battle over' : view.turn ? `Turn ${view.turn}` : 'Team preview'} · vs ${view.botName}`}
       side={
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="chunky ghost font-display text-[12px]"
+            style={{ padding: '6px 12px' }}
+            onClick={onHint}
+            disabled={busy || view.ended || !view.request?.active || !!view.request.forceSwitch}
+            title="Ask the Search bot for its three best options"
+          >
+            HINT
+          </button>
           <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 12px' }} onClick={onUndo} disabled={!view.canUndo || busy}>
             TAKE BACK
           </button>
@@ -355,8 +382,8 @@ function BattleView({
       <div data-ui="practice-battle" className="grid grid-cols-[minmax(0,1fr),minmax(260px,340px)] gap-4">
         <div className="flex flex-col gap-3 min-w-0">
           <div className="grid grid-cols-2 gap-3">
-            <ActiveCard battle={battle} side="p2" label={view.botName} dexOf={dexOf} />
-            <ActiveCard battle={battle} side="p1" label="You" dexOf={dexOf} />
+            <ActiveCard battle={battle} side="p2" label={view.botName} />
+            <ActiveCard battle={battle} side="p1" label="You" />
           </div>
           {warnings.length > 0 && (
             <div className="text-[13px] text-ink-2 rounded-[10px] border border-white/10 px-3 py-2">
@@ -364,6 +391,7 @@ function BattleView({
               {warnings.length > 3 ? ` (and ${warnings.length - 3} more)` : ''}
             </div>
           )}
+          {hints && !view.ended && <HintList hints={hints} busy={busy} onChoose={onChoose} />}
           {view.ended ? (
             <div className="mono-panel rounded-[12px] p-4 flex items-center gap-3 flex-wrap">
               <span data-ui="battle-result" className="font-display text-[20px] font-bold text-ink-0 mr-auto">
@@ -386,6 +414,7 @@ function BattleView({
           )}
         </div>
         <div className="mono-panel rounded-[12px] p-3 flex flex-col min-h-0 max-h-[460px]">
+          {view.evals.length > 1 && <EvalGraph evals={view.evals} />}
           <SectionHead label="Battle log" />
           <div ref={logBox} data-ui="battle-log" className="overflow-y-auto flex flex-col gap-0.5 pr-1">
             {log.map((line, i) =>
@@ -410,12 +439,10 @@ function ActiveCard({
   battle,
   side,
   label,
-  dexOf,
 }: {
   battle: ClientBattle;
   side: 'p1' | 'p2';
   label: string;
-  dexOf: (species: string) => number;
 }) {
   const mon = battle[side].active[0];
   // The client only knows Pokémon that have appeared, so count faints against the team size.
@@ -440,7 +467,7 @@ function ActiveCard({
         </span>
       </div>
       <div className="flex items-center gap-3 min-w-0">
-        <PokemonSprite dex={dexOf(mon.baseSpeciesForme)} name={mon.name} size="sm" />
+        <PokemonSprite dex={dexNumber(mon.speciesForme)} name={mon.name} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="font-display text-[17px] font-bold text-ink-0 truncate">{mon.name}</div>
           <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
@@ -583,5 +610,44 @@ function SwitchButton({ p, disabled, onClick }: { p: RequestPokemon; disabled: b
         </span>
       </span>
     </ChoiceButton>
+  );
+}
+
+function HintList({ hints, busy, onChoose }: { hints: Hint[]; busy: boolean; onChoose: (choice: string) => void }) {
+  if (!hints.length) return <div className="text-[13px] text-ink-2">No hint for this decision.</div>;
+  const top = hints[0].score;
+  return (
+    <div data-ui="hints" className="mono-panel rounded-[12px] p-3 flex flex-col gap-2">
+      <SectionHead label="Hint" extra="the Search bot's best options; click one to play it" />
+      {hints.map((h, i) => (
+        <ChoiceButton key={h.choice} disabled={busy} onClick={() => onChoose(h.choice)} title={`Expected value ${h.score.toFixed(2)}`}>
+          <span className="font-mono-hud text-[14px] text-accent-2 w-4">{i + 1}</span>
+          <span className="truncate">{h.label}</span>
+          <span className="font-mono-hud text-[14px] text-ink-2 ml-auto pl-2">
+            {i === 0 ? 'best' : `${(h.score - top).toFixed(1)}`}
+          </span>
+        </ChoiceButton>
+      ))}
+    </div>
+  );
+}
+
+/** Position value per turn from your side: above the middle line you are ahead. */
+function EvalGraph({ evals }: { evals: number[] }) {
+  const w = 300;
+  const h = 56;
+  const span = Math.max(3, ...evals.map((v) => Math.abs(Math.max(-6, Math.min(6, v)))));
+  const x = (i: number) => (evals.length === 1 ? w / 2 : (i / (evals.length - 1)) * w);
+  const y = (v: number) => h / 2 - (Math.max(-span, Math.min(span, v)) / span) * (h / 2 - 3);
+  const points = evals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const last = evals[evals.length - 1];
+  return (
+    <div data-ui="eval-graph" className="mb-3">
+      <SectionHead label="Position" extra={last > 0.25 ? 'you are ahead' : last < -0.25 ? 'the bot is ahead' : 'even'} />
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[56px]" role="img" aria-label="Position value by turn">
+        <line x1="0" x2={w} y1={h / 2} y2={h / 2} stroke="rgba(255,255,255,.15)" strokeDasharray="3 3" />
+        <polyline points={points} fill="none" stroke="var(--hud-accent-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
   );
 }
