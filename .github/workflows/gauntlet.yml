@@ -6,7 +6,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/renderer/src/engine/**'
+      - 'src/renderer/src/engine/bots/**'
+      - 'src/renderer/src/engine/engine.ts'
       - 'src/renderer/src/lib/battle/damage.ts'
       - 'scripts/bots-gauntlet.mjs'
   schedule:

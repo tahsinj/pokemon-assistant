@@ -808,6 +808,17 @@ Status:
     (`border-danger/40`) also produced no CSS before and now work.
   - Counter Draft still offers a Dynamax toggle, which neither format
     allows. Counter Draft v2 in M4 replaces it.
+- **M3 mostly done.** Battles run on `@pkmn/sim` (`src/renderer/src/engine/`):
+  50 seeded games replay identically through a stock `BattleStream`. Bots:
+  Random, Greedy and Search, measured by `npm run bots:gauntlet` (Greedy
+  beats Random 96%, Search beats Greedy 72%, 100 games each). Battle >
+  Practice plays full battles in a worker with hints, take-backs, a position
+  graph and saved logs; Battle > Replay Review loads Showdown replays and
+  flags weak move choices from public information. The calc has 30 golden
+  tests, roll histograms and Send to practice. Left for M3, tracked in
+  [WORKPLAN.md](WORKPLAN.md) section 1: the predictor on the new state,
+  hidden-set sampling for Search, search-based replay review, manual entry
+  and retiring the Battle Tracker, and a packaged-app check.
 
 ## 8. Risks
 
