@@ -23,7 +23,8 @@
     "build-dex": "node scripts/build-dex.mjs",
     "fetch-usage": "node scripts/fetch-usage.mjs",
     "test:ui": "playwright test",
-    "bots:gauntlet": "node scripts/bots-gauntlet.mjs"
+    "bots:gauntlet": "node scripts/bots-gauntlet.mjs",
+    "test:electron": "node scripts/electron-smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

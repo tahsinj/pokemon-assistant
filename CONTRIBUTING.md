@@ -55,6 +55,7 @@ Solo project, but these rules keep the history and the code readable.
 ```bash
 npm run check     # eslint, prose lint, CSS lint, typecheck, tests
 npm run test:ui   # after UI changes: every page at two window sizes
+npm run build && npm run test:electron   # after engine or build changes (needs a display)
 ```
 
 The UI tests run against a production build with a stubbed preload and no

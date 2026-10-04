@@ -85,8 +85,8 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
 hints, Replay Review and the calc extras work. Left: the predictor adapter
-(1.3), manual entry and retiring the Battle Tracker (1.6), packaging checks
-(section 6).
+(1.3), hidden-set sampling for Search (1.4), manual entry and retiring the
+Battle Tracker (1.6), and a Windows installer check (section 6).
 
 ### 1.1 Dependencies
 
@@ -297,8 +297,11 @@ Small items, any time. Each is one commit.
 
 ## 6. Platform
 
-- [ ] Windows installer check after M3 (`npm run pack:win`): the sim worker
-  and fonts load from the packaged app.
+- [x] `npm run test:electron` (CI job `electron`, under Xvfb) loads the built
+  app from disk in Electron and starts a practice battle: the module worker
+  works over `file://`.
+- [ ] Build the Windows installer (`npm run pack:win`, needs Windows or Wine)
+  and try it once by hand.
 - [ ] macOS and Linux builds (SPEC 9: later).
 - [ ] Usage history: keep several months per format and show trends in Meta
   ("Kingambit up 3% since last month"), on top of the packs from 2.3.

@@ -27,7 +27,12 @@ export function ActiveCard({
     return (
       <div className="mono-panel rounded-[12px] p-3">
         <span className="font-sans text-[13px] text-ink-2">
-          {label}: {battle[side].team.length && left === 0 ? 'no Pokémon left.' : 'waiting for the first switch-in.'}
+          {label}:{' '}
+          {battle[side].team.length && left === 0
+            ? 'no Pokémon left.'
+            : battle[side].team.length
+              ? battle[side].team.map((p) => p.speciesForme).join(', ')
+              : 'waiting for the first switch-in.'}
         </span>
       </div>
     );
