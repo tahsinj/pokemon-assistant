@@ -1,7 +1,7 @@
 /**
  * Conversions from stored Pokémon (PC box records, saved-team members) into
- * the shapes the battle surfaces consume: BattlePage's CombatSpec data fields
- * and BattleSessionPage's makePokemon spec. Pure data mapping - no DOM, no
+ * the shapes the battle code consumes: calc fields for matchups and the
+ * battle tracker's makePokemon spec. Pure data mapping, with no DOM or
  * battle-engine imports (the session spec is typed structurally on purpose).
  */
 
@@ -57,7 +57,7 @@ export function fromTeamMember(m: TeamMemberPersist, level = 50): CombatImportIn
 const FILL_31: BaseStats = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 const FILL_0: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 
-/** The data fields of BattlePage's CombatSpec (UI-only fields excluded). */
+/** The calc-relevant fields of a stored Pokémon, with moves padded to four. */
 export interface CombatFields {
   speciesName: string;
   level: number;

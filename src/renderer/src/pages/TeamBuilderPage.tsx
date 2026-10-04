@@ -703,7 +703,7 @@ export function TeamBuilderPage({
                   <button
                     type="button"
                     aria-label={`Remove ${p.name} from slot ${i + 1}`}
-                    className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    className="p-0 absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSlot(i, null);

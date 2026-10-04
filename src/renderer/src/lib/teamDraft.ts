@@ -1,8 +1,9 @@
 /**
  * Cross-page snapshot of the Team Builder's current squad. Pages unmount on
- * tab switch (App renders one page at a time), so BattlePage/BattleSessionPage
- * can't read the builder's state directly - the builder mirrors it here on
- * every change instead. Module singleton, renderer-session lifetime only.
+ * tab switch (App renders one page at a time), so the damage calc and the
+ * battle tracker can't read the builder's state directly; the builder mirrors
+ * it here on every change instead. Module singleton, lives as long as the
+ * renderer.
  */
 
 import type { MemberDetail } from './bridgeTypes';

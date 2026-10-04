@@ -2529,29 +2529,32 @@ body {
   border-radius: var(--r-lg);
 }
 
-/* Plain buttons inside pages (not .btn) */
+/* Default look for plain buttons inside pages. It sits in the components
+   layer at class-level specificity, so a button's own utility classes win. */
 
-.ds button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell) {
-  background: var(--bg-2);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  font-size: 13px;
-  font-family: var(--font-display);
-}
+@layer components {
+  .ds :where(button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell)) {
+    background: var(--bg-2);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-display);
+  }
 
-.ds button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):hover {
-  background: var(--bg-3);
-}
+  .ds :where(button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):hover) {
+    background: var(--bg-3);
+  }
 
-.ds button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):focus {
-  outline: none;
-}
+  .ds :where(button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):focus) {
+    outline: none;
+  }
 
-.ds button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):focus-visible {
-  box-shadow: var(--focus-ring);
+  .ds :where(button:not([class*='btn-']):not(.chunky):not(.nav-hex):not(.dive-close):not(.pc-box-rename-trigger):not(.box-tab):not(.box-cell):focus-visible) {
+    box-shadow: var(--focus-ring);
+  }
 }
 
 .ds input:not([type='range']),

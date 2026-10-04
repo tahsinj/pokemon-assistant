@@ -111,22 +111,44 @@ export function smallCapsBodyText(): string[] {
   return [...new Set(out)];
 }
 
-/** Text that spills out of its own box (wider than the box, nothing clipping or scrolling it). */
+/**
+ * Text that spills out of its own box: in-flow content (child boxes or text)
+ * reaching past the right edge of a box that neither clips nor scrolls.
+ * Absolutely positioned decorations, like a badge hanging off a corner, are
+ * placed on purpose and don't count.
+ */
 export function spilledText(): string[] {
   const root = document.querySelector('.dive-content');
   if (!root) return [];
   const out: string[] = [];
+  const contentRight = (el: HTMLElement): number => {
+    let right = -Infinity;
+    for (const node of Array.from(el.childNodes)) {
+      if (node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        for (const r of Array.from(range.getClientRects())) right = Math.max(right, r.right);
+      } else if (node instanceof HTMLElement && node.offsetParent !== null) {
+        const pos = getComputedStyle(node).position;
+        if (pos !== 'absolute' && pos !== 'fixed') right = Math.max(right, node.getBoundingClientRect().right);
+      }
+    }
+    return right;
+  };
   for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
     if (!el.offsetParent || el.clientWidth === 0) continue;
     const cs = getComputedStyle(el);
-    if (cs.overflowX !== 'visible' || cs.display === 'inline') continue;
-    if (el.scrollWidth <= el.clientWidth + 2) continue;
+    if (cs.overflowX !== 'visible' || cs.display === 'inline' || cs.display === 'contents') continue;
+    const box = el.getBoundingClientRect();
+    const over = contentRight(el) - box.right;
+    if (over <= 2) continue;
     // Report the innermost box: skip it when a child already spills by itself.
-    const childSpills = Array.from(el.children).some(
-      (c) => c instanceof HTMLElement && c.clientWidth > 0 && c.scrollWidth > c.clientWidth + 2,
-    );
+    const childSpills = Array.from(el.children).some((c) => {
+      if (!(c instanceof HTMLElement) || c.offsetParent === null) return false;
+      return contentRight(c) - c.getBoundingClientRect().right > 2;
+    });
     const text = (el.innerText ?? '').replace(/\s+/g, ' ').trim();
-    if (!childSpills && text) out.push(`"${text.slice(0, 40)}" is ${el.scrollWidth - el.clientWidth}px wider than its box`);
+    if (!childSpills && text) out.push(`"${text.slice(0, 40)}" is ${Math.round(over)}px wider than its box`);
   }
   return [...new Set(out)];
 }

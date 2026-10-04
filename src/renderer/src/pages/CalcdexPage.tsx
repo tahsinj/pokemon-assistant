@@ -1,17 +1,17 @@
 /**
- * Calcdex - Showdex-style two-player damage workbench.
- * Two mirrored panels (you on top, opponent below) with a shared field bar
- * between them, sized so both dashboards fit on screen at once. Every roster
- * sprite is clickable; the active pair drives the move matrix damage/KO
- * readouts in both directions. Opponent sets auto-fill from Smogon usage and
- * can be swapped move-by-move; either roster can be imported from saved teams
- * / the Team Builder draft / a Showdown paste and saved back to the local
- * team store (opposing teams get the "opponent" tag).
+ * Damage calc: two rosters (you on top, the opponent below) with a shared
+ * field bar between them. Two views:
+ * - Matchup: the active pair's full sets and both move matrices.
+ * - Team: every member of your roster against their active, strongest move
+ *   first, with their best move back.
+ * Opponent sets auto-fill from usage stats. Either roster can be imported from
+ * saved teams, the PC box, the Team Builder draft or a Showdown paste, and
+ * saved back to the local team store (opposing teams get the "opponent" tag).
  */
 import { useEffect, useMemo, useState } from 'react';
 import type { BaseStats, HeldItem, Move, Pokemon, StatKey } from '../lib/types';
 import type { SmogonBundle, SmogonSpeciesIntel } from '../lib/smogon';
-import type { SaveTeamPayload, TeamMemberPersist } from '../lib/bridgeTypes';
+import type { PcPokemonRecord, SaveTeamPayload, TeamMemberPersist } from '../lib/bridgeTypes';
 import {
   EMPTY_SIDE,
   NEUTRAL_EVS,
@@ -23,6 +23,7 @@ import {
   type Weather,
 } from '../lib/battle/types';
 import { calcDamage, type DamageOutcome } from '../lib/battle/damage';
+import { hpColorFor, koText } from '../lib/battle/koText';
 import { NATURES, STAT_LABELS, calcAllStats } from '../lib/stats';
 import { TYPES } from '../lib/typechart';
 import { abilityName, findMove, moveName } from '../lib/displayNames';
@@ -31,11 +32,14 @@ import { suggestMoveset } from '../lib/recommender';
 import { buildSpeciesFuse, resolveSpeciesName } from '../lib/fuzzySpecies';
 import { parseShowdownTeam, exportShowdownFromParsed, type ParsedShowdownMon } from '../lib/showdownTeam';
 import { getTeamDraft } from '../lib/teamDraft';
+import { usePcCollection, type PcCollection } from '../lib/usePcCollection';
 import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 import { TypeChip } from '../components/hud/HudPrimitives';
 import { PokemonSprite } from '../components/PokemonSprite';
 import { SpeciesList } from '../components/SpeciesList';
 import { ItemSearchInput } from '../components/ItemSearchInput';
+import { Segmented } from '../components/hud/Segmented';
+import { TeamMatrix, type MatrixRow } from '../components/calc/TeamMatrix';
 
 type StatusCode = '' | 'brn' | 'par' | 'psn' | 'tox' | 'slp' | 'frz';
 
@@ -91,15 +95,13 @@ interface CalcMon {
   setLabel: string;
 }
 
-interface Screens {
-  isReflect: boolean;
-  isLightScreen: boolean;
-  isAuroraVeil: boolean;
-}
-
-const NO_SCREENS: Screens = { isReflect: false, isLightScreen: false, isAuroraVeil: false };
-
 type SideKey = 'p1' | 'p2';
+type View = 'pair' | 'team';
+
+const VIEWS: { id: View; label: string }[] = [
+  { id: 'pair', label: 'Matchup' },
+  { id: 'team', label: 'Team' },
+];
 
 interface PanelState {
   name: string;
@@ -205,24 +207,6 @@ function itemStatMult(item: string, k: StatKey): number {
   return 1;
 }
 
-function koText(d: DamageOutcome): { text: string; color: string } {
-  if (d.error) return { text: 'ERR', color: 'var(--ink-2)' };
-  if (d.category === 'Status') return { text: 'N/A', color: 'var(--ink-2)' };
-  if (d.isZero) return { text: 'IMMUNE', color: 'var(--ink-2)' };
-  if (d.ko.n === 1 && d.ko.chance >= 1) return { text: '1HKO', color: 'var(--hud-danger)' };
-  if (d.ko.n === 1) return { text: `${(d.ko.chance * 100).toFixed(0)}% 1HKO`, color: '#ffb84d' };
-  if (d.ko.n === 2) {
-    const pct = d.ko.chance >= 1 ? '' : ` ${(d.ko.chance * 100).toFixed(0)}%`;
-    return { text: `2HKO${pct}`, color: '#ffd34d' };
-  }
-  if (d.ko.n > 0) return { text: `${d.ko.n}HKO`, color: 'var(--ink-1)' };
-  return { text: '-', color: 'var(--ink-2)' };
-}
-
-function hpColorFor(pct: number): string {
-  return pct > 50 ? '#7cd87b' : pct > 25 ? '#ffd34d' : 'var(--hud-danger)';
-}
-
 /** Strip the pill chrome off inputs that live inside tiles. */
 const BARE_INPUT: React.CSSProperties = {
   background: 'transparent',
@@ -281,6 +265,20 @@ export function CalcdexPage({
     };
   };
 
+  const monFromPc = (rec: PcPokemonRecord): CalcMon | null =>
+    monFromMember({
+      slot: 0,
+      speciesId: rec.speciesId,
+      speciesDisplay: rec.speciesDisplay,
+      item: rec.item,
+      ability: rec.ability,
+      nature: rec.nature,
+      level: rec.level,
+      ivs: { ...rec.ivs },
+      evs: { ...rec.evs },
+      moves: rec.moves,
+    });
+
   const monFromParsed = (block: ParsedShowdownMon): CalcMon | null => {
     const species = resolveSpeciesName(fuse, block.species);
     if (!species) return null;
@@ -301,13 +299,13 @@ export function CalcdexPage({
   const [p1, setP1] = useState<PanelState>({ name: 'You', roster: [null, null, null, null, null, null], active: 0 });
   const [p2, setP2] = useState<PanelState>({ name: 'Opponent', roster: [null, null, null, null, null, null], active: 0 });
 
+  const [view, setView] = useState<View>('pair');
   const [weather, setWeather] = useState<Weather>('');
   const [terrain, setTerrain] = useState<Terrain>('');
+  const [gravity, setGravity] = useState(false);
   const [crit, setCrit] = useState(false);
-  const [screens, setScreens] = useState<{ p1: Screens; p2: Screens }>({
-    p1: { ...NO_SCREENS },
-    p2: { ...NO_SCREENS },
-  });
+  const [sides, setSides] = useState<Record<SideKey, SideSpec>>({ p1: { ...EMPTY_SIDE }, p2: { ...EMPTY_SIDE } });
+  const pc = usePcCollection();
 
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; tag: string }[]>([]);
   const refreshSaved = useMemo(
@@ -329,15 +327,15 @@ export function CalcdexPage({
   const active1 = p1.roster[p1.active];
   const active2 = p2.roster[p2.active];
 
-  const sideSpec = (s: Screens): SideSpec => ({ ...EMPTY_SIDE, ...s });
-
   const fieldFor = (attacker: SideKey): FieldSpec => ({
     weather,
     terrain,
-    isGravity: false,
-    attackerSide: sideSpec(attacker === 'p1' ? screens.p1 : screens.p2),
-    defenderSide: sideSpec(attacker === 'p1' ? screens.p2 : screens.p1),
+    isGravity: gravity,
+    attackerSide: attacker === 'p1' ? sides.p1 : sides.p2,
+    defenderSide: attacker === 'p1' ? sides.p2 : sides.p1,
   });
+  const setSide = (side: SideKey, patch: Partial<SideSpec>) =>
+    setSides((s) => ({ ...s, [side]: { ...s[side], ...patch } }));
 
   /** Damage per move slot (index-aligned; null for empty slots / no target). */
   const outcomesFor = (attacker: CalcMon | null, defender: CalcMon | null, side: SideKey) => {
@@ -351,14 +349,36 @@ export function CalcdexPage({
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const outcomes1 = useMemo(() => outcomesFor(active1, active2, 'p1'), [active1, active2, weather, terrain, crit, screens]);
+  const outcomes1 = useMemo(() => outcomesFor(active1, active2, 'p1'), [active1, active2, weather, terrain, gravity, crit, sides]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const outcomes2 = useMemo(() => outcomesFor(active2, active1, 'p2'), [active1, active2, weather, terrain, crit, screens]);
+  const outcomes2 = useMemo(() => outcomesFor(active2, active1, 'p2'), [active1, active2, weather, terrain, gravity, crit, sides]);
+
+  // Team view: each of your Pokémon against their active, both ways.
+  const matrixRows = useMemo<MatrixRow[]>(() => {
+    if (view !== 'team' || !active2) return [];
+    const present = (o: (DamageOutcome | null)[]) => o.filter((d): d is DamageOutcome => !!d);
+    return p1.roster.flatMap((mon, slot) =>
+      mon
+        ? [
+            {
+              slot,
+              name: mon.species.name,
+              dex: mon.species.dex,
+              hpPercent: mon.hpPercent,
+              outcomes: present(outcomesFor(mon, active2, 'p1')),
+              reverse: present(outcomesFor(active2, mon, 'p2')),
+            },
+          ]
+        : [],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, p1.roster, active2, weather, terrain, gravity, crit, sides]);
 
   const matchupLabel =
     active1 && active2 ? `${active1.species.name} vs ${active2.species.name}` : 'Set both actives to calc';
 
-  const screenToggles: [keyof Screens, string][] = [
+  const screenToggles: [keyof SideSpec, string][] = [
+    ['stealthRock', 'Rocks'],
     ['isReflect', 'Reflect'],
     ['isLightScreen', 'Screen'],
     ['isAuroraVeil', 'Veil'],
@@ -368,27 +388,31 @@ export function CalcdexPage({
     <ModuleFrame
       subtitle={`${matchupLabel}${weather ? ` · ${weather}` : ''}${terrain ? ` · ${terrain} Terrain` : ''}`}
       side={
-        <button
-          type="button"
-          onClick={() => setCrit((v) => !v)}
-          aria-pressed={crit}
-          className="chunky font-display text-[12px]"
-          style={
-            {
-              '--c': crit ? 'var(--hud-danger)' : 'var(--ink-2)',
-              padding: '6px 14px',
-            } as React.CSSProperties
-          }
-          title="Force every calc to assume a critical hit"
-        >
-          CRIT {crit ? 'ON' : 'OFF'}
-        </button>
+        <div className="flex items-center gap-2">
+          <Segmented value={view} onChange={setView} options={VIEWS} size="md" />
+          <button
+            type="button"
+            onClick={() => setCrit((v) => !v)}
+            aria-pressed={crit}
+            className="chunky font-display text-[12px]"
+            style={
+              {
+                '--c': crit ? 'var(--hud-danger)' : 'var(--ink-2)',
+                padding: '6px 14px',
+              } as React.CSSProperties
+            }
+            title="Force every calc to assume a critical hit"
+          >
+            CRIT {crit ? 'ON' : 'OFF'}
+          </button>
+        </div>
       }
     >
       <div className="flex flex-col gap-2.5 hud-form">
         <PlayerPanel
           side="p1"
           accent="var(--hud-accent-2)"
+          showDashboard={view === 'pair'}
           panel={p1}
           setPanel={setP1}
           outcomes={outcomes1}
@@ -400,6 +424,8 @@ export function CalcdexPage({
           freshMon={freshMon}
           monFromMember={monFromMember}
           monFromParsed={monFromParsed}
+          monFromPc={monFromPc}
+          pc={pc}
           savedTeams={savedTeams}
           onSaved={refreshSaved}
         />
@@ -447,19 +473,51 @@ export function CalcdexPage({
                 <label key={k} className="flex items-center gap-1 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={screens[side][k]}
-                    onChange={(e) => setScreens((s) => ({ ...s, [side]: { ...s[side], [k]: e.target.checked } }))}
+                    checked={!!sides[side][k]}
+                    onChange={(e) => setSide(side, { [k]: e.target.checked })}
                   />
                   {lbl}
                 </label>
               ))}
+              <label className="flex items-center gap-1" title="Layers of Spikes on this side">
+                Spikes
+                <select
+                  value={sides[side].spikes}
+                  onChange={(e) => setSide(side, { spikes: Number(e.target.value) as SideSpec['spikes'] })}
+                  style={{ padding: '1px 6px' }}
+                >
+                  {[0, 1, 2, 3].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           ))}
+          <label className="flex items-center gap-1 cursor-pointer font-mono-hud text-[13px] text-ink-1">
+            <input type="checkbox" checked={gravity} onChange={(e) => setGravity(e.target.checked)} />
+            Gravity
+          </label>
         </div>
+
+        {view === 'team' && (
+          <TeamMatrix
+            rows={matrixRows}
+            target={active2?.species.name ?? null}
+            activeSlot={p1.active}
+            moveType={(name) => findMove(name, moves)?.type}
+            onOpen={(slot) => {
+              setP1((p) => ({ ...p, active: slot }));
+              setView('pair');
+            }}
+          />
+        )}
 
         <PlayerPanel
           side="p2"
           accent="var(--hud-danger)"
+          showDashboard
           panel={p2}
           setPanel={setP2}
           outcomes={outcomes2}
@@ -471,6 +529,8 @@ export function CalcdexPage({
           freshMon={freshMon}
           monFromMember={monFromMember}
           monFromParsed={monFromParsed}
+          monFromPc={monFromPc}
+          pc={pc}
           savedTeams={savedTeams}
           onSaved={refreshSaved}
         />
@@ -482,6 +542,7 @@ export function CalcdexPage({
 function PlayerPanel({
   side,
   accent,
+  showDashboard,
   panel,
   setPanel,
   outcomes,
@@ -493,11 +554,14 @@ function PlayerPanel({
   freshMon,
   monFromMember,
   monFromParsed,
+  monFromPc,
+  pc,
   savedTeams,
   onSaved,
 }: {
   side: SideKey;
   accent: string;
+  showDashboard: boolean;
   panel: PanelState;
   setPanel: React.Dispatch<React.SetStateAction<PanelState>>;
   outcomes: (DamageOutcome | null)[];
@@ -509,6 +573,8 @@ function PlayerPanel({
   freshMon: (species: Pokemon) => CalcMon;
   monFromMember: (m: TeamMemberPersist) => CalcMon | null;
   monFromParsed: (block: ParsedShowdownMon) => CalcMon | null;
+  monFromPc: (rec: PcPokemonRecord) => CalcMon | null;
+  pc: PcCollection;
   savedTeams: { id: string; name: string; tag: string }[];
   onSaved: () => Promise<void>;
 }) {
@@ -613,6 +679,17 @@ function PlayerPanel({
     setPanel((p) => ({ ...p, roster, active: Math.max(0, roster.findIndex((m) => !!m)) }));
     setImportOpen(false);
     setMsg(`Loaded ${count} from the Team Builder.`);
+  };
+
+  const onAddFromPc = (id: string) => {
+    const rec = pc.mons.find((m) => m.id === id);
+    const mon = rec && monFromPc(rec);
+    if (!mon) return;
+    const empty = panel.roster.findIndex((m) => !m);
+    const slot = empty >= 0 ? empty : panel.active;
+    setRosterSlot(slot, mon);
+    setPanel((p) => ({ ...p, active: slot }));
+    setMsg(`Added ${rec.nickname || mon.species.name} to slot ${slot + 1}.`);
   };
 
   const onExportTeam = async () => {
@@ -722,7 +799,7 @@ function PlayerPanel({
                     type="button"
                     aria-label={`Remove ${mon.species.name}`}
                     onClick={() => setRosterSlot(i, null)}
-                    className="absolute -top-1 -right-1 w-[15px] h-[15px] rounded-full bg-black/80 border border-white/20 text-ink-1 hover:text-white font-mono-hud text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    className="p-0 absolute -top-1 -right-1 w-[15px] h-[15px] rounded-full bg-black/80 border border-white/20 text-ink-1 hover:text-white font-mono-hud text-[10px] leading-none opacity-0 group-hover:opacity-100 transition"
                   >
                     ×
                   </button>
@@ -794,6 +871,22 @@ function PlayerPanel({
                 ))}
               </select>
             )}
+            {pc.available && pc.mons.length > 0 && (
+              <select
+                value=""
+                aria-label="Add a Pokémon from the PC box"
+                onChange={(e) => {
+                  if (e.target.value) onAddFromPc(e.target.value);
+                }}
+              >
+                <option value="">Add from PC box…</option>
+                {pc.mons.map((rec) => (
+                  <option key={rec.id} value={rec.id}>
+                    {rec.nickname || rec.speciesDisplay} · Lv {rec.level} · {pc.boxNameById[rec.boxId] ?? 'Box'}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
               className="chunky ghost font-display text-[11px]"
@@ -837,7 +930,7 @@ function PlayerPanel({
       )}
 
       {/* Active dashboard */}
-      {active ? (
+      {!showDashboard ? null : active ? (
         <ActiveDashboard
           side={side}
           mon={active}
@@ -1100,7 +1193,7 @@ function ActiveDashboard({
                 aria-label="Remove item"
                 title="Remove item (e.g. after Knock Off)"
                 onClick={() => update({ item: '' })}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-black/60 border border-white/20 text-ink-2 hover:text-danger font-mono-hud text-[10px] leading-none transition"
+                className="p-0 absolute right-2 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-black/60 border border-white/20 text-ink-2 hover:text-danger font-mono-hud text-[10px] leading-none transition"
               >
                 ×
               </button>
@@ -1159,7 +1252,7 @@ function ActiveDashboard({
             return (
               <div
                 key={i}
-                className={`grid grid-cols-[minmax(0,1.05fr),minmax(70px,1fr),96px,16px] gap-2 items-center rounded-[8px] pl-2.5 pr-1.5 py-[3px] border transition ${
+                className={`grid grid-cols-[minmax(0,1.05fr),minmax(48px,1fr),auto,16px] gap-2 items-center rounded-[8px] pl-2.5 pr-1.5 py-[3px] border transition ${
                   name ? 'border-white/10 bg-white/[.04]' : 'border-dashed border-white/10 bg-transparent'
                 }`}
                 title={d?.desc || undefined}
@@ -1219,7 +1312,7 @@ function ActiveDashboard({
                     type="button"
                     aria-label={`Clear move ${i + 1}`}
                     onClick={() => setMove(i, '')}
-                    className="w-4 h-4 rounded-full bg-black/50 border border-white/15 text-ink-2 hover:text-white font-mono-hud text-[10px] leading-none"
+                    className="p-0 w-4 h-4 rounded-full bg-black/50 border border-white/15 text-ink-2 hover:text-white font-mono-hud text-[10px] leading-none"
                   >
                     ×
                   </button>
@@ -1275,7 +1368,7 @@ function ActiveDashboard({
                       type="button"
                       aria-label={`Raise ${STAT_LABELS[k]} stage`}
                       onClick={() => bumpStage(k, 1)}
-                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
+                      className="p-0 w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
                     >
                       +
                     </button>
@@ -1291,7 +1384,7 @@ function ActiveDashboard({
                       type="button"
                       aria-label={`Lower ${STAT_LABELS[k]} stage`}
                       onClick={() => bumpStage(k, -1)}
-                      className="w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
+                      className="p-0 w-[16px] h-[13px] rounded-[4px] border border-white/15 text-ink-2 hover:text-white hover:border-white/35 font-mono-hud text-[10px] leading-none transition"
                     >
                       −
                     </button>
