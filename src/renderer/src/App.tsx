@@ -1,6 +1,6 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { loadData } from './lib/data';
-import { DEFAULT_FORMAT, FORMAT_ORDER, FORMATS, FormatContext, isFormatId, type FormatId } from './lib/formats';
+import { ChangeFormatContext, DEFAULT_FORMAT, FORMAT_ORDER, FORMATS, FormatContext, isFormatId, type FormatId } from './lib/formats';
 import type { SmogonBundle } from './lib/smogon';
 import type { Pokemon, Move, HeldItem } from './lib/types';
 import { BIOMES, type BiomeName, type HudTeamMon } from './lib/hudFixtures';
@@ -146,19 +146,21 @@ export function App() {
     });
   };
 
-  // Tools hold state keyed to the old format's species, so close them and show
-  // the loading pill until the new data arrives.
-  const changeFormat = (id: FormatId) => {
-    if (id === formatId) return;
-    try {
-      localStorage.setItem(FORMAT_KEY, id);
-    } catch {
-      /* storage unavailable: the choice lasts until restart */
-    }
-    setOpenArea(null);
-    setPokemon(null);
-    setFormatId(id);
-  };
+  // Tools hold state keyed to the old format's species, so the open page is
+  // remounted (its key includes the format) once the new data arrives.
+  const changeFormat = useCallback(
+    (id: FormatId) => {
+      if (id === formatId) return;
+      try {
+        localStorage.setItem(FORMAT_KEY, id);
+      } catch {
+        /* storage unavailable: the choice lasts until restart */
+      }
+      setPokemon(null);
+      setFormatId(id);
+    },
+    [formatId],
+  );
 
   const pokemonById = useMemo(() => {
     const m: Record<string, Pokemon> = {};
@@ -356,252 +358,262 @@ export function App() {
 
   return (
     <FormatContext.Provider value={format}>
-      <div
-        className={`hud-root hud-perspective relative w-screen overflow-hidden ${
-          openTool ? 'dive-open' : ''
-        } ${perfLite ? 'perf-lite' : ''}`}
-        style={{ height: '100vh' }}
-      >
-        <div className="biome">
-          <div className="biome-blob a" />
-          <div className="biome-blob b" />
-          <div className="biome-blob c" />
-        </div>
-
+      <ChangeFormatContext.Provider value={changeFormat}>
         <div
-          className="base-layer relative z-10 w-full p-6 grid"
-          style={{
-            height: '100vh',
-            gridTemplateColumns: 'minmax(280px, 320px) minmax(0, 1fr) minmax(180px, 220px)',
-            gridTemplateRows: 'auto minmax(0, 1fr) auto',
-            columnGap: '20px',
-            rowGap: '16px',
-          }}
+          className={`hud-root hud-perspective relative w-screen overflow-hidden ${
+            openTool ? 'dive-open' : ''
+          } ${perfLite ? 'perf-lite' : ''}`}
+          style={{ height: '100vh' }}
         >
-          {/* ROW 1 - (Focus Lens spans up from row 2), spacer, Squad pill */}
-          <div style={{ gridColumn: '2 / 3', gridRow: '1 / 2' }} />
-          <div
-            style={{ gridColumn: '3 / 4', gridRow: '1 / 2' }}
-            className="flex justify-end items-start"
-          >
-            {hudTeam.length > 0 && (
-              <div className="font-mono-hud text-[14px] uppercase tracking-[.28em] text-accent-2 flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: 'var(--hud-accent-2)',
-                    boxShadow: '0 0 8px var(--hud-accent-2)',
-                  }}
-                />
-                Squad · {hudTeam.length}/6
-              </div>
-            )}
+          <div className="biome">
+            <div className="biome-blob a" />
+            <div className="biome-blob b" />
+            <div className="biome-blob c" />
           </div>
 
-          {/* ROW 1-2 - FocusLens, SyncCore, TeamColumn */}
           <div
-            style={{ gridColumn: '1 / 2', gridRow: '1 / 3', minHeight: 0, minWidth: 0 }}
+            className="base-layer relative z-10 w-full p-6 grid"
+            style={{
+              height: '100vh',
+              gridTemplateColumns: 'minmax(280px, 320px) minmax(0, 1fr) minmax(180px, 220px)',
+              gridTemplateRows: 'auto minmax(0, 1fr) auto',
+              columnGap: '20px',
+              rowGap: '16px',
+            }}
           >
-            {focusMon ? (
-              <FocusLens mon={focusMon} />
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <div className="glass rounded-[16px] px-5 py-6 text-center max-w-[260px]">
-                  <div className="font-display text-[16px] font-bold text-ink-0 mb-1.5">
-                    No squad yet
-                  </div>
-                  <div className="font-mono-hud text-[14px] text-ink-2 leading-relaxed mb-3">
-                    Build a team to see it on your dashboard.
-                  </div>
-                  <button
-                    type="button"
-                    className="chunky font-display text-[12px]"
-                    style={{ padding: '6px 14px' }}
-                    onClick={() => showTool('team')}
-                  >
-                    OPEN TEAM BUILDER
-                  </button>
+            {/* ROW 1 - (Focus Lens spans up from row 2), spacer, Squad pill */}
+            <div style={{ gridColumn: '2 / 3', gridRow: '1 / 2' }} />
+            <div
+              style={{ gridColumn: '3 / 4', gridRow: '1 / 2' }}
+              className="flex justify-end items-start"
+            >
+              {hudTeam.length > 0 && (
+                <div className="font-mono-hud text-[14px] uppercase tracking-[.28em] text-accent-2 flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(86,230,194,.22)] bg-black/40">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{
+                      background: 'var(--hud-accent-2)',
+                      boxShadow: '0 0 8px var(--hud-accent-2)',
+                    }}
+                  />
+                  Squad · {hudTeam.length}/6
                 </div>
-              </div>
-            )}
-          </div>
-          <div
-            style={{ gridColumn: '2 / 3', gridRow: '2 / 3', minWidth: 0, minHeight: 0 }}
-            className="relative flex items-center justify-center"
-          >
-            <div className="relative" style={{ width: coreSize, height: coreSize }}>
-              <SyncCore
-                hexes={AREAS}
-                active={openArea}
-                size={coreSize}
-                onPick={(id) => setOpenArea((prev) => (prev === id ? null : id))}
-              />
+              )}
             </div>
-            {!dataReady && (
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 mono-panel px-4 py-2 rounded-full text-[14px]">
-                {loadError ? (
-                  <span style={{ color: 'var(--hud-danger)' }}>
-                    ⚠ {loadError}{' '}
+
+            {/* ROW 1-2 - FocusLens, SyncCore, TeamColumn */}
+            <div
+              style={{ gridColumn: '1 / 2', gridRow: '1 / 3', minHeight: 0, minWidth: 0 }}
+            >
+              {focusMon ? (
+                <FocusLens mon={focusMon} />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="glass rounded-[16px] px-5 py-6 text-center max-w-[260px]">
+                    <div className="font-display text-[16px] font-bold text-ink-0 mb-1.5">
+                      No squad yet
+                    </div>
+                    <div className="font-mono-hud text-[14px] text-ink-2 leading-relaxed mb-3">
+                      Build a team to see it on your dashboard.
+                    </div>
                     <button
                       type="button"
-                      className="underline ml-1"
-                      onClick={() => setLoadAttempt((n) => n + 1)}
+                      className="chunky font-display text-[12px]"
+                      style={{ padding: '6px 14px' }}
+                      onClick={() => showTool('team')}
                     >
-                      retry
+                      OPEN TEAM BUILDER
                     </button>
-                  </span>
-                ) : (
-                  <span>SYNCING DATA…</span>
-                )}
-              </div>
-            )}
-          </div>
-          <div
-            style={{ gridColumn: '3 / 4', gridRow: '2 / 3', minHeight: 0 }}
-            className="flex justify-end items-center overflow-visible"
-          >
-            {hudTeam.length > 0 ? (
-              <TeamColumn
-                team={hudTeam}
-                activeId={activeMonId}
-                  onPick={(id) => {
-                  setActiveMonId(id);
-                  setHoverMonId(null);
-                }}
-                onHover={setHoverMonId}
-              />
-            ) : (
-              <button
-                type="button"
-                className="glass rounded-[14px] px-4 py-5 text-center w-[170px] cursor-pointer hover:brightness-110 transition"
-                onClick={() => showTool('team')}
-                title="Build a team in the Team Builder"
-              >
-                <div className="text-[26px] leading-none mb-2 text-accent">＋</div>
-                <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-1">
-                  Add a team
+                  </div>
                 </div>
-              </button>
-            )}
+              )}
+            </div>
+            <div
+              style={{ gridColumn: '2 / 3', gridRow: '2 / 3', minWidth: 0, minHeight: 0 }}
+              className="relative flex items-center justify-center"
+            >
+              <div className="relative" style={{ width: coreSize, height: coreSize }}>
+                <SyncCore
+                  hexes={AREAS}
+                  active={openArea}
+                  size={coreSize}
+                  onPick={(id) => setOpenArea((prev) => (prev === id ? null : id))}
+                />
+              </div>
+              {!dataReady && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 mono-panel px-4 py-2 rounded-full text-[14px]">
+                  {loadError ? (
+                    <span style={{ color: 'var(--hud-danger)' }}>
+                      ⚠ {loadError}{' '}
+                      <button
+                        type="button"
+                        className="underline ml-1"
+                        onClick={() => setLoadAttempt((n) => n + 1)}
+                      >
+                        retry
+                      </button>
+                    </span>
+                  ) : (
+                    <span>SYNCING DATA…</span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div
+              style={{ gridColumn: '3 / 4', gridRow: '2 / 3', minHeight: 0 }}
+              className="flex justify-end items-center overflow-visible"
+            >
+              {hudTeam.length > 0 ? (
+                <TeamColumn
+                  team={hudTeam}
+                  activeId={activeMonId}
+                    onPick={(id) => {
+                    setActiveMonId(id);
+                    setHoverMonId(null);
+                  }}
+                  onHover={setHoverMonId}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="glass rounded-[14px] px-4 py-5 text-center w-[170px] cursor-pointer hover:brightness-110 transition"
+                  onClick={() => showTool('team')}
+                  title="Build a team in the Team Builder"
+                >
+                  <div className="text-[26px] leading-none mb-2 text-accent">＋</div>
+                  <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-1">
+                    Add a team
+                  </div>
+                </button>
+              )}
+            </div>
+
+            {/* ROW 3 - Telemetry strip + key hint */}
+            <div
+              style={{ gridColumn: '1 / 4', gridRow: '3 / 4' }}
+              data-ui="home-bar"
+              className="flex items-end justify-between gap-4"
+            >
+              <TelemetryStrip />
+              <div className="flex items-center gap-3">
+                <div className="key-hint" role="group" aria-label="Format">
+                  {FORMAT_ORDER.map((id, i) => (
+                    <Fragment key={id}>
+                      {i > 0 && <span className="sep">·</span>}
+                      <button
+                        type="button"
+                        onClick={() => changeFormat(id)}
+                        aria-pressed={id === formatId}
+                        title={`Use ${FORMATS[id].label} data in every tool`}
+                        className="cursor-pointer"
+                        style={{
+                          border: 'none',
+                          background: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                          letterSpacing: 'inherit',
+                          textTransform: 'inherit',
+                          color: id === formatId ? 'var(--hud-accent)' : 'inherit',
+                        }}
+                      >
+                        {FORMATS[id].shortLabel}
+                      </button>
+                    </Fragment>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleFx}
+                  title={
+                    perfLite
+                      ? 'Effects reduced for performance - click for full visuals'
+                      : 'Click to reduce effects (faster on weak GPUs)'
+                  }
+                  className="key-hint cursor-pointer"
+                  style={{ border: 'none' }}
+                >
+                  <span>
+                    <span style={{ color: perfLite ? 'var(--hud-accent)' : 'var(--hud-accent-2)' }}>
+                      FX
+                    </span>{' '}
+                    {perfLite ? 'lite' : 'full'}
+                  </span>
+                </button>
+                <div className="key-hint" title="Esc closes the open area; number keys 1–6 set your lead Pokémon">
+                  <span>
+                    <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> close
+                  </span>
+                  <span className="sep">·</span>
+                  <span>
+                    <span style={{ color: '#fff' }}>1–6</span> set lead
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* ROW 3 - Telemetry strip + key hint */}
+          {/* Dive overlay */}
+          <div className="dive-halo" />
+          <div className="dive-backdrop" onClick={closeArea} />
           <div
-            style={{ gridColumn: '1 / 4', gridRow: '3 / 4' }}
-            data-ui="home-bar"
-            className="flex items-end justify-between gap-4"
+            className="dive-stage"
+            role="dialog"
+            aria-modal="true"
+            aria-label={area?.label ?? ''}
           >
-            <TelemetryStrip />
-            <div className="flex items-center gap-3">
-              <div className="key-hint" role="group" aria-label="Format">
-                {FORMAT_ORDER.map((id, i) => (
-                  <Fragment key={id}>
-                    {i > 0 && <span className="sep">·</span>}
-                    <button
-                      type="button"
-                      onClick={() => changeFormat(id)}
-                      aria-pressed={id === formatId}
-                      title={`Use ${FORMATS[id].label} data in every tool`}
-                      className="cursor-pointer"
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        padding: 0,
-                        font: 'inherit',
-                        letterSpacing: 'inherit',
-                        textTransform: 'inherit',
-                        color: id === formatId ? 'var(--hud-accent)' : 'inherit',
-                      }}
-                    >
-                      {FORMATS[id].shortLabel}
-                    </button>
-                  </Fragment>
+            <div className="area-bar" data-ui="area-bar">
+              <div className="area-name hud-mark">{area?.label}</div>
+              <div className="area-tabs" role="tablist" aria-label={area ? `${area.label} tools` : undefined} onKeyDown={onTabKey}>
+                {area?.tools.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    data-ui="area-tab"
+                    data-tool={t}
+                    aria-selected={t === openTool}
+                    tabIndex={t === openTool ? 0 : -1}
+                    className={`area-tab ${t === openTool ? 'active' : ''}`}
+                    onClick={() => showTool(t)}
+                  >
+                    {TOOL_NAMES[t]}
+                  </button>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={toggleFx}
-                title={
-                  perfLite
-                    ? 'Effects reduced for performance - click for full visuals'
-                    : 'Click to reduce effects (faster on weak GPUs)'
-                }
-                className="key-hint cursor-pointer"
-                style={{ border: 'none' }}
-              >
-                <span>
-                  <span style={{ color: perfLite ? 'var(--hud-accent)' : 'var(--hud-accent-2)' }}>
-                    FX
-                  </span>{' '}
-                  {perfLite ? 'lite' : 'full'}
-                </span>
+              <div className="dive-esc-hint" data-ui="close-hint">ESC · CLOSE</div>
+              <button type="button" className="dive-close" data-ui="close" onClick={closeArea} aria-label="Close">
+                <span className="sr-only">Close</span>
               </button>
-              <div className="key-hint" title="Esc closes the open area; number keys 1–6 set your lead Pokémon">
-                <span>
-                  <span style={{ color: 'var(--hud-accent-2)' }}>ESC</span> close
-                </span>
-                <span className="sep">·</span>
-                <span>
-                  <span style={{ color: '#fff' }}>1–6</span> set lead
-                </span>
+            </div>
+            <div
+              className={`dive-content ${staggerIn ? 'dive-stagger-in' : ''}`}
+              key={`${openTool || 'empty'}-${formatId}`}
+            >
+              <div className="ds">
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      <div className="mono-panel px-4 py-2 rounded-full text-[14px]">
+                        LOADING MODULE…
+                      </div>
+                    </div>
+                  }
+                >
+                  <ToolContext.Provider value={openInfo}>
+                    {openTool && !pokemon ? (
+                      <div className="flex items-center justify-center py-16">
+                        <div className="mono-panel px-4 py-2 rounded-full text-[14px]">LOADING {format.shortLabel.toUpperCase()} DATA…</div>
+                      </div>
+                    ) : (
+                      diveModule
+                    )}
+                  </ToolContext.Provider>
+                </Suspense>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Dive overlay */}
-        <div className="dive-halo" />
-        <div className="dive-backdrop" onClick={closeArea} />
-        <div
-          className="dive-stage"
-          role="dialog"
-          aria-modal="true"
-          aria-label={area?.label ?? ''}
-        >
-          <div className="area-bar" data-ui="area-bar">
-            <div className="area-name hud-mark">{area?.label}</div>
-            <div className="area-tabs" role="tablist" aria-label={area ? `${area.label} tools` : undefined} onKeyDown={onTabKey}>
-              {area?.tools.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  data-ui="area-tab"
-                  data-tool={t}
-                  aria-selected={t === openTool}
-                  tabIndex={t === openTool ? 0 : -1}
-                  className={`area-tab ${t === openTool ? 'active' : ''}`}
-                  onClick={() => showTool(t)}
-                >
-                  {TOOL_NAMES[t]}
-                </button>
-              ))}
-            </div>
-            <div className="dive-esc-hint" data-ui="close-hint">ESC · CLOSE</div>
-            <button type="button" className="dive-close" data-ui="close" onClick={closeArea} aria-label="Close">
-              <span className="sr-only">Close</span>
-            </button>
-          </div>
-          <div
-            className={`dive-content ${staggerIn ? 'dive-stagger-in' : ''}`}
-            key={openTool || 'empty'}
-          >
-            <div className="ds">
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center h-full">
-                    <div className="mono-panel px-4 py-2 rounded-full text-[14px]">
-                      LOADING MODULE…
-                    </div>
-                  </div>
-                }
-              >
-                <ToolContext.Provider value={openInfo}>{diveModule}</ToolContext.Provider>
-              </Suspense>
-            </div>
-          </div>
-        </div>
-      </div>
+      </ChangeFormatContext.Provider>
     </FormatContext.Provider>
   );
 }

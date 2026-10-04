@@ -51,6 +51,13 @@ export function isFormatId(value: unknown): value is FormatId {
 
 export const FormatContext = createContext<FormatProfile>(FORMATS[DEFAULT_FORMAT]);
 
+/** Switches the app's format; pages reload with the new format's data. */
+export const ChangeFormatContext = createContext<((id: FormatId) => void) | null>(null);
+
+export function useChangeFormat(): ((id: FormatId) => void) | null {
+  return useContext(ChangeFormatContext);
+}
+
 export function useFormat(): FormatProfile {
   return useContext(FormatContext);
 }

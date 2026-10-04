@@ -308,10 +308,10 @@ Small items, any time. Each is one commit.
 
 ## 7. Open questions for the owner
 
-- The PC Box has "TR planning" (`lib/pc/trPriority.ts`, `trAssign.ts`).
-  Technical Records are a Sword and Shield item and mean nothing on Showdown.
-  Remove it, or reword it as "moves to teach"?
+Decided so far: the PC Box's TR planning became "Moves to teach", limited to
+moves learnable in the selected format with a format toggle in the panel;
+Practice defaults to the Search bot.
+
 - Fetch Smogon sample sets at runtime instead of bundling their move lists
   and spreads?
 - Rename the GitHub repo to `stab-lab`?
-- Which bot level should Practice default to (suggested: level 2)?

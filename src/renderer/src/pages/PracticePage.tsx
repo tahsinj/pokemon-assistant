@@ -66,7 +66,8 @@ export function PracticePage({
   const [paste, setPaste] = useState('');
   const [foeSource, setFoeSource] = useState<FoeSource>(smogon ? 'meta' : 'random');
   const [foeTeamId, setFoeTeamId] = useState('');
-  const [level, setLevel] = useState<BotLevel>(1);
+  // Search is the default: it plays sensibly and answers in well under a second.
+  const [level, setLevel] = useState<BotLevel>(2);
   const [view, setView] = useState<SessionView | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assignTr } from './trAssign';
+import { rankLearners } from './teachAssign';
 import type { Pokemon, Move } from '../types';
 import type { SmogonBundle, SmogonSpeciesIntel } from '../smogon';
 
@@ -46,12 +46,12 @@ const MOVES: Record<string, Move> = {
   earthquake: move('earthquake'),
 };
 
-describe('assignTr', () => {
+describe('rankLearners', () => {
   it('returns null for a move not in the dataset', () => {
-    expect(assignTr('hyperbeam', [], {}, MOVES, null)).toBeNull();
+    expect(rankLearners('hyperbeam', [], {}, MOVES, null)).toBeNull();
   });
 
-  it('ranks mons that want the TM above those that merely can learn it', () => {
+  it('ranks mons that want the move above those that merely can learn it', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]),
       pidgey: mon('pidgey', [{ learn: 'tutor', move: 'knockoff' }]),
@@ -61,7 +61,7 @@ describe('assignTr', () => {
       pidgey: intel(0.001, []), // can learn it, nobody runs it
     });
 
-    const res = assignTr(
+    const res = rankLearners(
       'knockoff',
       [
         { slot: 0, speciesId: 'tyranitar', moves: ['Crunch'] },
@@ -82,7 +82,7 @@ describe('assignTr', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]) };
     const smogon = bundle({ tyranitar: intel(0.12, [{ name: 'Knock Off', pct: 85 }]) });
 
-    const res = assignTr(
+    const res = rankLearners(
       'knockoff',
       [{ slot: 3, speciesId: 'tyranitar', nickname: 'Rocky', moves: ['Knock Off'] }],
       pokemonById,
@@ -94,15 +94,15 @@ describe('assignTr', () => {
     expect(res!.alreadyKnow).toEqual([{ slot: 3, speciesName: 'Tyranitar', nickname: 'Rocky' }]);
   });
 
-  it('counts mons that cannot be taught the move', () => {
+  it('counts mons that cannot learn the move in the format', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]),
-      // only learns it by level-up - not a TM, so not teachable
-      magikarp: mon('magikarp', [{ learn: '15', move: 'knockoff' }]),
+      // Magikarp has no way to learn it.
+      magikarp: mon('magikarp', [{ learn: '15', move: 'splash' }]),
     };
     const smogon = bundle({ tyranitar: intel(0.12, [{ name: 'Knock Off', pct: 85 }]) });
 
-    const res = assignTr(
+    const res = rankLearners(
       'knockoff',
       [
         { slot: 0, speciesId: 'tyranitar', moves: ['Crunch'] },
@@ -114,6 +114,7 @@ describe('assignTr', () => {
     );
 
     expect(res!.candidates.map((c) => c.speciesId)).toEqual(['tyranitar']);
+    expect(res!.candidates[0].how).toBe('TM');
     expect(res!.cannotLearnCount).toBe(1);
   });
 
@@ -128,7 +129,7 @@ describe('assignTr', () => {
       weavile: intel(0.1, [{ name: 'Knock Off', pct: 60 }]),
     });
 
-    const res = assignTr(
+    const res = rankLearners(
       'knockoff',
       [
         { slot: 0, speciesId: 'tyranitar', moves: ['Crunch'] },
@@ -148,7 +149,7 @@ describe('assignTr', () => {
   it('still surfaces a learnable mon when no usage data exists', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]) };
 
-    const res = assignTr(
+    const res = rankLearners(
       'knockoff',
       [{ slot: 0, speciesId: 'tyranitar', moves: ['Crunch'] }],
       pokemonById,

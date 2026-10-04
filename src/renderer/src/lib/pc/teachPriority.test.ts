@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTrPriorities, TR_MIN_MOVE_PCT } from './trPriority';
+import { computeTeachPriorities, TEACH_MIN_MOVE_PCT } from './teachPriority';
 import type { Pokemon, Move } from '../types';
 import type { SmogonBundle, SmogonSpeciesIntel } from '../smogon';
 
@@ -46,12 +46,12 @@ const MOVES: Record<string, Move> = {
   earthquake: move('earthquake'),
 };
 
-describe('computeTrPriorities', () => {
+describe('computeTeachPriorities', () => {
   it('flags a heavily-used taught move the mon is missing', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]) };
     const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Knock Off', pct: 80 }]) });
 
-    const out = computeTrPriorities(
+    const out = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Crunch', 'Earthquake'] }],
       pokemonById,
       MOVES,
@@ -68,7 +68,7 @@ describe('computeTrPriorities', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]) };
     const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Knock Off', pct: 80 }]) });
 
-    const out = computeTrPriorities(
+    const out = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Knock Off'] }],
       pokemonById,
       MOVES,
@@ -78,35 +78,50 @@ describe('computeTrPriorities', () => {
     expect(out).toHaveLength(0);
   });
 
-  it('only counts taught (tm/tutor) moves, not level-up or egg moves', () => {
+  it('counts any way the species learns the move in the format, and says how', () => {
     const pokemonById = {
       tyranitar: mon('tyranitar', [
-        { learn: '15', move: 'crunch' }, // level-up: free, not a TM
-        { learn: 'egg', move: 'knockoff' }, // egg: bred, not a TM
+        { learn: '15', move: 'crunch' },
+        { learn: 'tm', move: 'crunch' },
+        { learn: 'egg', move: 'knockoff' },
+        { learn: 'legacy', move: 'pursuit' },
       ]),
     };
     const smogon = bundle({
       tyranitar: intel(0.1, [
         { name: 'Crunch', pct: 90 },
-        { name: 'Knock Off', pct: 90 },
+        { name: 'Knock Off', pct: 80 },
+        { name: 'Pursuit', pct: 70 },
+        { name: 'Stone Edge', pct: 60 },
       ]),
     });
 
-    const out = computeTrPriorities(
+    // National Dex still has Pursuit; Gen 9 OU's data would drop both the move and the legacy learn.
+    const out = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Earthquake'] }],
       pokemonById,
-      MOVES,
+      { ...MOVES, pursuit: move('pursuit') },
       smogon,
     );
 
+    const how = Object.fromEntries(out.map((e) => [e.moveId, e.wantedBy[0].how]));
+    // Level-up wins over TM as the easier way to teach it; Stone Edge isn't learnable here.
+    expect(how).toEqual({ crunch: 'Lv 15', knockoff: 'Egg', pursuit: 'Past gen' });
+  });
+
+  it('never suggests moves the format does not have', () => {
+    // A move the format dropped (not in the format's move list) is skipped even if usage lists it.
+    const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'notarealmove' }]) };
+    const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Not A Real Move', pct: 90 }]) });
+    const out = computeTeachPriorities([{ speciesId: 'tyranitar', moves: [] }], pokemonById, MOVES, smogon);
     expect(out).toHaveLength(0);
   });
 
   it('drops moves below the usage threshold', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tutor', move: 'knockoff' }]) };
-    const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Knock Off', pct: TR_MIN_MOVE_PCT - 1 }]) });
+    const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Knock Off', pct: TEACH_MIN_MOVE_PCT - 1 }]) });
 
-    const out = computeTrPriorities(
+    const out = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Crunch'] }],
       pokemonById,
       MOVES,
@@ -119,13 +134,13 @@ describe('computeTrPriorities', () => {
   it('boosts a move wanted by a mon that is on a saved team', () => {
     const pokemonById = { tyranitar: mon('tyranitar', [{ learn: 'tm', move: 'knockoff' }]) };
     const smogon = bundle({ tyranitar: intel(0.1, [{ name: 'Knock Off', pct: 80 }]) });
-    const base = computeTrPriorities(
+    const base = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Crunch'] }],
       pokemonById,
       MOVES,
       smogon,
     );
-    const boosted = computeTrPriorities(
+    const boosted = computeTeachPriorities(
       [{ speciesId: 'tyranitar', moves: ['Crunch'] }],
       pokemonById,
       MOVES,
@@ -153,7 +168,7 @@ describe('computeTrPriorities', () => {
       garchomp: intel(0.15, [{ name: 'Earthquake', pct: 95 }]),
     });
 
-    const out = computeTrPriorities(
+    const out = computeTeachPriorities(
       [
         { speciesId: 'tyranitar', moves: ['Crunch'] },
         { speciesId: 'garchomp', moves: ['Dragon Claw'] },

@@ -48,12 +48,13 @@ import {
   exportBoxTxt,
 } from '../lib/pc/export';
 import { reviewStoredMon, reviewReadiness, type OptSuggestion, type OptSeverity, type Readiness } from '../lib/pc/optimize';
-import { computeTrPriorities, type TrPriorityEntry } from '../lib/pc/trPriority';
-import { assignTr, type TrAssignResult, type TrAssignCandidate } from '../lib/pc/trAssign';
+import { computeTeachPriorities, type TeachPriorityEntry } from '../lib/pc/teachPriority';
+import { rankLearners, type TeachAssignResult, type TeachCandidate } from '../lib/pc/teachAssign';
 import { loadDismissed, toggleDismissed, dismissalId, partitionDismissed } from '../lib/pc/dismissedTips';
 import { usePersistentState } from '../lib/usePersistentState';
 import type { StatKey } from '../lib/types';
 import { abilityName } from '../lib/displayNames';
+import { FormatToggle } from '../components/FormatToggle';
 
 type EditorMode = 'closed' | 'pick-species' | 'view' | 'edit';
 
@@ -170,7 +171,7 @@ export function PcPage({
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
   const [tabRenameDraft, setTabRenameDraft] = useState('');
   const [boxCounts, setBoxCounts] = useState<Record<string, number>>({});
-  // Species that sit on a saved team - they weight TM priorities up.
+  // Species that sit on a saved team weigh more in the moves-to-teach list.
   const [teamSpeciesIds, setTeamSpeciesIds] = useState<Set<string>>(() => new Set());
   const [hasLastExport, setHasLastExport] = useState(false);
   const [dragOver, setDragOver] = useState<{ boxId: string; slot?: number } | null>(null);
@@ -251,7 +252,7 @@ export function PcPage({
     return m;
   }, [occupants, pokemonById, smogon, dismissedTips]);
 
-  // Load the species sitting on saved teams so TM priorities can weight them up.
+  // Load the species sitting on saved teams so moves to teach can weigh them up.
   useEffect(() => {
     if (!bridge?.teamsList || !bridge.teamsLoad) return;
     let cancelled = false;
@@ -269,10 +270,10 @@ export function PcPage({
     };
   }, [bridge]);
 
-  // Ranked taught-moves (TMs) worth acquiring for the mons in this box.
-  const trPriorities = useMemo(
+  // Moves worth teaching the mons in this box, from what the format allows.
+  const teachPriorities = useMemo(
     () =>
-      computeTrPriorities(
+      computeTeachPriorities(
         occupants.map((o) => ({ speciesId: o.speciesId, moves: o.moves })),
         pokemonById,
         moves,
@@ -282,17 +283,15 @@ export function PcPage({
     [occupants, pokemonById, moves, smogon, teamSpeciesIds],
   );
 
-  // "Who should I give this TM to?" - the inverse query. Pick a move; rank the
-  // box mons that can learn it and want it. The picker is scoped to the moves at
-  // least one mon here can actually be taught (the records that matter for box).
-  const [trAssignMove, setTrAssignMove] = useState('');
+  // The inverse: pick a move and rank the box mons that can learn it and want
+  // it. The picker lists only moves at least one mon here can learn in the format.
+  const [learnMove, setLearnMove] = useState('');
   const boxTeachableMoves = useMemo(() => {
     const seen = new Map<string, string>(); // moveId -> display name
     for (const o of occupants) {
       const sp = pokemonById[o.speciesId];
       if (!sp) continue;
       for (const lm of sp.moves) {
-        if (lm.learn !== 'tm' && lm.learn !== 'tutor') continue;
         const id = lm.move.toLowerCase().replace(/[^a-z0-9]/g, '');
         const m = moves[id];
         if (m && !seen.has(id)) seen.set(id, m.name);
@@ -303,10 +302,10 @@ export function PcPage({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [occupants, pokemonById, moves]);
 
-  const trAssignResult = useMemo(() => {
-    const id = trAssignMove.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const learnResult = useMemo(() => {
+    const id = learnMove.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!id) return null;
-    return assignTr(
+    return rankLearners(
       id,
       occupants.map((o) => ({ slot: o.slot, speciesId: o.speciesId, nickname: o.nickname, moves: o.moves })),
       pokemonById,
@@ -314,7 +313,7 @@ export function PcPage({
       smogon,
       teamSpeciesIds,
     );
-  }, [trAssignMove, occupants, pokemonById, moves, smogon, teamSpeciesIds]);
+  }, [learnMove, occupants, pokemonById, moves, smogon, teamSpeciesIds]);
 
   const refreshBoxes = useCallback(async () => {
     if (!bridge?.pcBoxesList) return;
@@ -944,13 +943,18 @@ export function PcPage({
             })}
           </div>
 
-          {smogon && <TrPriorityPanel entries={trPriorities} hasMons={occupants.length > 0} />}
+          <div className="flex flex-wrap items-center gap-2 mt-4" data-ui="teach-format">
+            <span className="font-sans text-[13px] text-ink-2">Moves learnable in</span>
+            <FormatToggle />
+          </div>
 
-          <TrAssignPanel
-            value={trAssignMove}
-            onChange={setTrAssignMove}
+          {smogon && <MovesToTeachPanel entries={teachPriorities} hasMons={occupants.length > 0} />}
+
+          <WhoLearnsPanel
+            value={learnMove}
+            onChange={setLearnMove}
             options={boxTeachableMoves}
-            result={trAssignResult}
+            result={learnResult}
             hasMons={occupants.length > 0}
           />
 
@@ -1761,17 +1765,17 @@ function StatGridText({
   );
 }
 
-const TR_TIER_STYLE: Record<TrPriorityEntry['tier'], { color: string; label: string }> = {
+const TEACH_TIER_STYLE: Record<TeachPriorityEntry['tier'], { color: string; label: string }> = {
   high: { color: '#f2c14e', label: 'High' },
   medium: { color: '#7aa2d8', label: 'Med' },
   low: { color: 'var(--fg-dim)', label: 'Low' },
 };
 
 /**
- * Ranked list of taught moves (TMs and tutor moves) the mons in this box want but
- * don't run - prioritized by meta usage and saved-team membership.
+ * Moves the mons in this box can learn in the format, that ladder sets run and
+ * they don't, ranked by usage and saved-team membership.
  */
-function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; hasMons: boolean }) {
+function MovesToTeachPanel({ entries, hasMons }: { entries: TeachPriorityEntry[]; hasMons: boolean }) {
   const [open, setOpen] = useState(true);
   const shown = entries.slice(0, 12);
   return (
@@ -1780,7 +1784,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="section-head"
-        title="Taught moves (TM / tutor) your box mons want but don't run, ranked by ladder usage and team membership. ★ = the mon is on a saved team."
+        title="Moves your box Pokémon can learn in this format and ladder sets run, but they don't have yet. Ranked by ladder usage and team membership. ★ = on a saved team."
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -1792,7 +1796,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
           cursor: 'pointer',
         }}
       >
-        TM Priorities
+        Moves to teach
         <span style={{ color: 'var(--fg-dim)', fontWeight: 400 }}>({entries.length})</span>
         <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 12 }}>
           {open ? '▾' : '▸'}
@@ -1802,8 +1806,8 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
         (entries.length === 0 ? (
           <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '4px 0 0' }}>
             {hasMons
-              ? 'Every mon here already runs its standard taught moves.'
-              : 'Add Pokémon to this box to see which TMs to chase.'}
+              ? 'Every Pokémon here already runs its standard moves.'
+              : 'Add Pokémon to this box to see which moves to teach.'}
           </p>
         ) : (
           <ol
@@ -1817,7 +1821,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
             }}
           >
             {shown.map((e, i) => {
-              const ts = TR_TIER_STYLE[e.tier];
+              const ts = TEACH_TIER_STYLE[e.tier];
               return (
                 <li
                   key={e.moveId}
@@ -1848,7 +1852,7 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
                     {e.wantedBy.map((w, j) => (
                       <span key={w.speciesId + j}>
                         {j > 0 && ' · '}
-                        {w.speciesName} {w.moveUsagePct.toFixed(0)}%{w.onTeam ? ' ★' : ''}
+                        {w.speciesName} {w.moveUsagePct.toFixed(0)}% ({w.how}){w.onTeam ? ' ★' : ''}
                       </span>
                     ))}
                   </div>
@@ -1866,18 +1870,18 @@ function TrPriorityPanel({ entries, hasMons }: { entries: TrPriorityEntry[]; has
   );
 }
 
-const TR_ASSIGN_TIER_STYLE: Record<TrAssignCandidate['tier'], { color: string; label: string }> = {
+const LEARNER_TIER_STYLE: Record<TeachCandidate['tier'], { color: string; label: string }> = {
   high: { color: '#6fcf97', label: 'Best fit' },
   medium: { color: '#7aa2d8', label: 'Good fit' },
   low: { color: 'var(--fg-dim)', label: 'Coverage' },
 };
 
 /**
- * "I have this TM - who should I give it to?" Pick a move from the box's
- * teachable set and see the mons that can learn it, ranked by how much they want
- * it. The inverse of {@link TrPriorityPanel}.
+ * "Who should learn this move?" Pick a move the box can learn and see the mons
+ * that can learn it, ranked by how much they want it. The inverse of
+ * {@link MovesToTeachPanel}.
  */
-function TrAssignPanel({
+function WhoLearnsPanel({
   value,
   onChange,
   options,
@@ -1887,7 +1891,7 @@ function TrAssignPanel({
   value: string;
   onChange: (v: string) => void;
   options: { id: string; name: string }[];
-  result: TrAssignResult | null;
+  result: TeachAssignResult | null;
   hasMons: boolean;
 }) {
   const [open, setOpen] = useState(true);
@@ -1897,7 +1901,7 @@ function TrAssignPanel({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="section-head"
-        title="Have a TM in hand? Pick the move and see which mon in this box should learn it, ranked by ladder usage and saved-team membership."
+        title="Pick a move and see which Pokémon in this box should learn it, ranked by ladder usage and saved-team membership."
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -1909,7 +1913,7 @@ function TrAssignPanel({
           cursor: 'pointer',
         }}
       >
-        Who gets this TM?
+        Who should learn it?
         <span style={{ marginLeft: 'auto', color: 'var(--fg-dim)', fontWeight: 400, fontSize: 12 }}>
           {open ? '▾' : '▸'}
         </span>
@@ -1918,7 +1922,7 @@ function TrAssignPanel({
         <>
           <input
             type="text"
-            list="tr-assign-moves"
+            list="teach-moves"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={hasMons ? 'Type a move (e.g. Knock Off)…' : 'Add Pokémon to this box first'}
@@ -1935,7 +1939,7 @@ function TrAssignPanel({
               color: 'var(--ink-0)',
             }}
           />
-          <datalist id="tr-assign-moves">
+          <datalist id="teach-moves">
             {options.map((o) => (
               <option key={o.id} value={o.name} />
             ))}
@@ -1944,15 +1948,15 @@ function TrAssignPanel({
           {!value.trim() ? (
             <p className="text-[13px] text-ink-2 mt-2 mb-0">
               {hasMons
-                ? `Pick from ${options.length} ${options.length === 1 ? 'move' : 'moves'} the mons in this box can be taught.`
-                : 'Add Pokémon to this box to match a TM to a recipient.'}
+                ? `Pick from ${options.length} ${options.length === 1 ? 'move' : 'moves'} the Pokémon in this box can learn in this format.`
+                : 'Add Pokémon to this box to find who should learn a move.'}
             </p>
           ) : !result ? (
             <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
               No move matching “{value.trim()}”. Pick one from the list.
             </p>
           ) : (
-            <TrAssignResults result={result} />
+            <TeachAssignResults result={result} />
           )}
         </>
       )}
@@ -1960,7 +1964,7 @@ function TrAssignPanel({
   );
 }
 
-function TrAssignResults({ result }: { result: TrAssignResult }) {
+function TeachAssignResults({ result }: { result: TeachAssignResult }) {
   if (result.candidates.length === 0) {
     return (
       <p style={{ fontSize: 12, color: 'var(--fg-dim)', margin: '8px 0 0' }}>
@@ -1985,7 +1989,7 @@ function TrAssignResults({ result }: { result: TrAssignResult }) {
         }}
       >
         {result.candidates.map((c, i) => {
-          const ts = TR_ASSIGN_TIER_STYLE[c.tier];
+          const ts = LEARNER_TIER_STYLE[c.tier];
           return (
             <li
               key={`${c.slot}-${c.speciesId}`}
@@ -2015,7 +2019,7 @@ function TrAssignResults({ result }: { result: TrAssignResult }) {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--fg-dim)', paddingLeft: 24 }}>
-                Box slot {c.slot + 1} · {c.reason}
+                Box slot {c.slot + 1} · {c.how} · {c.reason}
               </div>
             </li>
           );

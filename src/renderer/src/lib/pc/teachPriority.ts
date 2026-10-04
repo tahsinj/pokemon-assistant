@@ -1,27 +1,25 @@
 /**
- * TM priority list for a PC box.
+ * Moves to teach across a PC box.
  *
- * Moves a species doesn't get by level-up or breeding have to be taught. This
- * module scans the mons in a box and answers: "Across everything I'm storing, which
- * taught moves should I acquire first?" - ranked by how much each mon that wants
- * the move matters (ladder usage = meta impact, plus a boost for mons on a saved
- * team) and how standard the move is for that mon.
+ * Answers "which moves should my box Pokémon learn first?": moves each
+ * species can learn in the active format, that ladder sets run, and that the
+ * stored Pokémon doesn't have yet. Ranked by how much the Pokémon that want a
+ * move matter (ladder usage, plus a boost for Pokémon on a saved team) and how
+ * standard the move is on them.
  *
- * Pure + dependency-light so it unit-tests in the node vitest env.
+ * The species data passed in is already narrowed to the format, so Gen 9 OU
+ * never suggests moves that only older games teach, while National Dex does.
  */
 
 import type { Move, Pokemon } from '../types';
 import type { SmogonBundle } from '../smogon';
+import { learnLabel } from '../displayNames';
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// A move only counts as a "TM" if the species must be *taught* it. Level-up moves
-// come for free as the mon grows; egg/legacy moves are bred, not farmed as records.
-const TAUGHT_TAGS = new Set(['tm', 'tutor']);
-
 // A missing move needs at least this much ladder usage on the species before it's
-// worth flagging as a TM to chase.
-export const TR_MIN_MOVE_PCT = 20;
+// worth suggesting.
+export const TEACH_MIN_MOVE_PCT = 20;
 
 // Species usage (fraction) at which meta weight saturates. ~15% usage is already a
 // top-of-ladder staple in the format.
@@ -31,7 +29,7 @@ const USAGE_SATURATION = 0.15;
 // sitting in storage.
 const ON_TEAM_MULTIPLIER = 1.8;
 
-export interface TrWanter {
+export interface TeachWanter {
   speciesId: string;
   speciesName: string;
   /** Ladder usage of this move on this species, 0..100. */
@@ -42,45 +40,62 @@ export interface TrWanter {
   onTeam: boolean;
   /** This mon's contribution to the move's aggregate score. */
   points: number;
+  /** How this species learns the move, e.g. "Lv 40", "TM", "Egg", "Past gen". */
+  how: string;
 }
 
-export interface TrPriorityEntry {
+export interface TeachPriorityEntry {
   moveId: string;
   moveName: string;
   type: string;
   category: string;
-  /** Aggregate priority across every box mon that wants this TM. */
+  /** Aggregate priority across every box mon that wants this move. */
   score: number;
   tier: 'high' | 'medium' | 'low';
-  /** Mons that want this TM, highest contributor first. */
-  wantedBy: TrWanter[];
+  /** Mons that want this move, highest contributor first. */
+  wantedBy: TeachWanter[];
 }
 
-export interface TrMonInput {
+export interface TeachMonInput {
   speciesId: string;
   moves: string[];
 }
 
-function tierFor(score: number): TrPriorityEntry['tier'] {
+function tierFor(score: number): TeachPriorityEntry['tier'] {
   if (score >= 90) return 'high';
   if (score >= 45) return 'medium';
   return 'low';
 }
 
+/** Order for picking one learn method to show: the easiest to use in a game first. */
+const METHOD_ORDER = ['level', 'tm', 'tutor', 'egg', 'event', 'legacy'];
+const methodRank = (learn: string) => METHOD_ORDER.indexOf(/^\d+$/.test(learn) ? 'level' : learn);
+
+/** How a species learns a move in the active format, or null when it can't. */
+export function howLearned(species: Pokemon, moveId: string): string | null {
+  const id = norm(moveId);
+  let best: string | null = null;
+  for (const lm of species.moves) {
+    if (norm(lm.move) !== id) continue;
+    if (best === null || methodRank(lm.learn) < methodRank(best)) best = lm.learn;
+  }
+  return best === null ? null : learnLabel(best);
+}
+
 /**
- * Rank the taught moves worth acquiring for a set of stored mons.
+ * Rank the moves worth teaching a set of stored mons.
  *
  * @param teamSpeciesIds species ids (Pokemon.id) that appear on saved teams.
  */
-export function computeTrPriorities(
-  mons: TrMonInput[],
+export function computeTeachPriorities(
+  mons: TeachMonInput[],
   pokemonById: Record<string, Pokemon>,
   movesById: Record<string, Move>,
   smogon: SmogonBundle | null,
   teamSpeciesIds: Set<string> = new Set(),
-): TrPriorityEntry[] {
+): TeachPriorityEntry[] {
   if (!smogon) return [];
-  const byMove = new Map<string, TrPriorityEntry>();
+  const byMove = new Map<string, TeachPriorityEntry>();
 
   for (const mon of mons) {
     const sp = pokemonById[mon.speciesId];
@@ -88,22 +103,19 @@ export function computeTrPriorities(
     const intel = smogon.species[sp.id];
     if (!intel) continue;
 
-    // What this species must be taught, by normalized move id.
-    const taught = new Set<string>();
-    for (const lm of sp.moves) if (TAUGHT_TAGS.has(lm.learn)) taught.add(norm(lm.move));
-
     const own = new Set(mon.moves.map(norm).filter(Boolean));
     const onTeam = teamSpeciesIds.has(sp.id);
     const metaWeight = 0.4 + 0.6 * Math.min(1, intel.usage / USAGE_SATURATION);
     const teamMult = onTeam ? ON_TEAM_MULTIPLIER : 1;
 
     for (const m of intel.moves) {
-      if (m.pct < TR_MIN_MOVE_PCT) continue; // not standard enough to chase
+      if (m.pct < TEACH_MIN_MOVE_PCT) continue; // not standard enough to suggest
       const nm = norm(m.name);
       if (own.has(nm)) continue; // already runs it
-      if (!taught.has(nm)) continue; // not a TM for this species (level/egg/unlearnable)
+      const how = howLearned(sp, nm);
+      if (!how) continue; // can't learn it in this format
       const move = movesById[nm];
-      if (!move) continue; // move missing from our dataset
+      if (!move) continue; // not a move in this format
 
       const points = (m.pct / 100) * metaWeight * teamMult * 100;
 
@@ -128,6 +140,7 @@ export function computeTrPriorities(
         speciesUsage: intel.usage,
         onTeam,
         points,
+        how,
       });
     }
   }

@@ -9,7 +9,7 @@ import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recomme
 import { defensiveProfile } from '../lib/typechart';
 import { MoveCard, SpriteFrame } from './hud/ModuleFrame';
 import { StatBar, TypeChip } from './hud/HudPrimitives';
-import { abilityName } from '../lib/displayNames';
+import { abilityName, learnLabel } from '../lib/displayNames';
 
 export function PokemonDexDetail({
   p,
@@ -322,12 +322,4 @@ export function PokemonDexDetail({
       </div>
     </div>
   );
-}
-
-/** How a move is learned, as shown in the learnset: "Lv 12", "TM", "Egg", "Past gen". */
-function learnLabel(learn: string): string {
-  if (/^\d+$/.test(learn)) return `Lv ${learn}`;
-  if (learn === 'tm') return 'TM';
-  if (learn === 'legacy') return 'Past gen';
-  return learn[0].toUpperCase() + learn.slice(1);
 }

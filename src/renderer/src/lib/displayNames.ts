@@ -42,3 +42,11 @@ export function speciesParts(p: Pick<Pokemon, 'name' | 'baseSpecies' | 'forme'>)
   if (!p.forme) return { base: p.name, form: null };
   return { base: p.baseSpecies ?? p.name, form: p.forme.replace(/-/g, ' ') };
 }
+
+/** How a move is learned, for display: "Lv 12", "TM", "Tutor", "Egg", "Event", "Past gen". */
+export function learnLabel(learn: string): string {
+  if (/^\d+$/.test(learn)) return `Lv ${learn}`;
+  if (learn === 'tm') return 'TM';
+  if (learn === 'legacy') return 'Past gen';
+  return learn.charAt(0).toUpperCase() + learn.slice(1);
+}
