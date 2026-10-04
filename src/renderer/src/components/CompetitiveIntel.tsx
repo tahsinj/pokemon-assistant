@@ -22,19 +22,19 @@ function SmogonSetCard({ name, set }: { name: string; set: SmogonSet }) {
   return (
     <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-1.5 min-w-0">
       <div className="font-display text-[14px] font-bold text-ink-0 truncate">{name}</div>
-      <div className="font-mono-hud text-[13px] text-ink-1">
+      <div className="font-mono-hud text-[14px] text-ink-1">
         {set.item.join(' / ') || 'No item'} · {set.ability ?? '-'} · {set.nature ?? '-'}
       </div>
       {evLine(set.evs) && (
-        <div className="font-mono-hud text-[12px] tabular-nums text-ink-2">EVs {evLine(set.evs)}</div>
+        <div className="font-mono-hud text-[14px] tabular-nums text-ink-2">EVs {evLine(set.evs)}</div>
       )}
       {ivLine(set.ivs) && (
-        <div className="font-mono-hud text-[12px] tabular-nums text-ink-2">IVs {ivLine(set.ivs)}</div>
+        <div className="font-mono-hud text-[14px] tabular-nums text-ink-2">IVs {ivLine(set.ivs)}</div>
       )}
       <div className="flex flex-col gap-0.5 mt-0.5">
         {set.moves.map((slot, i) => (
           <div key={i} className="font-display text-[14px] font-semibold text-ink-0 truncate">
-            <span className="font-mono-hud text-[12px] text-ink-2 mr-1.5">{i + 1}</span>
+            <span className="font-mono-hud text-[14px] text-ink-2 mr-1.5">{i + 1}</span>
             {slot.join(' / ')}
           </div>
         ))}
@@ -54,7 +54,7 @@ function PctRow({ name, pct, wrap }: { name: string; pct: number; wrap?: boolean
       <span className={`relative font-display text-[13px] font-semibold text-ink-0 min-w-0 ${wrap ? '' : 'truncate'}`}>
         {name}
       </span>
-      <span className="relative font-mono-hud text-[13px] tabular-nums text-ink-1 flex-shrink-0">
+      <span className="relative font-mono-hud text-[14px] tabular-nums text-ink-1 flex-shrink-0">
         {pct.toFixed(1)}%
       </span>
     </div>
@@ -166,7 +166,7 @@ export function CompetitiveIntel({
                       selectable ? 'hover:border-accent-2' : 'opacity-50 cursor-default'
                     }`}
                   >
-                    {t.name} <span className="font-mono-hud text-[12px] text-ink-2">{Math.round(t.pct)}%</span>
+                    {t.name} <span className="font-mono-hud text-[14px] text-ink-2">{Math.round(t.pct)}%</span>
                   </button>
                 );
               })}
@@ -200,7 +200,7 @@ export function CompetitiveIntel({
                     {c.name}
                   </span>
                   <span
-                    className="relative font-mono-hud text-[12px] tabular-nums font-semibold flex-shrink-0"
+                    className="relative font-mono-hud text-[14px] tabular-nums font-semibold flex-shrink-0"
                     style={{ color: c.score >= 0.7 ? 'var(--hud-danger)' : 'var(--ink-1)' }}
                   >
                     {(c.score * 100).toFixed(0)}

@@ -82,14 +82,14 @@ export function TeamCompositionPanel({
                 </span>
                 <span className="flex flex-wrap gap-1 mt-0.5">
                   {m.tags.length === 0 ? (
-                    <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
+                    <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                       no clear role
                     </span>
                   ) : (
                     m.tags.map((t) => (
                       <span
                         key={t}
-                        className="font-mono-hud text-[12px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/40 text-accent-2"
+                        className="font-mono-hud text-[14px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-black/40 text-accent-2"
                       >
                         {inferred ? '~' : ''}{ROLE_SHORT[t]}
                       </span>
@@ -107,7 +107,7 @@ export function TeamCompositionPanel({
         {audit.checklist.map((row) => (
           <div
             key={row.role}
-            className="flex items-center gap-1.5 font-mono-hud text-[12px] uppercase tracking-wider"
+            className="flex items-center gap-1.5 font-mono-hud text-[14px] uppercase tracking-wider"
             title={row.present ? row.filledBy.join(', ') : 'no member fills this role'}
           >
             <span style={{ color: row.present ? '#7cd87b' : 'var(--ink-2)' }}>
@@ -120,7 +120,7 @@ export function TeamCompositionPanel({
 
       {/* Prioritized insights */}
       {audit.gaps.length === 0 ? (
-        <div className="font-mono-hud text-[13px]" style={{ color: '#7cd87b' }}>
+        <div className="font-mono-hud text-[14px]" style={{ color: '#7cd87b' }}>
           ✓ Solid composition - no glaring role gaps.
         </div>
       ) : (
@@ -162,7 +162,7 @@ function GapRow({
         type="button"
         onClick={clickable ? onToggle : undefined}
         aria-expanded={open}
-        className={`w-full text-left font-mono-hud text-[13px] leading-snug flex items-start gap-1.5 ${
+        className={`w-full text-left font-mono-hud text-[14px] leading-snug flex items-start gap-1.5 ${
           clickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
         }`}
         style={{ color }}
@@ -177,7 +177,7 @@ function GapRow({
       {open && clickable && (
         <div className="grid grid-cols-3 gap-2 mt-1.5 mb-1">
           {suggestions.length === 0 ? (
-            <div className="col-span-3 font-mono-hud text-[12px] text-ink-2 py-1">
+            <div className="col-span-3 font-mono-hud text-[14px] text-ink-2 py-1">
               Nothing in your PC or the legal dex cleanly fills this role.
             </div>
           ) : (
@@ -194,7 +194,7 @@ function GapRow({
                   <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                     {s.p.name}
                   </span>
-                  <span className="block font-mono-hud text-[12px] text-ink-2 truncate">
+                  <span className="block font-mono-hud text-[14px] text-ink-2 truncate">
                     {s.reason}
                   </span>
                 </span>

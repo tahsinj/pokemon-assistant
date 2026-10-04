@@ -60,7 +60,7 @@ export function DexDetailModal({
       >
         <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="hud-mark font-mono-hud text-[12px] uppercase tracking-[0.16em] text-accent-2">
+            <span className="hud-mark font-mono-hud text-[14px] uppercase tracking-[0.16em] text-accent-2">
               POKÉDEX
             </span>
             <span className="font-display text-[16px] font-bold text-ink-0 truncate">

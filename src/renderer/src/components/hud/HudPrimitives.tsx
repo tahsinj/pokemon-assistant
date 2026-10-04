@@ -73,7 +73,7 @@ export function Hex({
 export function KVCard({ k, v }: { k: string; v: string }) {
   return (
     <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">{k}</div>
+      <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">{k}</div>
       <div className="font-display text-[15px] font-semibold mt-0.5 truncate">{v}</div>
     </div>
   );

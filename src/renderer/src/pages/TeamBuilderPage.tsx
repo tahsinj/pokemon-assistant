@@ -561,7 +561,7 @@ export function TeamBuilderPage({
           <div className="mono-panel p-3 rounded-[10px]">
             {sectionHead('SHOWDOWN PASTE / TEAM META')}
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
+              <label className="flex items-center gap-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                 Name
                 <input
                   value={teamName}
@@ -569,12 +569,12 @@ export function TeamBuilderPage({
                   className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[14px] text-white outline-none focus:border-accent-2 min-w-[180px]"
                 />
               </label>
-              <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
+              <label className="flex items-center gap-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                 Tag
                 <select
                   value={teamTag}
                   onChange={(e) => setTeamTag(e.target.value as TeamTag)}
-                  className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
+                  className="bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[14px] uppercase tracking-wider text-ink-1 outline-none focus:border-accent-2"
                 >
                   {TEAM_TAGS.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -695,11 +695,11 @@ export function TeamBuilderPage({
                   <div className="min-w-0 flex-1">
                     <div className="font-display text-[15px] font-bold flex items-center justify-between text-ink-0">
                       <span className="truncate">{p.name}</span>
-                      <span className="font-mono-hud text-[12px] text-ink-2 flex-shrink-0 ml-2">
+                      <span className="font-mono-hud text-[14px] text-ink-2 flex-shrink-0 ml-2">
                         #{String(p.dex).padStart(4, '0')}
                       </span>
                     </div>
-                    <div className="font-mono-hud text-[13px] text-ink-2 uppercase truncate">
+                    <div className="font-mono-hud text-[14px] text-ink-2 uppercase truncate">
                       {slot.detail
                         ? [
                             slot.detail.level != null ? `LV ${slot.detail.level}` : null,
@@ -719,7 +719,7 @@ export function TeamBuilderPage({
                   <button
                     type="button"
                     aria-label={`Remove ${p.name} from slot ${i + 1}`}
-                    className="p-0 absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white hover:border-white/40 font-mono-hud text-[12px] leading-none opacity-0 group-hover:opacity-100 transition"
+                    className="p-0 absolute top-2 right-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 text-ink-1 hover:text-white hover:border-white/40 font-mono-hud text-[14px] leading-none opacity-0 group-hover:opacity-100 transition"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSlot(i, null);
@@ -763,7 +763,7 @@ export function TeamBuilderPage({
                       key={s}
                       type="button"
                       onClick={() => setPickSource(s)}
-                      className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                      className={`font-mono-hud text-[14px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                         pickSource === s
                           ? 'bg-accent-2 text-black'
                           : 'text-ink-2 hover:text-ink-1'
@@ -809,7 +809,7 @@ export function TeamBuilderPage({
                             <span className="font-display text-[14px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                               {rec.nickname || sp.name}
                               {rec.nickname && (
-                                <span className="font-mono-hud text-[12px] text-ink-2 ml-1.5">{sp.name}</span>
+                                <span className="font-mono-hud text-[14px] text-ink-2 ml-1.5">{sp.name}</span>
                               )}
                             </span>
                             <span className="flex gap-1 flex-shrink-0">
@@ -817,10 +817,10 @@ export function TeamBuilderPage({
                                 <TypeChip key={t} t={t.toLowerCase()} />
                               ))}
                             </span>
-                            <span className="font-mono-hud text-[12px] text-ink-1 flex-shrink-0 w-12 text-right">
+                            <span className="font-mono-hud text-[14px] text-ink-1 flex-shrink-0 w-12 text-right">
                               Lv {rec.level}
                             </span>
-                            <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                            <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                               {pc.boxNameById[rec.boxId] ?? 'Box'}
                             </span>
                           </button>
@@ -840,7 +840,7 @@ export function TeamBuilderPage({
                   </div>
                 ) : (
                   <div className="h-full overflow-y-auto pr-1 no-scrollbar flex flex-col gap-1">
-                    <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-1 pb-1">
+                    <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 px-1 pb-1">
                       {teamMembers.length === 0
                         ? 'Owned species - add some to your team to rank these by synergy'
                         : 'Owned species ranked for this team · Smogon co-usage + coverage'}
@@ -857,7 +857,7 @@ export function TeamBuilderPage({
                           <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                             {p.name}
                           </span>
-                          <span className="block font-mono-hud text-[12px] text-ink-2 truncate">
+                          <span className="block font-mono-hud text-[14px] text-ink-2 truncate">
                             {reasons[0] ?? ''}
                           </span>
                         </span>
@@ -899,7 +899,7 @@ export function TeamBuilderPage({
                     title={`${d.weakCount} weak · ${d.resistCount} resist vs ${d.type}`}
                   >
                     <TypeChip t={d.type.toLowerCase()} fill />
-                    <div className="font-mono-hud text-[13px]" style={{ color: c }}>
+                    <div className="font-mono-hud text-[14px]" style={{ color: c }}>
                       {score > 0 ? `+${score}` : score}
                     </div>
                   </div>
@@ -925,7 +925,7 @@ export function TeamBuilderPage({
                       title={`Best STAB multiplier vs ${o.type}: ×${o.bestMult}`}
                     >
                       <TypeChip t={o.type.toLowerCase()} fill />
-                      <div className="font-mono-hud text-[13px]" style={{ color: c }}>
+                      <div className="font-mono-hud text-[14px]" style={{ color: c }}>
                         ×{o.bestMult}
                       </div>
                     </div>
@@ -978,7 +978,7 @@ export function TeamBuilderPage({
                     <span className="block font-display text-[14px] font-semibold truncate text-ink-0">
                       {p.name}
                     </span>
-                    <span className="block font-mono-hud text-[12px] text-ink-2 truncate">
+                    <span className="block font-mono-hud text-[14px] text-ink-2 truncate">
                       {reasons[0] ?? ''}
                     </span>
                   </span>
@@ -1001,7 +1001,7 @@ export function TeamBuilderPage({
                     : 'coverage + level/IV quality (no Smogon data)',
               )}
               <div className="flex items-center gap-3 mb-2">
-                <label className="flex items-center gap-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 cursor-pointer">
+                <label className="flex items-center gap-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={legalOnly}
@@ -1034,7 +1034,7 @@ export function TeamBuilderPage({
             {ownedOpen && (
               <div className="rounded-[10px] border border-white/10 bg-black/30 p-2.5 mb-2.5">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
+                  <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                     Mega Stones / Z-Crystals you own - only these get suggested (others fall back to craftable items)
                   </span>
                   <input
@@ -1042,7 +1042,7 @@ export function TeamBuilderPage({
                     onChange={(e) => setOwnedQuery(e.target.value)}
                     placeholder="Search…"
                     aria-label="Search special items"
-                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[13px] text-white outline-none focus:border-accent-2 w-[160px] flex-shrink-0"
+                    className="bg-black/40 border border-white/15 rounded-full px-3 py-1 font-mono-hud text-[14px] text-white outline-none focus:border-accent-2 w-[160px] flex-shrink-0"
                   />
                 </div>
                 <div className="max-h-[180px] overflow-y-auto grid grid-cols-3 gap-1 no-scrollbar pr-1">
@@ -1057,7 +1057,7 @@ export function TeamBuilderPage({
                           type="button"
                           onClick={() => setOwnedItems(toggleOwnedItem(ownedItems, id))}
                           aria-pressed={on}
-                          className={`flex items-center gap-1.5 px-2 py-1 rounded-[8px] border text-left font-mono-hud text-[12px] transition ${
+                          className={`flex items-center gap-1.5 px-2 py-1 rounded-[8px] border text-left font-mono-hud text-[14px] transition ${
                             on
                               ? 'border-accent-2 bg-white/[.06] text-ink-0'
                               : 'border-white/10 text-ink-2 hover:border-white/25'
@@ -1069,7 +1069,7 @@ export function TeamBuilderPage({
                       );
                     })}
                 </div>
-                <div className="mt-1.5 font-mono-hud text-[12px] text-ink-2">
+                <div className="mt-1.5 font-mono-hud text-[14px] text-ink-2">
                   Re-analyze to apply your owned items.
                 </div>
               </div>
@@ -1095,7 +1095,7 @@ export function TeamBuilderPage({
                     </div>
                     <div className="flex flex-col gap-1">
                       {bestSix.coreDeficits.map((d) => (
-                        <div key={d.role} className="font-mono-hud text-[12px] text-ink-1">
+                        <div key={d.role} className="font-mono-hud text-[14px] text-ink-1">
                           <span className="uppercase tracking-wider text-ink-2">No {d.label.toLowerCase()}</span>
                           {d.suggestions.length > 0 ? (
                             <>
@@ -1117,12 +1117,12 @@ export function TeamBuilderPage({
                   <div key={c.preset} className="rounded-[10px] border border-white/10 bg-white/[.03] p-2.5 flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-display text-[14px] font-bold text-ink-0">{c.label}</span>
-                      <span className="font-mono-hud text-[13px] tabular-nums text-accent-2">
+                      <span className="font-mono-hud text-[14px] tabular-nums text-accent-2">
                         {c.score.toFixed(1)}
                       </span>
                     </div>
                     <div
-                      className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2"
+                      className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2"
                       title="quality · chemistry · defense · offense · roles"
                     >
                       Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
@@ -1145,12 +1145,12 @@ export function TeamBuilderPage({
                               <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                                 {a.rec.nickname || a.p.name}
                               </span>
-                              <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                              <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                                 {a.role} · Lv {a.rec.level}
                               </span>
                               {lines.length > 0 && (
                                 <span
-                                  className="font-mono-hud text-[12px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                  className="font-mono-hud text-[14px] px-1.5 py-0.5 rounded-full flex-shrink-0"
                                   style={{
                                     color: lines.some((l) => l.danger) ? 'var(--hud-danger)' : 'var(--hud-accent-2)',
                                     background: 'rgba(0,0,0,.45)',
@@ -1163,14 +1163,14 @@ export function TeamBuilderPage({
                             {expandedAdvice === key && lines.length > 0 && (
                               <div className="px-2 pb-1.5 flex flex-col gap-0.5">
                                 {a.matchedSetName && (
-                                  <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
+                                  <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                                     vs {a.matchedSetName}
                                   </div>
                                 )}
                                 {lines.map((l, i) => (
                                   <div
                                     key={i}
-                                    className="font-mono-hud text-[12px]"
+                                    className="font-mono-hud text-[14px]"
                                     style={{ color: l.danger ? 'var(--hud-danger)' : 'var(--ink-1)' }}
                                   >
                                     {l.text}
@@ -1183,7 +1183,7 @@ export function TeamBuilderPage({
                       })}
                     </div>
                     {c.stackedWeaknesses.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2">
+                      <div className="flex flex-wrap items-center gap-1 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
                         weak:
                         {c.stackedWeaknesses.map((t) => (
                           <TypeChip key={t} t={t.toLowerCase()} />
@@ -1275,16 +1275,16 @@ export function TeamBuilderPage({
                     >
                       {t.name}
                       {t.id === currentTeamId && (
-                        <span className="font-mono-hud text-[12px] uppercase tracking-wider text-accent-2 ml-2">
+                        <span className="font-mono-hud text-[14px] uppercase tracking-wider text-accent-2 ml-2">
                           loaded
                         </span>
                       )}
                     </button>
                   )}
-                  <span className="font-mono-hud text-[12px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-accent-2">
+                  <span className="font-mono-hud text-[14px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-accent-2">
                     {t.tag}
                   </span>
-                  <span className="font-mono-hud text-[12px] text-ink-2">
+                  <span className="font-mono-hud text-[14px] text-ink-2">
                     {new Date(t.updatedAt).toLocaleString()}
                   </span>
                   <button

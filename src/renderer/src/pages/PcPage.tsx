@@ -1035,12 +1035,12 @@ export function PcPage({
           {editorMode === 'view' && editor.species && viewerMon && (
             <div className="pc-view">
               <div className="pc-view-actions">
-                <span className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider">
+                <span className="font-mono-hud text-[14px] text-ink-2 uppercase tracking-wider">
                   Slot {editor.slot + 1}
                 </span>
                 {editor.shiny && (
                   <span
-                    className="font-mono-hud text-[12px]"
+                    className="font-mono-hud text-[14px]"
                     style={{ color: 'var(--hud-accent)' }}
                     title="Shiny"
                   >
@@ -1318,7 +1318,7 @@ function PcEditor({
             {species.types.map((t) => (
               <TypeChip key={t} t={t.toLowerCase()} />
             ))}
-            <span className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider">
+            <span className="font-mono-hud text-[14px] text-ink-2 uppercase tracking-wider">
               Slot {draft.slot + 1}
             </span>
           </div>
@@ -1614,7 +1614,7 @@ function CoachPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 font-mono-hud text-[13px] uppercase tracking-widest text-accent-2"
+        className="w-full flex items-center gap-2 font-mono-hud text-[14px] uppercase tracking-widest text-accent-2"
         aria-expanded={open}
         style={{ marginBottom: open ? 8 : 0 }}
       >
@@ -1623,7 +1623,7 @@ function CoachPanel({
           SET REVIEW{metaLabel ? <span className="text-ink-2"> · vs {metaLabel} usage</span> : null}
         </span>
         <span
-          className="ml-auto font-mono-hud text-[12px] px-1.5 py-0.5 rounded-[4px]"
+          className="ml-auto font-mono-hud text-[14px] px-1.5 py-0.5 rounded-[4px]"
           style={{
             background: review.length === 0 ? 'rgba(124,216,123,0.15)' : 'rgba(255,255,255,0.06)',
             color: review.length === 0 ? '#7cd87b' : 'var(--ink-2)',
@@ -1633,7 +1633,7 @@ function CoachPanel({
         </span>
       </button>
       {!open ? null : review.length === 0 ? (
-        <p className="font-mono-hud text-[13px] m-0" style={{ color: '#7cd87b' }}>
+        <p className="font-mono-hud text-[14px] m-0" style={{ color: '#7cd87b' }}>
           ✓ This set looks meta-standard - nothing to flag.
         </p>
       ) : (
@@ -1662,7 +1662,7 @@ function CoachPanel({
                 className="flex items-start gap-2 px-2 py-1.5 rounded-[8px] border border-white/5 bg-white/[.03]"
               >
                 <span
-                  className="font-mono-hud text-[12px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 mt-0.5"
+                  className="font-mono-hud text-[14px] font-bold px-1.5 py-0.5 rounded-[4px] flex-shrink-0 mt-0.5"
                   style={{ background: sev.dot, color: '#100b06' }}
                   title={s.severity}
                 >
@@ -1670,7 +1670,7 @@ function CoachPanel({
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="font-display text-[13px] font-semibold text-ink-0">{s.title}</div>
-                  <div className="font-mono-hud text-[12px] text-ink-2 leading-snug">{s.detail}</div>
+                  <div className="font-mono-hud text-[14px] text-ink-2 leading-snug">{s.detail}</div>
                 </div>
                 {fixLabel && (
                   <button
@@ -1703,7 +1703,7 @@ function CoachPanel({
           <button
             type="button"
             onClick={() => setShowHidden((v) => !v)}
-            className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 hover:text-ink-1 transition-colors"
+            className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 hover:text-ink-1 transition-colors"
             aria-expanded={showHidden}
           >
             {showHidden ? '▾' : '▸'} {hidden.length} dismissed

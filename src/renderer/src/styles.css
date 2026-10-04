@@ -735,7 +735,7 @@ body {
 
 .ds .pc-page .cell-meta {
   font-family: 'VT323', ui-monospace, Menlo, monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-2);
 }
 
@@ -1656,7 +1656,7 @@ body {
 
 .dive-content .section-head {
   font-family: 'VT323', ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: normal;
   color: var(--hud-accent-2);
   letter-spacing: 0.22em;
@@ -2782,7 +2782,7 @@ body {
   color: var(--fg-dim);
   text-transform: uppercase;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 14px;
 }
 
 .stat-row .value {
@@ -2807,7 +2807,7 @@ body {
 }
 
 .section-head {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -3008,7 +3008,7 @@ body {
 
 .pc-page .pc-edit-bst {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   color: var(--ink-2, var(--fg-dim));
 }

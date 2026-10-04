@@ -50,9 +50,9 @@ function TeamSlot({
       >
         <div className="font-display text-[15px] font-bold flex items-center justify-between">
           {mon.name}
-          <span className="font-mono-hud text-[13px] text-ink-2">{mon.dex}</span>
+          <span className="font-mono-hud text-[14px] text-ink-2">{mon.dex}</span>
         </div>
-        <div className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider mb-1.5">
+        <div className="font-mono-hud text-[14px] text-ink-2 uppercase tracking-wider mb-1.5">
           {typeof mon.lv === 'number' ? `LV ${mon.lv} · ${mon.role}` : mon.role}
         </div>
         <div className="flex gap-1 mb-2">
@@ -62,14 +62,14 @@ function TeamSlot({
         </div>
         {hasHp && (
           <div className="flex items-center gap-1.5">
-            <span className="font-mono-hud text-[12px] text-ink-2">HP</span>
+            <span className="font-mono-hud text-[14px] text-ink-2">HP</span>
             <div className="relative h-1.5 flex-1 rounded-full bg-black/40 overflow-hidden">
               <div
                 className="absolute inset-y-0 left-0 rounded-full"
                 style={{ width: `${hpFrac * 100}%`, background: hp, boxShadow: `0 0 6px ${hp}` }}
               />
             </div>
-            <span className="font-mono-hud text-[12px]" style={{ color: hp }}>
+            <span className="font-mono-hud text-[14px]" style={{ color: hp }}>
               {Math.round(hpFrac * 100)}
             </span>
           </div>
@@ -182,7 +182,7 @@ export function TeamColumn({
         />
       ))}
       <div
-        className="font-mono-hud text-[12px] text-ink-2 uppercase tracking-wider mt-1"
+        className="font-mono-hud text-[14px] text-ink-2 uppercase tracking-wider mt-1"
         title="Your saved squad from the Team Builder"
       >
         {team.length}/6 · squad

@@ -7,7 +7,7 @@ export const test = base.extend<{ app: Page }>({
   app: async ({ page }, use) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    // Sprites and fonts come from the network; block it so runs are fast and
+    // Sprites come from the network; block it so runs are fast and
     // repeatable. Sprites fall back to their letter glyphs.
     await page.route(/^https?:\/\/(?!localhost|127\.0\.0\.1)/, (route) => route.abort());
     await page.addInitScript(installAssistantStub);

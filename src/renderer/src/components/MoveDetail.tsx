@@ -18,7 +18,7 @@ const RESIST_GREEN = '#7cd87b';
 function StatTile({ k, v, hint }: { k: string; v: string; hint?: string }) {
   return (
     <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04] text-center" title={hint}>
-      <div className="font-mono-hud text-[12px] uppercase tracking-widest text-ink-2">{k}</div>
+      <div className="font-mono-hud text-[14px] uppercase tracking-widest text-ink-2">{k}</div>
       <div className="font-display text-[19px] font-bold text-ink-0 leading-tight mt-0.5">{v}</div>
     </div>
   );
@@ -37,7 +37,7 @@ function CoverageRow({ label, types, tone }: { label: string; types: string[]; t
   if (types.length === 0) return null;
   return (
     <div className="flex items-start gap-2">
-      <span className="font-mono-hud text-[12px] uppercase tracking-wider w-24 flex-shrink-0 pt-0.5" style={{ color: tone }}>
+      <span className="font-mono-hud text-[14px] uppercase tracking-wider w-24 flex-shrink-0 pt-0.5" style={{ color: tone }}>
         {label}
       </span>
       <span className="flex flex-wrap gap-1">
@@ -91,7 +91,7 @@ export function MoveDetail({ m, learners }: { m: Move; learners: MoveLearner[] }
       {/* Description + meta + flags, in one quiet card */}
       <div className="rounded-[10px] border border-white/10 bg-white/[.04] px-3.5 py-3 flex flex-col gap-2.5">
         {m.desc && <p className="font-mono-hud text-[14px] leading-relaxed text-ink-1">{m.desc}</p>}
-        <div className="flex flex-wrap gap-x-6 gap-y-1.5 font-mono-hud text-[13px] text-ink-1">
+        <div className="flex flex-wrap gap-x-6 gap-y-1.5 font-mono-hud text-[14px] text-ink-1">
           <span>
             <span className="text-ink-2 uppercase tracking-wider">Target </span>
             {targetLabel(m.target)}
@@ -157,7 +157,7 @@ export function MoveDetail({ m, learners }: { m: Move; learners: MoveLearner[] }
                 <span className="font-display text-[14px] font-semibold truncate flex-1 min-w-0 text-ink-0">
                   {l.name}
                 </span>
-                <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 flex-shrink-0">
                   {l.methods.includes('level') && l.level != null ? `Lv ${l.level}` : METHOD_LABEL[l.methods[0]]}
                 </span>
               </div>

@@ -74,7 +74,7 @@ export function SpeciesList({
           ))}
         </select>
       </div>
-      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-ink-2 mb-2 px-1">
+      <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 mb-2 px-1">
         {filtered.length} species
       </div>
       <div className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1 no-scrollbar">
@@ -109,12 +109,12 @@ export function SpeciesList({
                   </span>
                   <span className="flex items-center gap-1.5 min-w-0">
                     {!compact && (
-                      <span className="font-mono-hud text-[13px] text-ink-2">#{String(p.dex).padStart(4, '0')}</span>
+                      <span className="font-mono-hud text-[14px] text-ink-2">#{String(p.dex).padStart(4, '0')}</span>
                     )}
                     {p.types.map((t) => (
                       <TypeChip key={t} t={t.toLowerCase()} />
                     ))}
-                    <span className="font-mono-hud text-[13px] text-ink-2 ml-auto whitespace-nowrap" title="Base stat total">
+                    <span className="font-mono-hud text-[14px] text-ink-2 ml-auto whitespace-nowrap" title="Base stat total">
                       BST {bst(p.baseStats)}
                     </span>
                   </span>
@@ -133,7 +133,7 @@ export function FormTag({ form }: { form: string }) {
   return (
     <span
       data-ui="form-tag"
-      className="flex-shrink-0 whitespace-nowrap rounded-full border border-accent-2/40 px-1.5 font-mono-hud text-[12px] uppercase tracking-wider text-accent-2"
+      className="flex-shrink-0 whitespace-nowrap rounded-full border border-accent-2/40 px-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-accent-2"
     >
       {form}
     </span>

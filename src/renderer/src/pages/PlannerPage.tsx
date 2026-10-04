@@ -123,7 +123,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   ))}
                 </select>
               </label>
-              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[13px] text-ink-1 leading-snug flex items-center flex-wrap gap-1.5">
+              <div className="mono-panel p-2.5 rounded-[8px] font-mono-hud text-[14px] text-ink-1 leading-snug flex items-center flex-wrap gap-1.5">
                 EV YIELD
                 {formatEvYield(species.evYield).length === 0 ? (
                   <span className="text-white">· none</span>
@@ -131,7 +131,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   formatEvYield(species.evYield).map(({ label, value }) => (
                     <span
                       key={label}
-                      className="font-mono-hud text-[12px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 text-accent-2"
+                      className="font-mono-hud text-[14px] px-2 py-0.5 rounded-full bg-black/40 border border-white/15 text-accent-2"
                     >
                       +{value} {label}
                     </span>
@@ -155,7 +155,7 @@ export function PlannerPage({ pokemon }: { pokemon: Pokemon[] }) {
                   Total EVs exceed 510 - trim values.
                 </div>
               )}
-              <div className="grid grid-cols-[40px,36px,52px,minmax(56px,1fr),60px,minmax(64px,110px)] items-center gap-2 font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 px-0.5">
+              <div className="grid grid-cols-[40px,36px,52px,minmax(56px,1fr),60px,minmax(64px,110px)] items-center gap-2 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 px-0.5">
                 <span>Stat</span>
                 <span>Base</span>
                 <span>IV</span>

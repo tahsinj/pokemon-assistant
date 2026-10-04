@@ -56,7 +56,7 @@ export function PokemonDexDetail({
           type="button"
           onClick={() => setView(id)}
           aria-pressed={view === id}
-          className={`font-mono-hud text-[13px] uppercase tracking-wider px-4 py-1 rounded-full transition-colors ${
+          className={`font-mono-hud text-[14px] uppercase tracking-wider px-4 py-1 rounded-full transition-colors ${
             view === id ? 'bg-accent-2 text-black' : 'text-ink-2 hover:text-ink-1'
           }`}
         >
@@ -126,7 +126,7 @@ export function PokemonDexDetail({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mb-1">
+              <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 mb-1">
                 Abilities
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -154,10 +154,10 @@ export function PokemonDexDetail({
               </div>
             </div>
             <div className="px-3 py-2 rounded-[10px] border border-white/10 bg-white/[.04]">
-              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mb-1">
+              <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 mb-1">
                 Defending
               </div>
-              <div className="flex flex-col gap-1 font-mono-hud text-[13px]">
+              <div className="flex flex-col gap-1 font-mono-hud text-[14px]">
                 {weaks.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1">
                     <span style={{ color: 'var(--hud-danger)' }}>WEAK</span>
@@ -230,7 +230,7 @@ export function PokemonDexDetail({
                 key={id}
                 type="button"
                 onClick={() => setMoveTab(id)}
-                className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                className={`font-mono-hud text-[14px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                   moveTab === id
                     ? 'bg-accent-2 text-black'
                     : 'text-ink-2 hover:text-ink-1'
@@ -259,15 +259,15 @@ export function PokemonDexDetail({
                     <div className="font-display text-[14px] font-semibold truncate text-ink-0">
                       {move.name}
                     </div>
-                    <div className="font-mono-hud text-[12px] text-ink-2 truncate">
+                    <div className="font-mono-hud text-[14px] text-ink-2 truncate">
                       {reasons.join(' · ')}
                     </div>
                   </div>
                   <TypeChip t={move.type.toLowerCase()} />
-                  <span className="font-mono-hud text-[13px] text-ink-1">
+                  <span className="font-mono-hud text-[14px] text-ink-1">
                     PWR {move.power || '-'}
                   </span>
-                  <span className="font-mono-hud text-[13px] text-ink-1">{move.category}</span>
+                  <span className="font-mono-hud text-[14px] text-ink-1">{move.category}</span>
                 </div>
               ))}
             </div>
@@ -307,13 +307,13 @@ export function PokemonDexDetail({
               title={mv.desc}
             >
               <div className="font-display text-[14px] font-semibold truncate text-ink-0">{mv.name}</div>
-              <span className="font-mono-hud text-[13px] text-ink-2 whitespace-nowrap">{learnLabel(learn)}</span>
+              <span className="font-mono-hud text-[14px] text-ink-2 whitespace-nowrap">{learnLabel(learn)}</span>
               <TypeChip t={mv.type.toLowerCase()} />
-              <span className="font-mono-hud text-[13px] text-ink-1">{mv.category[0]}</span>
-              <span className="font-mono-hud text-[13px] text-ink-1">
+              <span className="font-mono-hud text-[14px] text-ink-1">{mv.category[0]}</span>
+              <span className="font-mono-hud text-[14px] text-ink-1">
                 PWR {mv.power || '-'}
               </span>
-              <span className="font-mono-hud text-[13px] text-ink-1">
+              <span className="font-mono-hud text-[14px] text-ink-1">
                 ACC {mv.accuracy === true ? '-' : mv.accuracy}
               </span>
             </div>

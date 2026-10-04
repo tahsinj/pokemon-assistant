@@ -83,7 +83,7 @@ export function SpeciesCounters({
                 key={s}
                 type="button"
                 onClick={() => setSource(s)}
-                className={`font-mono-hud text-[12px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
+                className={`font-mono-hud text-[14px] uppercase tracking-wider px-3 py-1 rounded-full transition-colors ${
                   source === s
                     ? 'bg-accent-2 text-black'
                     : 'text-ink-2 hover:text-ink-1'
@@ -95,7 +95,7 @@ export function SpeciesCounters({
           </div>
         )}
         {source === 'pc' && (
-          <label className="flex items-center gap-1.5 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
+          <label className="flex items-center gap-1.5 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
             Threat lv
             <input
               type="number"
@@ -106,7 +106,7 @@ export function SpeciesCounters({
                 const v = Number(e.target.value);
                 if (Number.isFinite(v)) setTargetLevel(Math.max(1, Math.min(100, Math.round(v))));
               }}
-              className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[13px] text-ink-1 outline-none focus:border-accent-2"
+              className="w-16 bg-black/40 border border-white/15 rounded-full px-2.5 py-1 font-mono-hud text-[14px] text-ink-1 outline-none focus:border-accent-2"
             />
           </label>
         )}
@@ -149,7 +149,7 @@ export function SpeciesCounters({
                       {label}
                     </div>
                     {sub && (
-                      <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 truncate">
+                      <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 truncate">
                         {sub}
                       </div>
                     )}
@@ -176,7 +176,7 @@ export function SpeciesCounters({
             })}
           </div>
           {source === 'pc' && pcOutcome && pcOutcome.underleveled > 0 && (
-            <div className="font-mono-hud text-[12px] text-ink-2 mt-2">
+            <div className="font-mono-hud text-[14px] text-ink-2 mt-2">
               › {pcOutcome.underleveled} PC Pokémon hidden - too underleveled for a level {targetLevel} threat (below{' '}
               {Math.ceil(targetLevel * 0.6)}).
             </div>

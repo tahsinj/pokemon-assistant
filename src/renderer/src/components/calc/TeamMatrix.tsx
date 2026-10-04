@@ -40,7 +40,7 @@ export function TeamMatrix({
   }
   return (
     <div data-ui="team-matrix" className="flex flex-col gap-2">
-      <div className="grid grid-cols-[150px,minmax(0,1fr),minmax(0,240px),auto] gap-3 px-3 font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
+      <div className="grid grid-cols-[150px,minmax(0,1fr),minmax(0,240px),auto] gap-3 px-3 font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
         <span>Your Pokémon</span>
         <span>Into {target}</span>
         <span>{target}'s best move back</span>
@@ -62,7 +62,7 @@ export function TeamMatrix({
                 <div data-ui="species-name" className="font-display text-[15px] font-bold text-ink-0 truncate">
                   {row.name}
                 </div>
-                <div className="font-mono-hud text-[13px]" style={{ color: hpColorFor(row.hpPercent) }}>
+                <div className="font-mono-hud text-[14px]" style={{ color: hpColorFor(row.hpPercent) }}>
                   {row.hpPercent}% HP
                 </div>
               </div>
@@ -110,7 +110,7 @@ function OutcomeChip({ d, type, danger }: { d: DamageOutcome; type?: string; dan
     >
       {type && <TypeChip t={type.toLowerCase()} />}
       <span className="font-display text-[13px] font-semibold text-ink-0">{d.moveName}</span>
-      <span className="font-mono-hud text-[13px] tabular-nums text-ink-1 whitespace-nowrap">
+      <span className="font-mono-hud text-[14px] tabular-nums text-ink-1 whitespace-nowrap">
         {rangeText(d)}
         {!d.isZero && !d.error && (
           <span className="ml-1.5" style={{ color: ko.color }}>

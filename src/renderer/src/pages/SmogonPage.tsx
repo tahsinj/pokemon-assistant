@@ -89,7 +89,7 @@ export function SmogonPage({
           </div>
 
           <div className="flex items-center justify-between mb-2 px-1">
-            <span className="font-mono-hud text-[13px] uppercase tracking-wider text-ink-2">
+            <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">
               {entries.length} species
             </span>
             <div className="flex gap-1">
@@ -99,7 +99,7 @@ export function SmogonPage({
                   type="button"
                   onClick={() => setSort(s.id)}
                   aria-pressed={sort === s.id}
-                  className={`font-mono-hud text-[13px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
+                  className={`font-mono-hud text-[14px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border transition ${
                     sort === s.id
                       ? 'bg-accent border-transparent text-[#100b06]'
                       : 'border-white/15 text-ink-1 hover:border-accent-2'
@@ -195,7 +195,7 @@ export function SmogonPage({
                   if (pokemonById[id] && smogon.species[id]) setSelectedId(id);
                 }}
               />
-              <div className="font-mono-hud text-[13px] tracking-wide text-ink-2 text-center mt-4">
+              <div className="font-mono-hud text-[14px] tracking-wide text-ink-2 text-center mt-4">
                 Usage data: Smogon · smogon.com/stats · {usagePeriod(smogon.meta)}
               </div>
             </>

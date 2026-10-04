@@ -86,7 +86,7 @@ export function MoveList({
         />
       </div>
 
-      <div className="font-mono-hud text-[13px] uppercase tracking-wider text-ink-2 mb-2 px-1">
+      <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 mb-2 px-1">
         {filtered.length} moves
       </div>
 
@@ -111,10 +111,10 @@ export function MoveList({
                   {m.name}
                 </span>
                 <TypeChip t={m.type.toLowerCase()} />
-                <span className="font-mono-hud text-[12px] text-ink-2 text-right" title={m.category}>
+                <span className="font-mono-hud text-[14px] text-ink-2 text-right" title={m.category}>
                   {CAT_LETTER[m.category]}
                 </span>
-                <span className="font-mono-hud text-[13px] text-ink-1 text-right">{m.power || '-'}</span>
+                <span className="font-mono-hud text-[14px] text-ink-1 text-right">{m.power || '-'}</span>
               </button>
             );
           })

@@ -64,11 +64,11 @@ export function CoverageThreats({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* -- Offensive: what it hits hard -- */}
         <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
-          <div className="font-mono-hud text-[12px] uppercase tracking-wider" style={{ color: '#7cd87b' }}>
+          <div className="font-mono-hud text-[14px] uppercase tracking-wider" style={{ color: '#7cd87b' }}>
             Strong into
           </div>
           {coverage.entries.length === 0 ? (
-            <div className="font-mono-hud text-[13px] text-ink-2">
+            <div className="font-mono-hud text-[14px] text-ink-2">
               No reliable super-effective coverage on record.
             </div>
           ) : (
@@ -91,15 +91,15 @@ export function CoverageThreats({
 
         {/* -- Defensive / threat: what to avoid -- */}
         <div className="mono-panel p-3 rounded-[10px] flex flex-col gap-2">
-          <div className="font-mono-hud text-[12px] uppercase tracking-wider" style={{ color: 'var(--hud-danger)' }}>
+          <div className="font-mono-hud text-[14px] uppercase tracking-wider" style={{ color: 'var(--hud-danger)' }}>
             Risky into
           </div>
           {!smogon ? (
-            <div className="font-mono-hud text-[13px] text-ink-2">
+            <div className="font-mono-hud text-[14px] text-ink-2">
               Meta threat data unavailable.
             </div>
           ) : riskyTop.length === 0 ? (
-            <div className="font-mono-hud text-[13px] text-ink-2">
+            <div className="font-mono-hud text-[14px] text-ink-2">
               No common super-effective attackers - solid defensively.
             </div>
           ) : (
@@ -111,7 +111,7 @@ export function CoverageThreats({
                   title={`Often carried by: ${r.examples.map((e) => e.name).join(', ')}`}
                 >
                   <TypeChip t={r.type} />
-                  {r.mult >= 4 && <span className="font-mono-hud text-[12px]" style={{ color: 'var(--hud-danger)' }}>×4</span>}
+                  {r.mult >= 4 && <span className="font-mono-hud text-[14px]" style={{ color: 'var(--hud-danger)' }}>×4</span>}
                 </span>
               ))}
             </div>
@@ -119,7 +119,7 @@ export function CoverageThreats({
 
           {fastTop.length > 0 && (
             <>
-              <div className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 mt-1">
+              <div className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 mt-1">
                 ⚠ Outspeed you & hit super-effectively
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -166,14 +166,14 @@ function CoverageRow({
   if (entries.length === 0) return null;
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${dim ? 'opacity-75' : ''}`}>
-      <span className="font-mono-hud text-[12px] uppercase tracking-wider text-ink-2 w-[68px] shrink-0">
+      <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 w-[68px] shrink-0">
         {label}
       </span>
       {entries.map((e) => (
         <span key={e.type} className="inline-flex items-center gap-0.5" title={`via ${e.via}${e.stab ? ' (STAB)' : ''}`}>
           <TypeChip t={e.type} />
           {hasUsage && e.prob !== null && (
-            <span className="font-mono-hud text-[12px] text-ink-2">{Math.round(e.prob * 100)}%</span>
+            <span className="font-mono-hud text-[14px] text-ink-2">{Math.round(e.prob * 100)}%</span>
           )}
         </span>
       ))}
@@ -231,10 +231,10 @@ function QuickCheck({
       </datalist>
 
       {query.trim() && !opp && (
-        <div className="font-mono-hud text-[12px] text-ink-2">No species matches “{query}”.</div>
+        <div className="font-mono-hud text-[14px] text-ink-2">No species matches “{query}”.</div>
       )}
       {opp && opp.id === p.id && (
-        <div className="font-mono-hud text-[12px] text-ink-2">Pick a different species.</div>
+        <div className="font-mono-hud text-[14px] text-ink-2">Pick a different species.</div>
       )}
       {opp && cell && <VerdictCard opp={opp} cell={cell} />}
     </div>
@@ -254,17 +254,17 @@ function VerdictCard({ opp, cell }: { opp: Pokemon; cell: MatchupCell }) {
         <div className="font-display text-[15px] font-bold">
           {s.mark} {s.word}
         </div>
-        <span className="font-mono-hud text-[12px] uppercase tracking-wider ml-auto opacity-80">
+        <span className="font-mono-hud text-[14px] uppercase tracking-wider ml-auto opacity-80">
           {cell.iAmFaster ? '↑ you outspeed' : '↓ they outspeed'}
         </span>
       </div>
-      <div className="font-mono-hud text-[12px] leading-snug opacity-90">
+      <div className="font-mono-hud text-[14px] leading-snug opacity-90">
         {cell.moveName
           ? <>Your best: <b>{cell.moveName}</b> - {koPct}% to KO ({cell.label}).</>
           : <>You can’t damage {opp.name} meaningfully.</>}{' '}
         They hit back for up to <b>{backLabel}</b>.
       </div>
-      <div className="font-mono-hud text-[12px] opacity-70">
+      <div className="font-mono-hud text-[14px] opacity-70">
         Assumes standard competitive sets, both at Lv 50.
       </div>
     </div>
