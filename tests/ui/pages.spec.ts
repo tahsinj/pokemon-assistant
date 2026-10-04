@@ -2,8 +2,9 @@ import { AREAS, TOOL_NAMES } from '../../src/renderer/src/lib/areas';
 import * as checks from './checks';
 import { test, expect, openTool, snap } from './fixtures';
 
-test('the orb shows one hex per area', async ({ app }) => {
+test('the orb shows one hex per area', async ({ app }, testInfo) => {
   for (const area of AREAS) await expect(app.getByRole('button', { name: area.label, exact: true })).toBeVisible();
+  await snap(app, testInfo, 'home');
 });
 
 for (const area of AREAS) {

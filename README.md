@@ -9,14 +9,15 @@ Built with Electron, React and TypeScript.
 
 ## Features
 
-- Pokédex with forms, learnsets, coverage and threats
-- Move index
-- Team Builder with set editor, role audit and PC sync
-- Battle calculator and Calcdex (damage / KO odds via `@smogon/calc`)
-- Battle tracker with set prediction and move recommendations
-- EV / IV planner and breeding odds
-- PC storage with set review and TM planning
-- Counter Draft and Smogon usage viewer
+Five areas around the home screen orb:
+
+- **Dex**: Pokédex with forms, learnsets, coverage and threats; move index
+- **Box**: PC storage with set review, Team Builder with set editor and role
+  audit, EV / IV planner, breeding odds
+- **Battle**: damage calc (`@smogon/calc`) with a one-on-one matchup view and a
+  whole-team view, plus a battle tracker with set prediction
+- **Counters**: Counter Draft
+- **Meta**: usage stats for the active format
 
 ## Getting started
 
@@ -28,8 +29,9 @@ npm run dev        # Vite on :5173, then Electron
 Other scripts:
 
 ```bash
-npm run check      # eslint, prose lint, typecheck, tests
+npm run check      # eslint, prose lint, CSS lint, typecheck, tests
 npm test           # vitest
+npm run test:ui    # Playwright: every page at 1100x700 and 1920x1080
 npm run build      # renderer -> dist/, electron -> dist-electron/
 npm run pack:win   # Windows installer into release/
 ```
@@ -56,6 +58,8 @@ npm run fetch-usage   # usage/<format>.json: usage stats and sample sets
   analysis text.
 - Sprites: fetched at runtime from [PokeAPI](https://github.com/PokeAPI/sprites)
   and cached locally. No sprite images are included in this repo.
+- Fonts: Inter, Space Grotesk and VT323 (SIL Open Font License), bundled
+  through [Fontsource](https://fontsource.org).
 
 ## Disclaimer
 

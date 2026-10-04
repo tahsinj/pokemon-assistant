@@ -761,6 +761,50 @@ Status:
   - Usage stats are public domain, but Smogon's curated sets are copyrighted.
     The app bundles only their move lists and spreads, as before; fetching
     sets at runtime instead would remove them from the repo.
+- **M2 done.** The orb shows five areas (Dex, Box, Battle, Counters, Meta).
+  Opening one shows an area bar with a tab per tool and the close button in
+  its own slot, and each tool has one name for its tab, page title and window
+  title. The three stylesheets are one `styles.css` with tokens at the top,
+  mapped into Tailwind's theme (132 KB to 71 KB, z-index rules 39 to 20), and
+  `npm run lint:css` keeps unused selectors out. Battle Calculator and Calcdex
+  are one damage calc with a Matchup view and a Team view (your roster against
+  their active), plus hazards, Gravity and PC import. Fonts are bundled
+  instead of loaded from Google Fonts. Every 2.6 issue is covered:
+  1. Header collisions: the close button lives in the area bar; asserted on
+     every page.
+  2. Broken frame: the notched corner is gone.
+  3. Truncated names: list rows are two lines; asserted.
+  4. Forms: the dex records `baseSpecies` and `forme`, and lists show a form
+     label; asserted.
+  5. Usage stats overflow: cards reflow and spreads wrap; spill checks on
+     every page.
+  6. Raw ability ids: display names everywhere; asserted.
+  7. Team Builder: opens on the newest saved team and keeps unsaved edits
+     across tabs; asserted.
+  8. Two calculators: merged.
+  9. Battle tracker: the duplicate connection state left with the mod bridge
+     in M1, inputs use the calc's form style and no text is under 13px. It
+     still has about 150 inline styles; the rebuild happens with replay
+     review in M3 (5.7), which replaces this page.
+  10. Naming drift: one name per tool, from `lib/areas.ts`.
+  11. Small mono caps: sentences are sans 13px or more; asserted. Mono labels
+      are at least 14px (VT323 runs small).
+  12. Stylesheets: one file, as above.
+
+  Notes:
+  - Screenshot tests are layout assertions plus screenshots saved as CI
+    artifacts, not pixel-diff baselines. Baselines would break on every
+    font or palette tweak, and the assertions name the actual problem.
+  - The component set from 5.8 is partly built: `ModuleFrame` is the page
+    shell, with `TeamMatrix`, `Segmented`, `SectionHead` and
+    `SpeciesList`/`FormTag`. `DataTable`, `Toolbar` and `Field` arrive with
+    the M3 battle pages, which are rebuilt anyway.
+  - The page button default skin now yields to utility classes, which
+    turned on styles that had never applied (filled active segments,
+    selected-row borders). Tailwind opacity modifiers on theme colors
+    (`border-danger/40`) also produced no CSS before and now work.
+  - Counter Draft still offers a Dynamax toggle, which neither format
+    allows. Counter Draft v2 in M4 replaces it.
 
 ## 8. Risks
 
