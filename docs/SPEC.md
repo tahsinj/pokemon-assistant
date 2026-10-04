@@ -734,6 +734,9 @@ Sizes are relative (S, M, L), not dates.
 M1 moves ahead of the UI work so the UI is rebuilt once, on the new data, and
 Spawns never needs fixing.
 
+The task-level plan for everything still to do, with file pointers and done-when
+checks, is [WORKPLAN.md](WORKPLAN.md).
+
 Status:
 
 - **M0 done.** Lockfile fixed, CI (lint, prose lint, typecheck, tests,

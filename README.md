@@ -3,7 +3,8 @@
 Unofficial desktop team and battle lab for Pokémon Showdown singles, covering
 Gen 9 OU and National Dex OU. Pick the format from the home screen and every
 tool switches to that format's species, learnsets, bans and usage data. The
-roadmap is in [docs/SPEC.md](docs/SPEC.md).
+roadmap is in [docs/SPEC.md](docs/SPEC.md), and the task list for the
+remaining work is in [docs/WORKPLAN.md](docs/WORKPLAN.md).
 
 Built with Electron, React and TypeScript.
 
