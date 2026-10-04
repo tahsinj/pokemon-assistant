@@ -68,6 +68,12 @@ tests in another, and uploads screenshots. Both must stay green.
   `color-mix` (see `tailwind.config.js`). Don't write `text-[var(--x)]`.
 - Plain page buttons get a default skin from `styles.css` at class-level
   specificity. Small icon buttons need `p-0`.
+- The simulator in the browser needs `define: { global: 'globalThis' }` and
+  `esbuild: { keepNames: true }` in `vite.config.ts`: battle cloning finds
+  objects by class name, and minified names break it (only in production
+  builds, so the UI tests catch it and vitest does not).
+- Never `pkill -f` a pattern that also appears in the command you run; it
+  kills its own shell. Match on the process's own argv instead.
 - New UI needs `data-ui` hooks where the layout checks look (`page-title`,
   `page-actions`, `species-row`, `species-name`, `ability`).
 
@@ -77,33 +83,33 @@ Goal: battles run on the real Showdown engine. Practice battles against bots,
 replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 5.3.
 
-Status: not started.
+Status: in progress. Engine, levels 0 and 1, and the Practice page work.
+Next: level 2 (1.4), hints and eval graph (1.5), replay review (1.6).
 
 ### 1.1 Dependencies
 
-- [ ] Move `@pkmn/sim` from devDependencies to dependencies.
-- [ ] Add `@pkmn/protocol`, `@pkmn/client` and `@pkmn/randoms` (match the
-  `@pkmn/sim` release line).
-- [ ] Check `@smogon/calc` for a 0.12 release and upgrade if it exists; run
-  the calc tests.
+- [x] Move `@pkmn/sim` from devDependencies to dependencies.
+- [x] Add `@pkmn/protocol`, `@pkmn/client`, `@pkmn/data` and `@pkmn/randoms`.
+- [x] Upgrade `@smogon/calc` to 0.12.
 
 ### 1.2 Engine module and worker
 
-- [ ] `src/renderer/src/engine/`: a plain module that wraps `BattleStream`
-  with a small API: `start({ format, p1Team, p2Team, seed })`, `choose(side,
-  choice)`, `request(side)`, `clone()` (JSON round trip), `log()`. No DOM, so
-  vitest can drive it directly.
-- [ ] `engine/simWorker.ts`: the same API over `postMessage`, loaded with
-  `new Worker(new URL('./simWorker.ts', import.meta.url), { type: 'module' })`.
-- [ ] Teams go in as Showdown export text and are packed with the sim's
-  `Teams` helpers; validate with `TeamValidator` for the active format.
+- [x] `src/renderer/src/engine/engine.ts`: `Engine` wraps the sim's `Battle`
+  (start, request, needsChoice, choose, clone, linesFor, inputLog) plus
+  `playOut`, `packTeam`, `validateTeam`, `randomTeam`, `seedFrom`. No DOM.
+- [x] `engine/session.ts` (player vs bot, take-back snapshots) behind
+  `engine/practice.worker.ts` and `engine/practiceClient.ts`, which falls
+  back to running in the page if the worker fails.
+- [x] Teams go in as Showdown export text; `validateTeam` uses the sim's
+  `TeamValidator`.
 - Done when: a vitest plays 50 seeded random-vs-random `gen9ou` battles to the
   end, and their logs match the same seeds run straight through `@pkmn/sim`
   (the parity test from SPEC 5.2). The worker loads in `npm run build` output.
 
 ### 1.3 Client state
 
-- [ ] Feed protocol lines into a `@pkmn/client` `Battle` per side.
+- [x] Feed protocol lines into a `@pkmn/client` `Battle`
+  (`engine/clientState.ts`); the Practice page renders from it.
 - [ ] Adapter from client state to what `lib/battle/predictor/` and
   `search/explain.ts` read, so both keep working on the new state.
 - Done when: predictor and explain tests pass against client state built
@@ -111,10 +117,12 @@ Status: not started.
 
 ### 1.4 Bots
 
-- [ ] `engine/bots/`: `interface Bot { choose(request, view): Promise<string> }`.
-- [ ] Level 0 Random: the sim's random player.
-- [ ] Level 1 Greedy: highest expected damage this turn by the calc; switch
-  out of a guaranteed KO.
+- [x] `engine/bots/bot.ts`: `interface Bot { choose(engine, side, request): string }`.
+  Bots see their own sets in full and only public info about the foe
+  (`bots/view.ts`).
+- [x] Level 0 Random (`bots/random.ts`, seeded).
+- [x] Level 1 Greedy (`bots/greedy.ts`): beats Random in at least 85% of 40
+  games (`bots/bots.test.ts`). `bots/match.ts` plays bot-vs-bot series.
 - [ ] Level 2 Search: expectimax, first ply on the real engine (clone per
   joint action), second ply on the calc model, opponent sets sampled from the
   predictor, chance nodes for damage roll buckets, crits and accuracy. Time
@@ -128,17 +136,17 @@ Status: not started.
 
 ### 1.5 Practice page
 
-- [ ] New tool `practice` ("Practice") in the Battle area (`lib/areas.ts`,
-  `App.tsx`).
-- [ ] Setup: your team from a saved team, the box, a Showdown paste, a random
-  team (`@pkmn/randoms`) or a meta sample; opponent the same plus bot level.
-- [ ] Battle view: both actives with HP bars and status, your bench, move and
-  switch buttons built from the request, the turn log in plain sentences.
+- [x] New tool `practice` ("Practice") in the Battle area.
+- [x] Setup: your team from a saved team, the Team Builder, a paste, a meta
+  sample (`engine/metaTeam.ts`) or a random team; opponent from a meta
+  sample, a saved team or a random team; bot level.
+- [x] Battle view: both actives with HP, status, boosts and Tera, move and
+  switch buttons from the request, the log in sentences (`engine/describe.ts`).
+- [x] Take back one turn; save the log; rematch.
+- [x] UI test (`tests/ui/practice.spec.ts`) plays a battle to the end.
 - [ ] Hint: level 2's top three actions with `explain.ts` text.
-- [ ] Take back one turn (snapshot each turn), eval graph per turn, export
-  the log as a Showdown replay file.
-- [ ] UI tests: start a random battle against level 0 and play it to the end
-  by always choosing the first legal option; all layout checks pass.
+- [ ] Eval graph per turn.
+- [ ] Add the box (PC) as a team source.
 - Done when: a full 6v6 Gen 9 OU battle against levels 0 to 2 plays to the
   end with no desyncs.
 

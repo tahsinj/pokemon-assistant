@@ -37,6 +37,9 @@ const BreedingPage = lazy(() =>
 const SmogonPage = lazy(() =>
   import('./pages/SmogonPage').then((m) => ({ default: m.SmogonPage })),
 );
+const PracticePage = lazy(() =>
+  import('./pages/PracticePage').then((m) => ({ default: m.PracticePage })),
+);
 const CounterDraftPage = lazy(() =>
   import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
 );
@@ -329,6 +332,8 @@ export function App() {
         return <TeamBuilderPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
       case 'calcdex':
         return <CalcdexPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
+      case 'practice':
+        return <PracticePage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'planner':
