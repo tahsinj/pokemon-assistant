@@ -1,8 +1,8 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { findLegacyUserData, MARKER } from './userDataMigration';
+import { DB_FILE, findLegacyUserData, MARKER, renameLegacyDb } from './userDataMigration';
 
 let appData: string;
 let current: string;
@@ -49,5 +49,45 @@ describe('findLegacyUserData', () => {
   it('ignores old folders without a database', () => {
     mkdirSync(path.join(appData, 'pokemon-assistant'));
     expect(findLegacyUserData(appData, current)).toBeNull();
+  });
+});
+
+describe('renameLegacyDb', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'stablab-db-'));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('renames the old database file', () => {
+    writeFileSync(path.join(dir, MARKER), 'old');
+    expect(renameLegacyDb(dir)).toBe(true);
+    expect(readFileSync(path.join(dir, DB_FILE), 'utf8')).toBe('old');
+    expect(existsSync(path.join(dir, MARKER))).toBe(false);
+  });
+
+  it('keeps an existing database under the new name', () => {
+    writeFileSync(path.join(dir, MARKER), 'old');
+    writeFileSync(path.join(dir, DB_FILE), 'new');
+    expect(renameLegacyDb(dir)).toBe(false);
+    expect(readFileSync(path.join(dir, DB_FILE), 'utf8')).toBe('new');
+  });
+
+  it('does nothing on a fresh install', () => {
+    expect(renameLegacyDb(dir)).toBe(false);
+  });
+});
+
+describe('findLegacyUserData after the rename', () => {
+  it('does nothing once the current folder has a database under the new name', () => {
+    const appData = mkdtempSync(path.join(tmpdir(), 'stablab-appdata-'));
+    const current = path.join(appData, 'STAB Lab');
+    mkdirSync(current);
+    writeFileSync(path.join(current, DB_FILE), 'x');
+    const old = path.join(appData, 'pokemon-assistant');
+    mkdirSync(old);
+    writeFileSync(path.join(old, MARKER), 'y');
+    expect(findLegacyUserData(appData, current)).toBeNull();
+    rmSync(appData, { recursive: true, force: true });
   });
 });

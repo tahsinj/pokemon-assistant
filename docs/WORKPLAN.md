@@ -44,7 +44,7 @@ tests in another, and uploads screenshots. Both must stay green.
 
 | Path | What |
 | --- | --- |
-| `src/main/` | Electron main: SQLite (`rivalsDb.ts`, `dbSchema.ts`), sprite cache, userData migration |
+| `src/main/` | Electron main: SQLite (`db.ts`, `dbSchema.ts`), sprite cache, userData migration |
 | `src/shared/speciesId.ts` | Species id normalization, shared by main and renderer |
 | `src/renderer/src/App.tsx` | Home screen, area bar, format picker, page routing |
 | `src/renderer/src/lib/areas.ts` | Areas, tools and their one name each. Add new tools here |
@@ -280,9 +280,9 @@ Status: not started.
 
 Small items, any time. Each is one commit.
 
-- [ ] Rename `src/main/rivalsDb.ts` and the `rivals-assistant.sqlite` file to
-  STAB Lab names. The file rename needs a migration step next to
-  `userDataMigration.ts`, with a test.
+- [x] `src/main/rivalsDb.ts` is `src/main/db.ts`, and the database is
+  `stab-lab.sqlite`; an old `rivals-assistant.sqlite` is renamed on start
+  (`renameLegacyDb`, tested).
 - [ ] Shared components from SPEC 5.8 that don't exist yet (`DataTable`,
   `Toolbar`, `Field`, `Panel`) as the M3 pages need them. `Field` should
   replace the three overlapping input skins in `styles.css` (`.ds input`,

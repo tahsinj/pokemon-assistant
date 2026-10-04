@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { app } from 'electron';
 import type { Database, SqlJsStatic } from 'sql.js';
 import { applySchema } from './dbSchema';
+import { DB_FILE, renameLegacyDb } from './userDataMigration';
 
 // ASM build avoids bundling sql-wasm.wasm into the Electron package.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -14,7 +15,7 @@ const initSqlJs = require('sql.js/dist/sql-asm.js') as (config?: {
 let db: Database | null = null;
 
 function dbPath() {
-  return path.join(app.getPath('userData'), 'rivals-assistant.sqlite');
+  return path.join(app.getPath('userData'), DB_FILE);
 }
 
 function persist() {
@@ -24,7 +25,8 @@ function persist() {
   fs.writeFileSync(dbPath(), Buffer.from(db.export()));
 }
 
-export async function initRivalsDb(): Promise<void> {
+export async function initDb(): Promise<void> {
+  renameLegacyDb(app.getPath('userData'));
   const SQL = await initSqlJs();
   const file = dbPath();
   if (fs.existsSync(file)) {

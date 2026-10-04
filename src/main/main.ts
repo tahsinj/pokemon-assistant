@@ -5,7 +5,7 @@ import {
   deletePcBox,
   deletePcPokemon,
   deleteTeam,
-  initRivalsDb,
+  initDb,
   listPcBoxes,
   listPcPokemon,
   listTeams,
@@ -15,7 +15,7 @@ import {
   reorderPcBoxes,
   savePcPokemon,
   saveTeam,
-} from './rivalsDb';
+} from './db';
 import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
 import { migrateLegacyUserData } from './legacyUserData';
 
@@ -62,7 +62,7 @@ async function bootstrap() {
   // Serve cpsprite:// from the per-user sprite cache (offline-capable).
   registerSpriteProtocol();
 
-  await initRivalsDb();
+  await initDb();
 
   ipcMain.handle('teams:list', () => listTeams());
   ipcMain.handle('teams:load', (_e, id: string) => loadTeam(id));
