@@ -59,6 +59,8 @@ export interface OpenTool {
   area: AreaDef;
   tool: ToolId;
   name: string;
+  /** Switch to another tool (and its area). */
+  goTo: (tool: ToolId) => void;
 }
 
 export const ToolContext = createContext<OpenTool | null>(null);

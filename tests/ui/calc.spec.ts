@@ -23,4 +23,12 @@ test('team view compares every roster member against the opposing active', async
   await matrix.getByRole('button', { name: 'OPEN' }).nth(2).click();
   await expect(app.getByRole('button', { name: 'Matchup', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(app.locator('[data-ui="page-subtitle"]')).toContainText('Gengar vs Great Tusk');
+
+  await app.getByTitle('Show every damage roll').first().click();
+  await expect(app.locator('[data-ui="roll-histogram"]')).toBeVisible();
+  expect(await app.evaluate(spilledText)).toEqual([]);
+
+  await app.getByRole('button', { name: 'SEND TO PRACTICE' }).click();
+  await expect(app.locator('.dive-content [data-ui="page-title"]')).toHaveText('Practice');
+  await expect(app.locator('[data-ui="battle-controls"]')).toContainText('Pick your lead', { timeout: 20_000 });
 });

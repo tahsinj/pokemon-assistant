@@ -83,8 +83,10 @@ Goal: battles run on the real Showdown engine. Practice battles against bots,
 replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 5.3.
 
-Status: in progress. Engine, levels 0 and 1, and the Practice page work.
-Next: level 2 (1.4), hints and eval graph (1.5), replay review (1.6).
+Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
+hints, Replay Review and the calc extras work. Left: the predictor adapter
+(1.3), manual entry and retiring the Battle Tracker (1.6), packaging checks
+(section 6).
 
 ### 1.1 Dependencies
 
@@ -123,16 +125,17 @@ Next: level 2 (1.4), hints and eval graph (1.5), replay review (1.6).
 - [x] Level 0 Random (`bots/random.ts`, seeded).
 - [x] Level 1 Greedy (`bots/greedy.ts`): beats Random in at least 85% of 40
   games (`bots/bots.test.ts`). `bots/match.ts` plays bot-vs-bot series.
-- [ ] Level 2 Search: expectimax, first ply on the real engine (clone per
-  joint action), second ply on the calc model, opponent sets sampled from the
-  predictor, chance nodes for damage roll buckets, crits and accuracy. Time
-  budget per move (default 1.5 s), runs in the worker.
-- [ ] `npm run bots:gauntlet` (`scripts/bots-gauntlet.mjs`): round robin over
-  a fixed team list, Elo with confidence intervals, writes
-  `docs/bot-elo.md`.
-- Done when: level 1 beats level 0 at least 90% and level 2 beats level 1 at
-  least 65% over 500 games each; a short gauntlet (about 100 games per
-  pairing) runs in CI and fails on a regression.
+- [x] Level 2 Search (`bots/search.ts`): one ply on the real engine, each
+  action against the foe's top replies, two roll samples each, scored by
+  Pokémon left and HP. About 0.1 to 0.3 s per decision.
+- [ ] Level 2 still sees the foe's real move list (narrowed to revealed moves
+  once any are used). Sample hidden sets from the predictor instead, and add
+  a calc-based second ply.
+- [x] `npm run bots:gauntlet` writes `docs/bot-elo.md`; the `Bot gauntlet`
+  workflow runs 60 games per pairing weekly and on bot changes.
+- Result (100 games each, [bot-elo.md](bot-elo.md)): Greedy beats Random 96%,
+  Search beats Greedy 72%, Search beats Random 99%. The spec asks for 500
+  games; run `npm run bots:gauntlet -- --games 500` (about 1.5 hours).
 
 ### 1.5 Practice page
 
@@ -144,20 +147,25 @@ Next: level 2 (1.4), hints and eval graph (1.5), replay review (1.6).
   switch buttons from the request, the log in sentences (`engine/describe.ts`).
 - [x] Take back one turn; save the log; rematch.
 - [x] UI test (`tests/ui/practice.spec.ts`) plays a battle to the end.
-- [ ] Hint: level 2's top three actions with `explain.ts` text.
-- [ ] Eval graph per turn.
+- [x] Hint: the Search bot's three best actions; click one to play it.
+- [x] Position graph per turn.
 - [ ] Add the box (PC) as a team source.
+- [ ] Hint explanations (threats, assumptions) once level 2 uses the
+  predictor.
 - Done when: a full 6v6 Gen 9 OU battle against levels 0 to 2 plays to the
   end with no desyncs.
 
 ### 1.6 Replay review (replaces the Battle Tracker)
 
-- [ ] New tool `replays` ("Replay Review") in the Battle area.
-- [ ] Input: a replay URL (fetch `https://replay.pokemonshowdown.com/<id>.json`),
-  or a dropped `.log` / `.html` file. Parse with `@pkmn/protocol` into the
-  client state; step turn by turn in the practice battle view.
-- [ ] Review: run level 2 on the chosen side's decisions and flag turns where
-  the choice was much worse than the best one, plus the eval graph.
+- [x] New tool `replays` ("Replay Review") in the Battle area
+  (`pages/ReplayPage.tsx`, `engine/replay.ts`, `engine/review.ts`).
+- [x] Input: a replay link (fetches `<id>.json`; if CORS blocks it, the user
+  saves the page and opens the file), a saved replay page, its JSON, or a
+  Practice log. Steps turn by turn with the shared battle view.
+- [x] Review from public information: flags turns where a clearly stronger
+  revealed move (or a likely KO) was passed up; position graph.
+- [ ] Review with the search bot needs a simulator state rebuilt from the
+  replay (teams from what was revealed plus usage sets). Not started.
 - [ ] Manual entry writes protocol lines for battles played elsewhere.
 - [ ] Then delete `pages/BattleSessionPage.tsx`, `lib/battle/events.ts`,
   `state.ts`, `stateBridge.ts` and `search/simulate.ts`. Port or delete their
@@ -167,12 +175,13 @@ Next: level 2 (1.4), hints and eval graph (1.5), replay review (1.6).
 
 ### 1.7 Calc extras (SPEC 5.4)
 
-- [ ] Golden tests: 30 calcs from `@smogon/calc`'s own test suite through
-  `lib/battle/damage.ts`, including id-form inputs (`choiceband`,
-  `roughskin`).
-- [ ] Roll histogram for the selected move and KO chance after hazards and
-  end-of-turn damage.
-- [ ] "Send to practice": start a battle from the two rosters on screen.
+- [x] Golden tests (`lib/battle/damage.golden.test.ts`): 30 calcs through the
+  wrapper with id-form inputs match `@smogon/calc` called directly. They
+  caught species ids disabling Soul Dew, Thick Club and similar effects.
+- [x] Roll histogram for a move (click its damage), with the calc's KO text,
+  which includes hazards set in the field bar.
+- [x] "Send to practice" starts Practice with the two rosters against the
+  Search bot.
 
 ### 1.8 Wrap up
 

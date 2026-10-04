@@ -20,6 +20,7 @@ import { ActiveCard, BattleLog, EvalGraph } from '../components/battle/BattlePar
 import { sampleMetaTeam } from '../engine/metaTeam';
 import { membersToShowdown } from '../engine/teamText';
 import { validateTeam } from '../engine/engine';
+import { takePracticeHandoff } from '../engine/handoff';
 import { isFainted, type BattleRequest, type RequestPokemon } from '../engine/types';
 
 type MySource = 'saved' | 'draft' | 'paste' | 'meta' | 'random';
@@ -71,6 +72,13 @@ export function PracticePage({
   const client = useRef<PracticeClient | null>(null);
 
   useEffect(() => () => client.current?.dispose(), []);
+
+  // Teams sent from the damage calc start a battle right away.
+  useEffect(() => {
+    const handoff = takePracticeHandoff();
+    if (handoff) void run({ format: format.showdownFormat, ...handoff, botLevel: 2 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!bridge?.teamsList) return;

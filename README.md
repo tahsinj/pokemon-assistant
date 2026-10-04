@@ -15,8 +15,10 @@ Five areas around the home screen orb:
 - **Dex**: Pokédex with forms, learnsets, coverage and threats; move index
 - **Box**: PC storage with set review, Team Builder with set editor and role
   audit, EV / IV planner, breeding odds
-- **Battle**: damage calc (`@smogon/calc`) with a one-on-one matchup view and a
-  whole-team view, plus a battle tracker with set prediction
+- **Battle**: damage calc (`@smogon/calc`) with a one-on-one matchup view, a
+  whole-team view and roll histograms; practice battles on the Showdown
+  simulator against three bot levels, with hints and take-backs; replay
+  review for Showdown replays; a battle tracker with set prediction
 - **Counters**: Counter Draft
 - **Meta**: usage stats for the active format
 

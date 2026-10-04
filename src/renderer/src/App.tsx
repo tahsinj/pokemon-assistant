@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { loadData } from './lib/data';
 import { DEFAULT_FORMAT, FORMAT_ORDER, FORMATS, FormatContext, isFormatId, type FormatId } from './lib/formats';
 import type { SmogonBundle } from './lib/smogon';
@@ -91,11 +91,11 @@ export function App() {
   const [areaTabs, setAreaTabs] = useState<Record<AreaId, ToolId>>(FIRST_TABS);
   const area = AREAS.find((a) => a.id === openArea) ?? null;
   const openTool = area ? areaTabs[area.id] : null;
-  const showTool = (tool: ToolId) => {
+  const showTool = useCallback((tool: ToolId) => {
     const target = areaOf(tool).id;
     setAreaTabs((prev) => ({ ...prev, [target]: tool }));
     setOpenArea(target);
-  };
+  }, []);
   const closeArea = () => setOpenArea(null);
   const [staggerIn, setStaggerIn] = useState(false);
   const [hudTeam, setHudTeam] = useState<HudTeamMon[]>([]);
@@ -304,8 +304,8 @@ export function App() {
   const dataReady = !!pokemon;
 
   const openInfo = useMemo<OpenTool | null>(
-    () => (area && openTool ? { area, tool: openTool, name: TOOL_NAMES[openTool] } : null),
-    [area, openTool],
+    () => (area && openTool ? { area, tool: openTool, name: TOOL_NAMES[openTool], goTo: showTool } : null),
+    [area, openTool, showTool],
   );
 
   useEffect(() => {

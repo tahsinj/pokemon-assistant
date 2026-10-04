@@ -40,6 +40,9 @@ import { SpeciesList } from '../components/SpeciesList';
 import { ItemSearchInput } from '../components/ItemSearchInput';
 import { Segmented } from '../components/hud/Segmented';
 import { TeamMatrix, type MatrixRow } from '../components/calc/TeamMatrix';
+import { RollHistogram } from '../components/calc/RollHistogram';
+import { useOpenTool } from '../lib/areas';
+import { sendToPractice } from '../engine/handoff';
 
 type StatusCode = '' | 'brn' | 'par' | 'psn' | 'tox' | 'slp' | 'frz';
 
@@ -306,6 +309,14 @@ export function CalcdexPage({
   const [crit, setCrit] = useState(false);
   const [sides, setSides] = useState<Record<SideKey, SideSpec>>({ p1: { ...EMPTY_SIDE }, p2: { ...EMPTY_SIDE } });
   const pc = usePcCollection();
+  const openTool = useOpenTool();
+
+  const rosterText = (panel: PanelState) =>
+    exportShowdownFromParsed(
+      panel.roster.filter((m): m is CalcMon => !!m).map(toParsedMon),
+      { includeLevelAlways: true },
+    );
+  const canPractice = p1.roster.some(Boolean) && p2.roster.some(Boolean);
 
   const [savedTeams, setSavedTeams] = useState<{ id: string; name: string; tag: string }[]>([]);
   const refreshSaved = useMemo(
@@ -389,6 +400,19 @@ export function CalcdexPage({
       subtitle={`${matchupLabel}${weather ? ` · ${weather}` : ''}${terrain ? ` · ${terrain} Terrain` : ''}`}
       side={
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="chunky ghost font-display text-[12px]"
+            style={{ padding: '6px 12px' }}
+            disabled={!canPractice || !openTool}
+            onClick={() => {
+              sendToPractice({ playerTeam: rosterText(p1), botTeam: rosterText(p2) });
+              openTool?.goTo('practice');
+            }}
+            title="Play these two rosters against each other in Practice, you against the Search bot"
+          >
+            SEND TO PRACTICE
+          </button>
           <Segmented value={view} onChange={setView} options={VIEWS} size="md" />
           <button
             type="button"
@@ -986,6 +1010,7 @@ function ActiveDashboard({
   onCopySet: () => Promise<void>;
 }) {
   const [showSpread, setShowSpread] = useState(false);
+  const [rollsFor, setRollsFor] = useState<number | null>(null);
 
   const learnset = useMemo(() => {
     const out: string[] = [];
@@ -1284,8 +1309,13 @@ function ActiveDashboard({
                     )}
                   </div>
                 </div>
-                <span
-                  className="font-mono-hud text-[14px] tabular-nums whitespace-nowrap text-right"
+                <button
+                  type="button"
+                  disabled={!showBar}
+                  aria-pressed={rollsFor === i}
+                  onClick={() => setRollsFor(rollsFor === i ? null : i)}
+                  title={showBar ? 'Show every damage roll' : undefined}
+                  className="p-0 bg-transparent border-0 font-mono-hud text-[14px] tabular-nums whitespace-nowrap text-right enabled:cursor-pointer enabled:hover:underline"
                   style={{ color: showBar ? '#fff' : 'var(--ink-2)' }}
                 >
                   {d
@@ -1306,7 +1336,7 @@ function ActiveDashboard({
                       {ko.text}
                     </span>
                   )}
-                </span>
+                </button>
                 {name ? (
                   <button
                     type="button"
@@ -1329,6 +1359,10 @@ function ActiveDashboard({
           </datalist>
         </div>
       </div>
+
+      {rollsFor !== null && outcomes[rollsFor] && (
+        <RollHistogram d={outcomes[rollsFor]!} targetHp={opposing?.hpPercent ?? 100} />
+      )}
 
       {/* Deep stat strip - horizontal, expandable IV/EV rows */}
       <div className="rounded-[10px] border border-white/10 bg-black/20 px-3 py-1.5">
