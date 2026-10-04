@@ -9,6 +9,9 @@ export function headerClearOfClose(): string[] {
   const rect = (sel: string) => document.querySelector(sel)?.getBoundingClientRect() ?? null;
   const actions = rect('[data-ui="page-actions"]');
   const out: string[] = [];
+  // Scrolled out of the page area: clipped away, so it can't collide with anything.
+  const content = rect('.dive-content');
+  if (actions && content && actions.bottom <= content.top) return out;
   for (const sel of ['[data-ui="close"]', '[data-ui="close-hint"]']) {
     const r = rect(sel);
     if (!actions || !r) continue;

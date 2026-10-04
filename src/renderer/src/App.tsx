@@ -40,6 +40,7 @@ const SmogonPage = lazy(() =>
 const PracticePage = lazy(() =>
   import('./pages/PracticePage').then((m) => ({ default: m.PracticePage })),
 );
+const ReplayPage = lazy(() => import('./pages/ReplayPage').then((m) => ({ default: m.ReplayPage })));
 const CounterDraftPage = lazy(() =>
   import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
 );
@@ -334,6 +335,8 @@ export function App() {
         return <CalcdexPage pokemon={pokemon} moves={moves} items={items} smogon={smogon} />;
       case 'practice':
         return <PracticePage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'replays':
+        return <ReplayPage />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'planner':
