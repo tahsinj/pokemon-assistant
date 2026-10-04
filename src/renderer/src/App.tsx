@@ -568,12 +568,13 @@ export function App() {
           <button
             type="button"
             className="dive-close"
+          data-ui="close"
             onClick={() => setOpenTool(null)}
             aria-label="Close"
           >
             <span className="sr-only">Close</span>
           </button>
-          <div className="dive-esc-hint">ESC · CLOSE</div>
+          <div className="dive-esc-hint" data-ui="close-hint">ESC · CLOSE</div>
           <div
             className={`dive-content ${staggerIn ? 'dive-stagger-in' : ''}`}
             key={openTool || 'empty'}

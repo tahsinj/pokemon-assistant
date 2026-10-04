@@ -17,14 +17,16 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "lint:prose": "node scripts/lint-prose.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json && tsc -p tsconfig.main-tests.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json && tsc -p tsconfig.tests.json",
     "check": "npm run lint && npm run lint:prose && npm run typecheck && npm test",
     "build-dex": "node scripts/build-dex.mjs",
-    "fetch-usage": "node scripts/fetch-usage.mjs"
+    "fetch-usage": "node scripts/fetch-usage.mjs",
+    "test:ui": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@pkmn/sim": "^0.10.11",
+    "@playwright/test": "^1.56.1",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

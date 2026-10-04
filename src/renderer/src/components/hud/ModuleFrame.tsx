@@ -24,14 +24,14 @@ export function ModuleFrame({
 }) {
   return (
     <div className="mod-in">
-      <div className="flex items-end justify-between gap-4 mb-3 px-1">
+      <div data-ui="page-header" className="flex items-end justify-between gap-4 mb-3 px-1">
         <div className="min-w-0">
           {kicker && (
             <div className="hud-mark font-mono-hud text-[14px] uppercase tracking-[.3em] text-[var(--hud-accent-2)] mb-1 whitespace-nowrap">
               {kicker}
             </div>
           )}
-          <div className="font-display text-[28px] font-bold leading-none text-[var(--ink-0)]">
+          <div data-ui="page-title" className="font-display text-[28px] font-bold leading-none text-[var(--ink-0)]">
             {title}
           </div>
           {subtitle && (
@@ -40,7 +40,7 @@ export function ModuleFrame({
             </div>
           )}
         </div>
-        {side && <div className="flex-shrink-0">{side}</div>}
+        {side && <div data-ui="page-actions" className="flex-shrink-0">{side}</div>}
       </div>
       <div className="glass notch rounded-[18px] p-5">{children}</div>
     </div>

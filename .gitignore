@@ -17,3 +17,7 @@ npm-debug.log*
 # Local assistant notes, never committed
 CLAUDE.md
 .claude/
+
+# Test output
+test-results/
+playwright-report/
