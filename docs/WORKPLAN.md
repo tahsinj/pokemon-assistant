@@ -149,7 +149,8 @@ hints, Replay Review and the calc extras work. Left: the predictor adapter
 - [x] UI test (`tests/ui/practice.spec.ts`) plays a battle to the end.
 - [x] Hint: the Search bot's three best actions; click one to play it.
 - [x] Position graph per turn.
-- [ ] Add the box (PC) as a team source.
+- [x] Add the box (PC) as a team source ("Best of box", the Team Builder's
+  balanced pick).
 - [ ] Hint explanations (threats, assumptions) once level 2 uses the
   predictor.
 - Done when: a full 6v6 Gen 9 OU battle against levels 0 to 2 plays to the

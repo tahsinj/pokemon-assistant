@@ -33,3 +33,16 @@ test('a practice battle against the random bot plays to the end', async ({ app }
   await expect(app.locator('[data-ui="battle-log"]')).toContainText('won the battle');
   await snap(app, testInfo, 'practice-end');
 });
+
+test('practice can use the best six from the PC box', async ({ app }) => {
+  await openTool(app, 'Battle', 'Practice');
+  await app.getByRole('button', { name: 'Best of box' }).click();
+  for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
+  await app.getByRole('button', { name: 'Random', exact: true }).nth(1).click();
+  await app.getByRole('button', { name: 'START BATTLE' }).click();
+  const controls = app.locator('[data-ui="battle-controls"]');
+  await expect(controls).toContainText('Pick your lead', { timeout: 20_000 });
+  // Six of the eight stub box Pokémon.
+  await expect(controls.locator('[data-ui="choice"]')).toHaveCount(6);
+  await expect(controls).toContainText('Corviknight');
+});

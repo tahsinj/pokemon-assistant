@@ -9,6 +9,9 @@ import type { SmogonBundle } from '../lib/smogon';
 import { useFormat } from '../lib/formats';
 import { findMove } from '../lib/displayNames';
 import { getTeamDraft } from '../lib/teamDraft';
+import { usePcCollection } from '../lib/usePcCollection';
+import { buildBestTeams } from '../lib/bestSix';
+import { exportShowdownFromPc } from '../lib/showdownTeam';
 import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 import { Segmented } from '../components/hud/Segmented';
 import { TypeChip } from '../components/hud/HudPrimitives';
@@ -23,12 +26,13 @@ import { validateTeam } from '../engine/engine';
 import { takePracticeHandoff } from '../engine/handoff';
 import { isFainted, type BattleRequest, type RequestPokemon } from '../engine/types';
 
-type MySource = 'saved' | 'draft' | 'paste' | 'meta' | 'random';
+type MySource = 'saved' | 'draft' | 'box' | 'paste' | 'meta' | 'random';
 type FoeSource = 'meta' | 'saved' | 'random';
 
 const MY_SOURCES: { id: MySource; label: string }[] = [
   { id: 'saved', label: 'Saved team' },
   { id: 'draft', label: 'Team Builder' },
+  { id: 'box', label: 'Best of box' },
   { id: 'paste', label: 'Paste' },
   { id: 'meta', label: 'Meta team' },
   { id: 'random', label: 'Random' },
@@ -96,6 +100,7 @@ export function PracticePage({
   }, [bridge]);
 
   const pokemonById = useMemo(() => new Map(pokemon.map((p) => [p.id, p])), [pokemon]);
+  const pc = usePcCollection();
 
   const savedText = async (id: string): Promise<string> => {
     const rec = id && bridge?.teamsLoad ? await bridge.teamsLoad(id) : null;
@@ -114,6 +119,12 @@ export function PracticePage({
         });
         if (!members.length) throw new Error('The Team Builder has no team in progress.');
         return membersToShowdown(members, moves);
+      }
+      case 'box': {
+        const best = buildBestTeams(pc.mons, Object.fromEntries(pokemonById), moves, smogon, { presets: ['balanced'] });
+        const members = best.candidates[0]?.members.map((m) => m.rec) ?? [];
+        if (!members.length) throw new Error('No Pokémon in your box are legal in this format.');
+        return exportShowdownFromPc(members);
       }
       case 'paste':
         if (!paste.trim()) throw new Error('Paste a Showdown team first.');
@@ -199,7 +210,11 @@ export function PracticePage({
         <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4 hud-form">
           <div className="mono-panel p-4 rounded-[12px] flex flex-col gap-3">
             <SectionHead label="Your team" />
-            <Segmented value={mySource} onChange={setMySource} options={MY_SOURCES.filter((s) => s.id !== 'saved' || savedTeams.length)} />
+            <Segmented
+              value={mySource}
+              onChange={setMySource}
+              options={MY_SOURCES.filter((s) => (s.id !== 'saved' || savedTeams.length) && (s.id !== 'box' || pc.mons.length))}
+            />
             {mySource === 'saved' && (
               <TeamSelect teams={savedTeams} value={myTeamId} onChange={setMyTeamId} label="Your saved team" />
             )}
@@ -276,6 +291,7 @@ export function PracticePage({
 const SOURCE_HINT: Record<MySource, string> = {
   saved: 'Uses the team exactly as saved.',
   draft: 'Uses the team currently open in the Team Builder.',
+  box: "The best six from your PC box, picked like the Team Builder's balanced preset, with their stored sets.",
   paste: 'Any team exported from Showdown.',
   meta: 'Six Pokémon drawn from this format by usage, with common sets.',
   random: 'A random battle team. If both sides are random, the battle uses random battle rules.',
