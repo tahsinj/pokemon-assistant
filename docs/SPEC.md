@@ -816,8 +816,9 @@ Status:
   graph and saved logs; Battle > Replay Review loads Showdown replays and
   flags weak move choices from public information. The calc has 30 golden
   tests, roll histograms and Send to practice. The set predictor runs on
-  `@pkmn/client` state (`engine/setTracker.ts`). Left for M3, tracked in
-  [WORKPLAN.md](WORKPLAN.md) section 1: hidden-set sampling for Search, search-based replay review, manual entry
+  `@pkmn/client` state (`engine/setTracker.ts`), and Search and the hint
+  plan with foe sets drawn from it instead of the real ones. Left for M3,
+  tracked in [WORKPLAN.md](WORKPLAN.md) section 1: hint explanations, search-based replay review, manual entry
   and retiring the Battle Tracker, and a packaged-app check.
 
 ## 8. Risks

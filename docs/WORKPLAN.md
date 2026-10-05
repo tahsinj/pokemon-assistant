@@ -86,8 +86,9 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
 hints, Replay Review, the calc extras and the predictor on client state
-work. Left: hidden-set sampling for Search (1.4), manual entry and retiring
-the Battle Tracker (1.6), and a Windows installer check (section 6).
+work, and Search plans with sampled foe sets instead of the real ones. Left:
+hint explanations (1.5), manual entry and retiring the Battle Tracker (1.6),
+and a Windows installer check (section 6).
 
 ### 1.1 Dependencies
 
@@ -135,9 +136,14 @@ the Battle Tracker (1.6), and a Windows installer check (section 6).
 - [x] Level 2 Search (`bots/search.ts`): one ply on the real engine, each
   action against the foe's top replies, two roll samples each, scored by
   Pokémon left and HP. About 0.1 to 0.3 s per decision.
-- [ ] Level 2 still sees the foe's real move list (narrowed to revealed moves
-  once any are used). Sample hidden sets from the predictor instead, and add
-  a calc-based second ply.
+- [x] Level 2 no longer sees the foe's real sets. It tracks the battle from
+  its own seat (`setTracker.ts`) and searches copies where each foe
+  Pokémon's unrevealed moves, item, ability, spread and Tera type are drawn
+  from the predictor (`bots/determinize.ts`); priors are the random battle
+  roles (`bots/setPool.ts`) plus the format's usage sets in Practice. A
+  calc-based second ply estimates the next exchange. The hint searches from
+  your seat the same way, so it no longer sees the bot's sets. About 50 ms
+  per decision; Search beat Greedy 47 of 60 in a first check.
 - [x] `npm run bots:gauntlet` writes `docs/bot-elo.md`; the `Bot gauntlet`
   workflow runs 60 games per pairing weekly and on bot changes.
 - Result (100 games each, [bot-elo.md](bot-elo.md)): Greedy beats Random 96%,

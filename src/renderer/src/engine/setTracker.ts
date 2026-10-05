@@ -119,12 +119,14 @@ function revealedAbility(p: ClientPokemon): string | null {
 
 const sideOf = (ident: string): SideId | null => (ident.startsWith('p1') ? 'p1' : ident.startsWith('p2') ? 'p2' : null);
 
-export function trackSets(
-  lines: readonly string[],
-  side: SideId,
-  ctx: PredictorContext,
-  ownSets?: PokemonSet[],
-): SetTracking {
+interface Walker {
+  feed(line: string): void;
+  /** Settle the move in progress; call at the end of each batch of lines. */
+  close(): void;
+  snapshot(): SetTracking;
+}
+
+function makeWalker(side: SideId, ctx: PredictorContext, ownSets?: PokemonSet[]): Walker {
   const foe: SideId = side === 'p1' ? 'p2' : 'p1';
   const battle = newClientBattle({ player: side, sets: ownSets });
   const seen = new Map<string, Seen>();
@@ -269,8 +271,8 @@ export function trackSets(
     }
   };
 
-  for (const line of lines) {
-    if (!line.startsWith('|')) continue;
+  const feed = (line: string) => {
+    if (!line.startsWith('|')) return;
     const parts = line.split('|');
     const kind = parts[1];
     const hasFrom = parts.some((x) => x.startsWith('[from]'));
@@ -305,12 +307,44 @@ export function trackSets(
       const record = active && who === foe && seen.get(keyOf(active));
       if (record) atSwitchIn.set(keyOf(active), { ...record, moves: new Set(record.moves) });
     }
-  }
-  close();
+  };
 
-  const models = new Map<string, OpponentModel>();
-  for (const [ident, s] of seen) models.set(ident, s.model);
-  return { battle, models };
+  const snapshot = (): SetTracking => {
+    const models = new Map<string, OpponentModel>();
+    for (const [ident, s] of seen) models.set(ident, s.model);
+    return { battle, models };
+  };
+
+  return { feed, close, snapshot };
+}
+
+export interface SetTracker {
+  /** Bring the models up to date with a battle's lines so far. Feeds only lines it hasn't seen. */
+  update(lines: readonly string[]): SetTracking;
+}
+
+/** A tracker for one side of one battle. Lines that don't extend the last batch (a take-back) start it over. */
+export function createSetTracker(side: SideId, ctx: PredictorContext, ownSets?: PokemonSet[]): SetTracker {
+  let walker = makeWalker(side, ctx, ownSets);
+  let done = 0;
+  let last = '';
+  return {
+    update(lines) {
+      if (lines.length < done || (done > 0 && lines[done - 1] !== last)) {
+        walker = makeWalker(side, ctx, ownSets);
+        done = 0;
+      }
+      for (let i = done; i < lines.length; i++) walker.feed(lines[i]);
+      done = lines.length;
+      last = lines[done - 1] ?? '';
+      walker.close();
+      return walker.snapshot();
+    },
+  };
+}
+
+export function trackSets(lines: readonly string[], side: SideId, ctx: PredictorContext, ownSets?: PokemonSet[]): SetTracking {
+  return createSetTracker(side, ctx, ownSets).update(lines);
 }
 
 /** The model's likeliest sets in the shape the explanation helpers take. */

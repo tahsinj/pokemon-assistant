@@ -24,6 +24,7 @@ import { sampleMetaTeam } from '../engine/metaTeam';
 import { membersToShowdown } from '../engine/teamText';
 import { validateTeam } from '../engine/engine';
 import { takePracticeHandoff } from '../engine/handoff';
+import { buildSmogonSetPool } from '../lib/battle/predictor/smogonPriors';
 import { isFainted, type BattleRequest, type RequestPokemon } from '../engine/types';
 
 type MySource = 'saved' | 'draft' | 'box' | 'paste' | 'meta' | 'random';
@@ -76,12 +77,18 @@ export function PracticePage({
   const [hints, setHints] = useState<Hint[] | null>(null);
   const client = useRef<PracticeClient | null>(null);
 
+  // Usage sets are the bot's and the hint's first guesses at hidden sets.
+  const setPool = useMemo(() => {
+    if (!smogon) return undefined;
+    return buildSmogonSetPool(smogon, Object.fromEntries(pokemon.map((p) => [p.id, p])));
+  }, [smogon, pokemon]);
+
   useEffect(() => () => client.current?.dispose(), []);
 
   // Teams sent from the damage calc start a battle right away.
   useEffect(() => {
     const handoff = takePracticeHandoff();
-    if (handoff) void run({ format: format.showdownFormat, ...handoff, botLevel: 2 });
+    if (handoff) void run({ format: format.showdownFormat, ...handoff, botLevel: 2, setPool });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -167,7 +174,8 @@ export function PracticePage({
       const [mine, theirs] = await Promise.all([myTeam(), foeTeam()]);
       const battleFormat = !mine && !theirs ? 'gen9randombattle' : format.showdownFormat;
       setWarnings(mine && battleFormat !== 'gen9randombattle' ? validateTeam(battleFormat, mine) : []);
-      await run({ format: battleFormat, playerTeam: mine, botTeam: theirs, botLevel: level });
+      const pool = battleFormat === 'gen9randombattle' ? undefined : setPool;
+      await run({ format: battleFormat, playerTeam: mine, botTeam: theirs, botLevel: level, setPool: pool });
     } catch (e) {
       setProblem(e instanceof Error ? e.message : 'The battle could not start.');
     }

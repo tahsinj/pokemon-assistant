@@ -6,9 +6,12 @@
 import { Engine, randomTeam, seedFrom } from './engine';
 import { greedyBot } from './bots/greedy';
 import { randomBot } from './bots/random';
-import { evaluate, rankActions, searchBot } from './bots/search';
+import { evaluate, rankActions, searchBot, viewKeeper } from './bots/search';
+import { engineContext } from './bots/setPool';
 import type { Bot } from './bots/bot';
-import type { BattleRequest } from './types';
+import type { CandidateSet } from '../lib/battle/predictor/types';
+import type { SetTracking } from './setTracker';
+import type { BattleRequest, SideId } from './types';
 
 export type BotLevel = 0 | 1 | 2;
 
@@ -31,6 +34,8 @@ export interface SessionOptions {
   botLevel: BotLevel;
   seed?: number;
   playerName?: string;
+  /** Usage-based sets for the format, by species id, as prior guesses at hidden sets. */
+  setPool?: Record<string, CandidateSet[]>;
 }
 
 export interface SessionView {
@@ -49,14 +54,16 @@ export interface SessionView {
   evals: number[];
 }
 
-function makeBot(level: BotLevel, seed: number): Bot {
-  return level === 0 ? randomBot(seed) : level === 1 ? greedyBot : searchBot();
+function makeBot(level: BotLevel, seed: number, setPool?: Record<string, CandidateSet[]>): Bot {
+  return level === 0 ? randomBot(seed) : level === 1 ? greedyBot : searchBot({}, setPool);
 }
 
 export class PracticeSession {
   private engine: Engine;
   private readonly bot: Bot;
   private readonly playerName: string;
+  /** Your view of the battle, so hints never use the bot's hidden sets. */
+  private readonly viewOf: (engine: Engine, side: SideId) => SetTracking;
   /** Engine copies at each of the player's turn decisions, oldest first. */
   private snapshots: Engine[] = [];
   private error?: string;
@@ -65,7 +72,8 @@ export class PracticeSession {
 
   constructor(o: SessionOptions) {
     const seed = o.seed ?? Math.floor(Math.random() * 2 ** 31);
-    this.bot = makeBot(o.botLevel, seed);
+    this.bot = makeBot(o.botLevel, seed, o.setPool);
+    this.viewOf = viewKeeper(engineContext(o.setPool));
     this.playerName = o.playerName ?? 'You';
     const team = (t: string | undefined, n: number) => (t?.trim() ? t : randomTeam('gen9randombattle', seedFrom(seed + n)));
     this.engine = Engine.start({
@@ -145,7 +153,7 @@ export class PracticeSession {
       const move = req.active?.[0]?.moves[Number(n) - 1]?.move ?? choice;
       return tera ? `${move} + Tera` : move;
     };
-    return rankActions(this.engine, 'p1', req)
+    return rankActions(this.engine, 'p1', req, this.viewOf(this.engine, 'p1'))
       .slice(0, 3)
       .map((r) => ({ choice: r.choice, label: label(r.choice), score: r.score }));
   }

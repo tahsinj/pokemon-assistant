@@ -192,7 +192,7 @@ export function narrowByAbility(model: OpponentModel, ability: string): Opponent
 export function narrowByItem(model: OpponentModel, item: string): OpponentModel {
   return reweight(
     model,
-    (c) => toId(c.item ?? '') === toId(item),
+    (c) => c.item == null || toId(c.item) === toId(item),
     {
       observation: `item revealed: ${item}`,
       eliminatedReason: `item mismatch`,
@@ -203,7 +203,7 @@ export function narrowByItem(model: OpponentModel, item: string): OpponentModel 
 export function narrowByTera(model: OpponentModel, teraType: string): OpponentModel {
   return reweight(
     model,
-    (c) => toId(c.teraType ?? '') === toId(teraType),
+    (c) => c.teraType == null || toId(c.teraType) === toId(teraType),
     {
       observation: `terastallized: ${teraType}`,
       eliminatedReason: `tera type mismatch`,

@@ -7,11 +7,13 @@ export interface PredictedSet {
   label: string; // human-readable archetype
   nature: string;
   ability: string;
+  /** Null when the set doesn't say; then any revealed item fits it. Same for teraType. */
   item: string | null;
   teraType: string | null;
   ivs: BaseStats;
   evs: BaseStats;
-  moves: string[]; // display names, up to 4
+  /** Display names. Usually four; a random battle role lists its whole movepool. */
+  moves: string[];
   /** Posterior weight in [0, 1]; sum across non-eliminated candidates = 1. */
   weight: number;
   /** True once an observation contradicted this set. Kept for explanation. */
