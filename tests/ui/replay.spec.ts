@@ -32,4 +32,10 @@ test('a saved battle log opens in replay review and steps through turns', async 
   await expect(app.locator('[data-ui="review"]')).toContainText('Gary');
   for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
   await snap(app, testInfo, 'replay');
+
+  await app.getByRole('button', { name: 'Search', exact: true }).click();
+  await expect(app.locator('[data-ui="review"]')).toContainText('Rebuilds each turn');
+  await expect(app.locator('[data-ui="review"]')).not.toContainText('checking turn', { timeout: 60_000 });
+  for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
+  await snap(app, testInfo, 'replay-search');
 });

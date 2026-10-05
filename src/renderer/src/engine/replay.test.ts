@@ -5,7 +5,10 @@ import { legalChoices } from './bots/random';
 import { foeSpec, ownSpec, fieldFor } from './bots/view';
 import { calcDamage } from '../lib/battle/damage';
 import { linesUpTo, parseReplay, replayJsonUrl } from './replay';
-import { replayEvals, reviewReplay } from './review';
+import { replayEvals, reviewReplay, searchReview } from './review';
+import { rebuildAt } from './rebuild';
+import { clientBattle } from './clientState';
+import { engineContext } from './bots/setPool';
 
 /**
  * A battle with known blunders: p1 uses its strongest damaging move on odd
@@ -61,4 +64,30 @@ describe('replays', () => {
     // The greedy side should mostly escape criticism.
     expect(reviewReplay(replay, 'p2').length).toBeLessThan(flags.length);
   });
+
+  it('rebuilds a turn in the simulator with the replay\'s actives, HP and fainted Pokémon', () => {
+    const replay = parseReplay(blunderLog(8));
+    const ctx = engineContext();
+    for (const turn of [2, Math.floor(replay.turnStarts.length / 2), replay.turnStarts.length]) {
+      const client = clientBattle(linesUpTo(replay, turn));
+      const rebuilt = rebuildAt(replay, turn, 'p1', ctx)!;
+      for (const side of ['p1', 'p2'] as const) {
+        const real = client[side].active[0]!;
+        const sim = rebuilt.engine.battle[side].active[0];
+        expect(sim.species.name, `turn ${turn} ${side}`).toBe(real.speciesForme);
+        expect(Math.abs(sim.hp / sim.maxhp - real.hp / real.maxhp)).toBeLessThan(0.02);
+        expect(rebuilt.engine.battle[side].pokemonLeft).toBe(client[side].team.filter((p) => !p.fainted).length + Math.max(0, 6 - client[side].team.length));
+      }
+      expect(rebuilt.engine.request('p1')?.active).toBeDefined();
+    }
+  });
+
+  it('the search review flags the planted blunders more than the greedy side', () => {
+    const replay = parseReplay(blunderLog(8));
+    const ctx = engineContext();
+    const flags = searchReview(replay, 'p1', ctx);
+    expect(flags.length).toBeGreaterThan(0);
+    expect(flags[0].text).toMatch(/search prefers/);
+    expect(searchReview(replay, 'p2', ctx).length).toBeLessThan(flags.length);
+  }, 120_000);
 });

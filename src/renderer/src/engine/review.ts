@@ -1,7 +1,9 @@
 /**
- * Replay review from public information only: for each turn of the reviewed
- * side, compare the move it used with its other revealed moves against the
- * target as it stood at the start of the turn, and flag clear misses.
+ * Replay review. The quick review uses public information only: for each
+ * turn of the reviewed side, compare the move it used with its other
+ * revealed moves against the target as it stood at the start of the turn,
+ * and flag clear misses. The search review rebuilds each turn in the
+ * simulator (`rebuild.ts`) and ranks every option with the search bot.
  */
 import type { Pokemon as ClientPokemon } from '@pkmn/client';
 import { calcDamage, type DamageOutcome } from '../lib/battle/damage';
@@ -9,7 +11,11 @@ import { EMPTY_FIELD, NEUTRAL_IVS, type BattlePokemonSpec } from '../lib/battle/
 import { moveValue } from './bots/greedy';
 import { clientBattle, type ClientBattle } from './clientState';
 import { linesUpTo, type Replay } from './replay';
-import type { SideId } from './types';
+import type { BattleRequest, SideId } from './types';
+import { toID } from '@pkmn/sim';
+import type { PredictorContext } from '../lib/battle/predictor/types';
+import { rankActions } from './bots/search';
+import { rebuildAt } from './rebuild';
 
 export interface Flag {
   turn: number;
@@ -92,4 +98,69 @@ export function reviewReplay(replay: Replay, side: SideId): Flag[] {
 /** Position value at the start of every turn, for the eval graph. */
 export function replayEvals(replay: Replay, side: SideId): number[] {
   return replay.turnStarts.map((_, i) => publicEval(clientBattle(linesUpTo(replay, i + 1)), side));
+}
+
+/**
+ * The action `side` chose at the start of `turn`, as a choice string for the
+ * rebuilt battle's request; null when the replay doesn't show a free choice
+ * (it couldn't move, or fainted first and was replaced).
+ */
+export function chosenAction(replay: Replay, turn: number, side: SideId, req: BattleRequest): string | null {
+  const start = replay.turnStarts[turn - 1];
+  const end = replay.turnStarts[turn] ?? replay.lines.length;
+  const window = replay.lines.slice(start, end);
+  let tera = false;
+  for (const line of window) {
+    const parts = line.split('|');
+    if (!parts[2]?.startsWith(`${side}a: `)) continue;
+    const kind = parts[1];
+    if (kind === '-terastallize') tera = true;
+    if (kind === 'cant' || kind === 'faint') return null;
+    if (kind === 'switch' && !parts.some((x) => x.startsWith('[from]'))) {
+      const ident = `${side}: ${parts[2].slice(5)}`;
+      const slot = req.side.pokemon.findIndex((p) => p.ident === ident);
+      return slot >= 0 && !req.side.pokemon[slot].active ? `switch ${slot + 1}` : null;
+    }
+    if (kind === 'move' && !parts.some((x) => x.startsWith('[from]'))) {
+      const slot = req.active?.[0]?.moves.findIndex((m) => m.id === toID(parts[3])) ?? -1;
+      return slot >= 0 ? `move ${slot + 1}${tera ? ' terastallize' : ''}` : null;
+    }
+  }
+  return null;
+}
+
+function choiceLabel(choice: string, req: BattleRequest): string {
+  const [kind, n, tera] = choice.split(' ');
+  if (kind === 'switch') return `switching to ${req.side.pokemon[Number(n) - 1]?.details.split(',')[0] ?? n}`;
+  const move = req.active?.[0]?.moves[Number(n) - 1]?.move ?? choice;
+  return tera ? `${move} with Tera` : move;
+}
+
+/** How far below the search's best a choice must score to be flagged, in Pokémon (see `evaluate`). */
+const SEARCH_GAP = 0.3;
+
+/** One turn of the search review: the rebuilt battle, the choice made, and the search's ranking. */
+export function searchReviewTurn(replay: Replay, turn: number, side: SideId, ctx: PredictorContext): Flag | null {
+  const rebuilt = rebuildAt(replay, turn, side, ctx);
+  const req = rebuilt?.engine.request(side);
+  if (!rebuilt || !req?.active || req.forceSwitch?.[0]) return null;
+  const choice = chosenAction(replay, turn, side, req);
+  if (!choice) return null;
+  const ranked = rankActions(rebuilt.engine, side, req, rebuilt.view);
+  const chosen = ranked.find((r) => r.choice === choice) ?? ranked.find((r) => r.choice === choice.replace(' terastallize', ''));
+  const best = ranked[0];
+  if (!chosen || !best || best.choice === chosen.choice) return null;
+  const gap = best.score - chosen.score;
+  if (gap < SEARCH_GAP) return null;
+  const me = rebuilt.engine.battle[side].active[0]?.name ?? 'It';
+  return {
+    turn,
+    gap,
+    text: `${me}: ${choiceLabel(choice, req)} was played; the search prefers ${choiceLabel(best.choice, req)} (about ${gap.toFixed(1)} Pokémon better).`,
+  };
+}
+
+/** The search review of every turn. Slow (a search per turn); the page runs it a turn at a time. */
+export function searchReview(replay: Replay, side: SideId, ctx: PredictorContext): Flag[] {
+  return replay.turnStarts.flatMap((_, i) => searchReviewTurn(replay, i + 1, side, ctx) ?? []);
 }

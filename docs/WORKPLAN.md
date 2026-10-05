@@ -87,8 +87,9 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
 hints, Replay Review, the calc extras and the predictor on client state
 work, Search plans with sampled foe sets instead of the real ones, and hints
-explain themselves. Left: search-based replay review, manual entry and
-retiring the Battle Tracker (1.6), and a Windows installer check (section 6).
+explain themselves; Replay Review can rank every turn with the search. Left:
+manual entry and retiring the Battle Tracker (1.6), and a Windows installer
+check (section 6).
 
 ### 1.1 Dependencies
 
@@ -179,8 +180,12 @@ retiring the Battle Tracker (1.6), and a Windows installer check (section 6).
   Practice log. Steps turn by turn with the shared battle view.
 - [x] Review from public information: flags turns where a clearly stronger
   revealed move (or a likely KO) was passed up; position graph.
-- [ ] Review with the search bot needs a simulator state rebuilt from the
-  replay (teams from what was revealed plus usage sets). Not started.
+- [x] Search review: `engine/rebuild.ts` rebuilds each turn in the
+  simulator (revealed sets filled from the predictor; HP, status, boosts,
+  Tera, hazards, weather and terrain copied; volatiles not), and
+  `searchReviewTurn` ranks every option with the Search bot and flags
+  choices about 0.3 Pokémon or more below the best. The page runs it a turn
+  at a time behind a Quick / Search switch.
 - [ ] Manual entry writes protocol lines for battles played elsewhere.
 - [ ] Then delete `pages/BattleSessionPage.tsx`, `lib/battle/events.ts`,
   `state.ts`, `stateBridge.ts` and `search/simulate.ts`. Port or delete their

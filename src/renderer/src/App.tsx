@@ -338,7 +338,7 @@ export function App() {
       case 'practice':
         return <PracticePage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'replays':
-        return <ReplayPage />;
+        return <ReplayPage pokemon={pokemon} smogon={smogon} />;
       case 'session':
         return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'planner':

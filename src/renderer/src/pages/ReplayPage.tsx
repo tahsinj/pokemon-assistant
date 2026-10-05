@@ -2,22 +2,34 @@
  * Replay review: load a Showdown replay (link, saved page or log file), step
  * through it turn by turn, and review one side's move choices.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { Pokemon } from '../lib/types';
+import type { SmogonBundle } from '../lib/smogon';
+import { buildSmogonSetPool } from '../lib/battle/predictor/smogonPriors';
+import { engineContext } from '../engine/bots/setPool';
 import { ModuleFrame, SectionHead } from '../components/hud/ModuleFrame';
 import { Segmented } from '../components/hud/Segmented';
 import { ActiveCard, BattleLog, EvalGraph } from '../components/battle/BattleParts';
 import { clientBattle } from '../engine/clientState';
 import { linesUpTo, parseReplay, replayJsonUrl, type Replay } from '../engine/replay';
-import { replayEvals, reviewReplay } from '../engine/review';
+import { replayEvals, reviewReplay, searchReviewTurn, type Flag } from '../engine/review';
 import type { SideId } from '../engine/types';
 
-export function ReplayPage() {
+type ReviewMode = 'quick' | 'search';
+
+export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
   const [replay, setReplay] = useState<Replay | null>(null);
   const [link, setLink] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [turn, setTurn] = useState(0);
   const [side, setSide] = useState<SideId>('p1');
+  const [mode, setMode] = useState<ReviewMode>('quick');
+  const [searched, setSearched] = useState<{ flags: Flag[]; done: number }>({ flags: [], done: 0 });
+  const ctx = useMemo(
+    () => engineContext(smogon ? buildSmogonSetPool(smogon, Object.fromEntries(pokemon.map((p) => [p.id, p]))) : undefined),
+    [smogon, pokemon],
+  );
 
   const open = (text: string) => {
     try {
@@ -56,7 +68,30 @@ export function ReplayPage() {
   const total = replay?.turnStarts.length ?? 0;
   const shown = useMemo(() => (replay ? linesUpTo(replay, turn >= total ? total + 1 : turn) : []), [replay, turn, total]);
   const battle = useMemo(() => clientBattle(shown), [shown]);
-  const flags = useMemo(() => (replay ? reviewReplay(replay, side) : []), [replay, side]);
+  const quickFlags = useMemo(() => (replay ? reviewReplay(replay, side) : []), [replay, side]);
+
+  // The search review takes a search per turn, so it runs a turn at a time and lets the page paint between.
+  useEffect(() => {
+    if (mode !== 'search' || !replay) return;
+    let cancelled = false;
+    setSearched({ flags: [], done: 0 });
+    void (async () => {
+      const found: Flag[] = [];
+      for (let t = 1; t <= replay.turnStarts.length; t++) {
+        await new Promise((r) => setTimeout(r, 0));
+        if (cancelled) return;
+        const flag = searchReviewTurn(replay, t, side, ctx);
+        if (flag) found.push(flag);
+        setSearched({ flags: [...found], done: t });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, replay, side, ctx]);
+
+  const flags = mode === 'quick' ? quickFlags : searched.flags;
+  const searching = mode === 'search' && searched.done < total;
   const evals = useMemo(() => (replay ? replayEvals(replay, side) : []), [replay, side]);
 
   const loader = (
@@ -121,6 +156,14 @@ export function ReplayPage() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2">Review</span>
             <Segmented value={side} onChange={setSide} options={[{ id: 'p1', label: names.p1 }, { id: 'p2', label: names.p2 }]} />
+            <Segmented
+              value={mode}
+              onChange={setMode}
+              options={[
+                { id: 'quick', label: 'Quick' },
+                { id: 'search', label: 'Search' },
+              ]}
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '4px 10px' }} onClick={() => setTurn(0)} disabled={turn === 0} aria-label="First turn">
@@ -153,7 +196,16 @@ export function ReplayPage() {
             <ActiveCard battle={battle} side={side} label={names[side]} exactHp={false} />
           </div>
           <div data-ui="review" className="mono-panel rounded-[12px] p-3 flex flex-col gap-2">
-            <SectionHead label="Review" extra={flags.length ? `${flags.length} turns to look at for ${reviewed}` : `nothing stands out for ${reviewed}`} />
+            <SectionHead
+              label="Review"
+              extra={
+                searching
+                  ? `checking turn ${searched.done + 1} of ${total}, ${flags.length} found so far`
+                  : flags.length
+                    ? `${flags.length} ${flags.length === 1 ? 'turn' : 'turns'} to look at for ${reviewed}`
+                    : `nothing stands out for ${reviewed}`
+              }
+            />
             {flags.map((f) => (
               <button
                 key={f.turn}
@@ -166,7 +218,9 @@ export function ReplayPage() {
               </button>
             ))}
             <p className="font-sans text-[13px] text-ink-2 m-0">
-              Compares each move with the other moves that Pokémon revealed during the battle, against the target at the start of the turn. Unrevealed moves and sets are not known.
+              {mode === 'quick'
+                ? 'Compares each move with the other moves that Pokémon revealed during the battle, against the target at the start of the turn. Unrevealed moves and sets are not known.'
+                : 'Rebuilds each turn in the simulator from what the replay showed, fills in unrevealed sets with likely ones, and ranks every option with the Search bot. Volatile effects such as Substitute are not carried over.'}
             </p>
           </div>
         </div>

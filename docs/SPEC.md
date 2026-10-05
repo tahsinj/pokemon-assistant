@@ -818,10 +818,10 @@ Status:
   tests, roll histograms and Send to practice. The set predictor runs on
   `@pkmn/client` state (`engine/setTracker.ts`); Search and the hint plan
   with foe sets drawn from it instead of the real ones, and hints explain
-  themselves (damage both ways, speed, the assumed set). Left for M3,
-  tracked in [WORKPLAN.md](WORKPLAN.md) section 1: search-based replay
-  review, manual entry and retiring the Battle Tracker, and a packaged-app
-  check.
+  themselves (damage both ways, speed, the assumed set). Replay Review can
+  rebuild each turn in the simulator and rank it with the search. Left for
+  M3, tracked in [WORKPLAN.md](WORKPLAN.md) section 1: manual entry and
+  retiring the Battle Tracker, and a packaged-app check.
 
 ## 8. Risks
 
