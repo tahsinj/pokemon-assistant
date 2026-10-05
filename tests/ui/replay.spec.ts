@@ -39,3 +39,29 @@ test('a saved battle log opens in replay review and steps through turns', async 
   for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
   await snap(app, testInfo, 'replay-search');
 });
+
+test('a battle entered by hand shows up like a replay', async ({ app }, testInfo) => {
+  await openTool(app, 'Battle', 'Replay Review');
+  await app.getByRole('button', { name: 'ENTER BY HAND' }).click();
+  await app.getByLabel('Your team').fill('Garchomp, Corviknight');
+  await app.getByLabel('Opponent team').fill('Rotom-Wash, Gholdengo');
+  await app.getByRole('button', { name: 'START ENTRY' }).click();
+  const entry = app.locator('[data-ui="manual-entry"]');
+  await expect(entry).toContainText('Garchomp is in');
+  await entry.getByLabel('Move').fill('Dragon Claw');
+  await entry.getByLabel('Target HP after').fill('60');
+  await entry.getByRole('button', { name: 'ADD' }).click();
+  await entry.getByRole('button', { name: 'Opponent' }).click();
+  await entry.getByLabel('Move').fill('Hydro Pump');
+  await entry.getByLabel('Target HP after').fill('35');
+  await entry.getByRole('button', { name: 'ADD' }).click();
+  await entry.getByRole('button', { name: 'END TURN' }).click();
+  const log = app.locator('[data-ui="battle-log"]');
+  await expect(log).toContainText('Garchomp used Dragon Claw');
+  await expect(log).toContainText('Turn 2');
+  await entry.getByLabel('Move').fill('Notamove');
+  await entry.getByRole('button', { name: 'ADD' }).click();
+  await expect(entry.getByRole('alert')).toContainText('not a move');
+  for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
+  await snap(app, testInfo, 'replay-manual');
+});

@@ -14,6 +14,8 @@ import { clientBattle } from '../engine/clientState';
 import { linesUpTo, parseReplay, replayJsonUrl, type Replay } from '../engine/replay';
 import { replayEvals, reviewReplay, searchReviewTurn, type Flag } from '../engine/review';
 import type { SideId } from '../engine/types';
+import { manualLines, type ManualEvent, type ManualSetup } from '../engine/manualLog';
+import { ManualComposer, ManualSetupForm } from '../components/battle/ManualEntry';
 
 type ReviewMode = 'quick' | 'search';
 
@@ -25,6 +27,8 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
   const [turn, setTurn] = useState(0);
   const [side, setSide] = useState<SideId>('p1');
   const [mode, setMode] = useState<ReviewMode>('quick');
+  /** A battle typed in by hand; `setup` is null while its teams are being entered. */
+  const [manual, setManual] = useState<{ setup: ManualSetup | null; events: ManualEvent[] } | null>(null);
   const [searched, setSearched] = useState<{ flags: Flag[]; done: number }>({ flags: [], done: 0 });
   const ctx = useMemo(
     () => engineContext(smogon ? buildSmogonSetPool(smogon, Object.fromEntries(pokemon.map((p) => [p.id, p]))) : undefined),
@@ -59,6 +63,13 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
     } finally {
       setLoading(false);
     }
+  };
+
+  const showManual = (setup: ManualSetup, events: ManualEvent[]) => {
+    const r = parseReplay(manualLines(setup, events).join('\n'));
+    setManual({ setup, events });
+    setReplay(r);
+    setTurn(r.turnStarts.length + 1);
   };
 
   const onFile = async (file: File | undefined) => {
@@ -107,6 +118,9 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
       <button type="button" className="chunky font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={() => void fetchLink()} disabled={loading}>
         {loading ? 'LOADING…' : 'LOAD LINK'}
       </button>
+      <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={() => setManual({ setup: null, events: [] })}>
+        ENTER BY HAND
+      </button>
       <label className="chunky ghost font-display text-[12px] cursor-pointer" style={{ padding: '6px 14px' }}>
         OPEN FILE
         <input
@@ -120,13 +134,21 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
     </div>
   );
 
+  if (manual && !manual.setup) {
+    return (
+      <ModuleFrame subtitle="Type in a battle played somewhere else">
+        <ManualSetupForm onStart={(setup) => showManual(setup, [])} onCancel={() => setManual(null)} />
+      </ModuleFrame>
+    );
+  }
+
   if (!replay) {
     return (
       <ModuleFrame subtitle="Step through a Showdown battle and review one side's choices">
         <div className="flex flex-col gap-3">
           {loader}
           <p className="text-[13px] text-ink-2 m-0">
-            Paste a replay link, or open a saved replay page, its JSON, or a log saved from Practice.
+            Paste a replay link, or open a saved replay page, its JSON, or a log saved from Practice. For a battle played somewhere else, enter it by hand.
           </p>
           {problem && (
             <p role="alert" className="text-[14px] text-danger m-0">
@@ -146,7 +168,11 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
     <ModuleFrame
       subtitle={`${names.p1} vs ${names.p2}${replay.format ? ` · ${replay.format}` : ''} · ${total} turns`}
       side={
-        <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 12px' }} onClick={() => setReplay(null)}>
+        <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 12px' }} onClick={() => {
+            setReplay(null);
+            setManual(null);
+          }}
+        >
           ANOTHER REPLAY
         </button>
       }
@@ -195,6 +221,7 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
             <ActiveCard battle={battle} side={other} label={names[other]} exactHp={false} />
             <ActiveCard battle={battle} side={side} label={names[side]} exactHp={false} />
           </div>
+          {manual?.setup && <ManualComposer setup={manual.setup} events={manual.events} onChange={(events) => showManual(manual.setup!, events)} />}
           <div data-ui="review" className="mono-panel rounded-[12px] p-3 flex flex-col gap-2">
             <SectionHead
               label="Review"
