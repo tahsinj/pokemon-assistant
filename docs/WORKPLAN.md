@@ -86,9 +86,9 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
 hints, Replay Review, the calc extras and the predictor on client state
-work, and Search plans with sampled foe sets instead of the real ones. Left:
-hint explanations (1.5), manual entry and retiring the Battle Tracker (1.6),
-and a Windows installer check (section 6).
+work, Search plans with sampled foe sets instead of the real ones, and hints
+explain themselves. Left: search-based replay review, manual entry and
+retiring the Battle Tracker (1.6), and a Windows installer check (section 6).
 
 ### 1.1 Dependencies
 
@@ -164,8 +164,9 @@ and a Windows installer check (section 6).
 - [x] Position graph per turn.
 - [x] Add the box (PC) as a team source ("Best of box", the Team Builder's
   balanced pick).
-- [ ] Hint explanations (threats, assumptions) once level 2 uses the
-  predictor.
+- [x] Hint explanations (`engine/hintExplain.ts`): each hint shows its
+  damage, the foe's strongest reply from its likeliest set, speed order and
+  the set assumed, all from your view of the battle.
 - Done when: a full 6v6 Gen 9 OU battle against levels 0 to 2 plays to the
   end with no desyncs.
 

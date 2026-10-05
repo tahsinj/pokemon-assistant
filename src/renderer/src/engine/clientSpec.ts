@@ -5,6 +5,7 @@
  * battle revealed (ability, item, Tera, moves) wins over the guess.
  */
 import type { Pokemon as ClientPokemon } from '@pkmn/client';
+import type { PokemonSet } from '@pkmn/data';
 import type { BaseStats } from '../lib/types';
 import {
   EMPTY_SIDE,
@@ -76,6 +77,23 @@ export function clientSpec(p: ClientPokemon, guess?: SetGuess): BattlePokemonSpe
     currentHPPercent: p.maxhp ? (100 * p.hp) / p.maxhp : 100,
     boosts: { atk: p.boosts.atk, def: p.boosts.def, spa: p.boosts.spa, spd: p.boosts.spd, spe: p.boosts.spe },
     status: (p.status || undefined) as BattlePokemonSpec['status'],
+  };
+}
+
+/** Calc inputs for one of your own Pokémon the client hasn't seen in battle yet (your bench in a random battle). */
+export function setSpec(set: PokemonSet, hpPercent: number): BattlePokemonSpec {
+  return {
+    speciesName: set.species,
+    level: set.level || 100,
+    nature: set.nature || 'Hardy',
+    ability: calcAbility(set.ability),
+    item: set.item || undefined,
+    teraType: set.teraType || undefined,
+    ivs: { ...NEUTRAL_IVS, ...set.ivs },
+    evs: { ...NEUTRAL_EVS, ...set.evs },
+    moves: set.moves.map((name) => ({ name })),
+    currentHPPercent: hpPercent,
+    boosts: {},
   };
 }
 

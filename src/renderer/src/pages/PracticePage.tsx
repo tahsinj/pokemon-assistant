@@ -574,13 +574,28 @@ function HintList({ hints, busy, onChoose }: { hints: Hint[]; busy: boolean; onC
     <div data-ui="hints" className="mono-panel rounded-[12px] p-3 flex flex-col gap-2">
       <SectionHead label="Hint" extra="the Search bot's best options; click one to play it" />
       {hints.map((h, i) => (
-        <ChoiceButton key={h.choice} disabled={busy} onClick={() => onChoose(h.choice)} title={`Expected value ${h.score.toFixed(2)}`}>
-          <span className="font-mono-hud text-[14px] text-accent-2 w-4">{i + 1}</span>
-          <span className="truncate">{h.label}</span>
-          <span className="font-mono-hud text-[14px] text-ink-2 ml-auto pl-2">
-            {i === 0 ? 'best' : `${(h.score - top).toFixed(1)}`}
-          </span>
-        </ChoiceButton>
+        <div key={h.choice} className="flex flex-col gap-1">
+          <ChoiceButton disabled={busy} onClick={() => onChoose(h.choice)} title={`Expected value ${h.score.toFixed(2)}`}>
+            <span className="font-mono-hud text-[14px] text-accent-2 w-4">{i + 1}</span>
+            <span className="truncate">{h.label}</span>
+            <span className="font-mono-hud text-[14px] text-ink-2 ml-auto pl-2">
+              {i === 0 ? 'best' : `${(h.score - top).toFixed(1)}`}
+            </span>
+          </ChoiceButton>
+          {h.explanation && (
+            <ul data-ui="hint-why" className="font-sans text-[14px] text-ink-2 pl-7 flex flex-col gap-0.5">
+              {h.explanation.outgoing && <li>{h.explanation.outgoing}</li>}
+              {h.explanation.incoming && <li>Reply: {h.explanation.incoming}</li>}
+              {h.explanation.speed && <li>{h.explanation.speed}</li>}
+              <li>{h.explanation.exchange}</li>
+            </ul>
+          )}
+        </div>
+      ))}
+      {hints[0].explanation?.assumptions.map((a) => (
+        <div key={a} className="font-sans text-[14px] text-ink-2">
+          {a}
+        </div>
       ))}
     </div>
   );

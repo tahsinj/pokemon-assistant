@@ -11,6 +11,7 @@ import { engineContext } from './bots/setPool';
 import type { Bot } from './bots/bot';
 import type { CandidateSet } from '../lib/battle/predictor/types';
 import type { SetTracking } from './setTracker';
+import { explainHint, type HintExplanation } from './hintExplain';
 import type { BattleRequest, SideId } from './types';
 
 export type BotLevel = 0 | 1 | 2;
@@ -24,6 +25,8 @@ export interface Hint {
   label: string;
   /** Position value after the turn, from your side; see `evaluate`. */
   score: number;
+  /** Damage both ways, speed and the set assumed for the foe. */
+  explanation: HintExplanation | null;
 }
 
 export interface SessionOptions {
@@ -153,9 +156,10 @@ export class PracticeSession {
       const move = req.active?.[0]?.moves[Number(n) - 1]?.move ?? choice;
       return tera ? `${move} + Tera` : move;
     };
-    return rankActions(this.engine, 'p1', req, this.viewOf(this.engine, 'p1'))
+    const view = this.viewOf(this.engine, 'p1');
+    return rankActions(this.engine, 'p1', req, view)
       .slice(0, 3)
-      .map((r) => ({ choice: r.choice, label: label(r.choice), score: r.score }));
+      .map((r) => ({ choice: r.choice, label: label(r.choice), score: r.score, explanation: explainHint(view, 'p1', req, r.choice) }));
   }
 
   /** The battle as a spectator saw it, for saving as a replay log. */
