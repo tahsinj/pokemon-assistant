@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  emptyBattleState,
-  makeId,
-  makePokemon,
-  type BattlePokemon,
-} from '../state';
-import { applyEvent } from '../events';
-import {
-  applyEventAndPredict,
   initOpponentModel,
   narrowByAbility,
   narrowByItem,
@@ -126,31 +118,6 @@ const ctx: PredictorContext = {
   moves: MOVES_DB,
 };
 
-function makeOppGarchomp(): BattlePokemon {
-  return makePokemon(
-    garchomp,
-    { speciesName: 'Garchomp', level: 50 },
-    makeId('opponent', 0),
-    { isOpponent: true, source: 'DEFAULT' },
-  );
-}
-function makePlayerGarchomp(): BattlePokemon {
-  return makePokemon(
-    garchomp,
-    {
-      speciesName: 'Garchomp',
-      level: 50,
-      nature: 'Jolly',
-      ability: 'Rough Skin',
-      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
-      evs: { hp: 4, atk: 252, def: 0, spa: 0, spd: 0, spe: 252 },
-      moves: [{ name: 'Earthquake' }],
-    },
-    makeId('player', 0),
-    { isOpponent: false, source: 'KNOWN' },
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -181,8 +148,7 @@ describe('generateCandidateSets', () => {
 
 describe('initOpponentModel', () => {
   it('seeds a model with normalized weights summing to 1', () => {
-    const p = makeOppGarchomp();
-    const model = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const model = initOpponentModel('Garchomp', 50, ctx);
     expect(model.candidates.length).toBeGreaterThan(0);
     const total = model.candidates.filter((c) => !c.eliminated).reduce((a, c) => a + c.weight, 0);
     expect(total).toBeCloseTo(1, 5);
@@ -193,8 +159,7 @@ describe('initOpponentModel', () => {
 
 describe('narrowByMove', () => {
   it('eliminates candidates that do not contain the move', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     // Earthquake should be in every Garchomp set.
     const eq = narrowByMove(seeded, 'Earthquake');
     expect(eq.candidates.every((c) => c.eliminated || c.moves.includes('Earthquake'))).toBe(true);
@@ -209,8 +174,7 @@ describe('narrowByMove', () => {
   });
 
   it('always adds an evidence row, even when nothing changes', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     const after = narrowByMove(seeded, 'Earthquake');
     expect(after.evidence.length).toBe(seeded.evidence.length + 1);
     expect(after.evidence[after.evidence.length - 1].observation).toContain('Earthquake');
@@ -219,103 +183,37 @@ describe('narrowByMove', () => {
 
 describe('narrowByAbility / narrowByItem / narrowByTera', () => {
   it('narrowByAbility filters mismatched candidates', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     const after = narrowByAbility(seeded, 'Rough Skin');
     expect(after.candidates.every((c) => c.eliminated || c.ability === 'Rough Skin')).toBe(true);
   });
 
   it('narrowByItem locks the item', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     const after = narrowByItem(seeded, 'Choice Band');
     const live = after.candidates.filter((c) => !c.eliminated);
     expect(live.every((c) => c.item === 'Choice Band')).toBe(true);
   });
 
   it('narrowByTera locks tera type', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     const after = narrowByTera(seeded, 'Dragon');
     const live = after.candidates.filter((c) => !c.eliminated);
     expect(live.every((c) => c.teraType === 'Dragon')).toBe(true);
   });
 });
 
-describe('applyEventAndPredict integration', () => {
-  it('initializes uncertainty on PokemonRevealed for opponent and not for player', () => {
-    let state = emptyBattleState();
-    const player = makePlayerGarchomp();
-    const opp = makeOppGarchomp();
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'player', slot: 0, pokemon: player }, ctx);
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'opponent', slot: 0, pokemon: opp }, ctx);
-    expect(state.sides.player.team[0]?.uncertainty).toBeNull();
-    expect(state.sides.opponent.team[0]?.uncertainty).not.toBeNull();
-    expect(state.sides.opponent.team[0]?.uncertainty?.candidates.length).toBeGreaterThan(0);
-  });
-
-  it('records MoveUsed observations and narrows the opponent model', () => {
-    let state = emptyBattleState();
-    const player = makePlayerGarchomp();
-    const opp = makeOppGarchomp();
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'player', slot: 0, pokemon: player }, ctx);
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'opponent', slot: 0, pokemon: opp }, ctx);
-    state = applyEventAndPredict(state, { type: 'BattleStarted', startingActive: { player: 0, opponent: 0 } }, ctx);
-
-    const beforeLive = state.sides.opponent.team[0]!.uncertainty!.candidates.filter((c) => !c.eliminated).length;
-    state = applyEventAndPredict(state, { type: 'MoveUsed', actor: 'o:0', move: 'Stone Edge' }, ctx);
-    const after = state.sides.opponent.team[0]!.uncertainty!;
-    // Stone Edge is offensive coverage - many archetypes include it, but not
-    // all (walls/setup with limited slots might omit it). Either way the
-    // evidence trail should grow.
-    expect(after.evidence.length).toBeGreaterThan(0);
-    const afterLive = after.candidates.filter((c) => !c.eliminated).length;
-    expect(afterLive).toBeLessThanOrEqual(beforeLive);
-  });
-
-  it('locks ability and item when revealed', () => {
-    let state = emptyBattleState();
-    const player = makePlayerGarchomp();
-    const opp = makeOppGarchomp();
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'player', slot: 0, pokemon: player }, ctx);
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'opponent', slot: 0, pokemon: opp }, ctx);
-    state = applyEventAndPredict(state, { type: 'BattleStarted', startingActive: { player: 0, opponent: 0 } }, ctx);
-
-    state = applyEventAndPredict(state, { type: 'ItemRevealed', target: 'o:0', item: 'Choice Scarf' }, ctx);
-    const m = state.sides.opponent.team[0]!.uncertainty!;
-    const live = m.candidates.filter((c) => !c.eliminated);
-    expect(live.every((c) => c.item === 'Choice Scarf')).toBe(true);
-  });
-
-  it('confidence increases as we narrow candidates', () => {
-    let state = emptyBattleState();
-    const player = makePlayerGarchomp();
-    const opp = makeOppGarchomp();
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'player', slot: 0, pokemon: player }, ctx);
-    state = applyEventAndPredict(state, { type: 'PokemonRevealed', side: 'opponent', slot: 0, pokemon: opp }, ctx);
-    state = applyEventAndPredict(state, { type: 'BattleStarted', startingActive: { player: 0, opponent: 0 } }, ctx);
-
-    const initialConf = state.sides.opponent.team[0]!.uncertainty!.confidence;
-    state = applyEventAndPredict(state, { type: 'ItemRevealed', target: 'o:0', item: 'Choice Band' }, ctx);
-    state = applyEventAndPredict(state, { type: 'AbilityRevealed', target: 'o:0', ability: 'Rough Skin' }, ctx);
-    const afterConf = state.sides.opponent.team[0]!.uncertainty!.confidence;
-    expect(afterConf).toBeGreaterThanOrEqual(initialConf);
-  });
-
-  it('keeps applyEvent and applyEventAndPredict in sync on non-opponent events', () => {
-    let state = emptyBattleState();
-    const player = makePlayerGarchomp();
-    state = applyEvent(state, { type: 'PokemonRevealed', side: 'player', slot: 0, pokemon: player });
-    const a = applyEvent(state, { type: 'BoostChanged', target: 'p:0', stat: 'atk', delta: 2 });
-    const b = applyEventAndPredict(state, { type: 'BoostChanged', target: 'p:0', stat: 'atk', delta: 2 }, ctx);
-    expect(a.sides.player.team[0]?.battle.boosts.atk).toBe(b.sides.player.team[0]?.battle.boosts.atk);
+describe('confidence', () => {
+  it('grows as reveals narrow the candidates', () => {
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
+    const narrowed = narrowByAbility(narrowByItem(seeded, 'Choice Band'), 'Rough Skin');
+    expect(narrowed.confidence).toBeGreaterThanOrEqual(seeded.confidence);
   });
 });
 
 describe('topCandidates ordering', () => {
   it('returns the top-K candidates sorted by weight', () => {
-    const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
+    const seeded = initOpponentModel('Garchomp', 50, ctx);
     const top = topCandidates(seeded, 2);
     expect(top.length).toBeLessThanOrEqual(2);
     for (let i = 1; i < top.length; i++) {

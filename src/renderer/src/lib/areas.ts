@@ -10,7 +10,6 @@ export type ToolId =
   | 'calcdex'
   | 'practice'
   | 'replays'
-  | 'session'
   | 'draft'
   | 'smogon';
 
@@ -35,7 +34,6 @@ export const TOOL_NAMES: Record<ToolId, string> = {
   calcdex: 'Damage Calc',
   practice: 'Practice',
   replays: 'Replay Review',
-  session: 'Battle Tracker',
   draft: 'Counter Draft',
   smogon: 'Usage Stats',
 };
@@ -44,7 +42,7 @@ export const TOOL_NAMES: Record<ToolId, string> = {
 export const AREAS: AreaDef[] = [
   { id: 'dex', label: 'Dex', glyph: 'D', tools: ['pokedex', 'moves'] },
   { id: 'box', label: 'Box', glyph: 'B', tools: ['pc', 'team', 'planner', 'breeding'] },
-  { id: 'battle', label: 'Battle', glyph: 'X', tools: ['calcdex', 'practice', 'replays', 'session'] },
+  { id: 'battle', label: 'Battle', glyph: 'X', tools: ['calcdex', 'practice', 'replays'] },
   { id: 'counters', label: 'Counters', glyph: 'C', tools: ['draft'] },
   { id: 'meta', label: 'Meta', glyph: 'M', tools: ['smogon'] },
 ];

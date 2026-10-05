@@ -87,9 +87,9 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
 hints, Replay Review, the calc extras and the predictor on client state
 work, Search plans with sampled foe sets instead of the real ones, and hints
-explain themselves; Replay Review can rank every turn with the search. Left:
-manual entry and retiring the Battle Tracker (1.6), and a Windows installer
-check (section 6).
+explain themselves; Replay Review ranks every turn with the search and takes
+battles entered by hand, and the Battle Tracker is gone. Left: a Windows
+installer check (section 6).
 
 ### 1.1 Dependencies
 
@@ -186,10 +186,13 @@ check (section 6).
   `searchReviewTurn` ranks every option with the Search bot and flags
   choices about 0.3 Pokémon or more below the best. The page runs it a turn
   at a time behind a Quick / Search switch.
-- [ ] Manual entry writes protocol lines for battles played elsewhere.
-- [ ] Then delete `pages/BattleSessionPage.tsx`, `lib/battle/events.ts`,
-  `state.ts`, `stateBridge.ts` and `search/simulate.ts`. Port or delete their
-  tests, and say which in the commit message.
+- [x] Manual entry writes protocol lines for battles played elsewhere
+  (`engine/manualLog.ts`, "Enter by hand" on Replay Review).
+- [x] Deleted `pages/BattleSessionPage.tsx`, `lib/battle/events.ts`,
+  `state.ts`, `stateBridge.ts`, `search/simulate.ts` and the old expectimax
+  search built on them (`expectimax.ts`, `evaluate.ts`, `speed.ts`,
+  `actions.ts`), with their tests. The predictor and explain tests that did
+  not need the old state were kept.
 - Done when: a saved Gen 9 OU replay loads, steps to the end, and the review
   flags at least one turn on a log with a known blunder.
 
@@ -205,7 +208,7 @@ check (section 6).
 
 ### 1.8 Wrap up
 
-- [ ] README: practice and replay review in the features list.
+- [x] README: practice and replay review in the features list.
 - [ ] SPEC.md status: M3 done with notes, like M2's.
 
 ## 2. M4: Counters v2
@@ -307,8 +310,7 @@ Small items, any time. Each is one commit.
   replace the three overlapping input skins in `styles.css` (`.ds input`,
   `.dive-content input`, `.hud-form input`).
 - [ ] Home screen focus card (`FocusLens`) still uses 11-13px mono labels.
-- [ ] `scripts/bench-recommend.mjs`: make sure it still runs, or delete it
-  with the old search code in 1.6.
+- [x] `scripts/bench-recommend.mjs` deleted with the old search code.
 - [ ] Bump the version in `package.json` when cutting a release (the home
   screen reads it).
 - [ ] SPEC.md section 2.1 still describes the old twelve tools; it is the

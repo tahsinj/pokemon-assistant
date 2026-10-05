@@ -21,9 +21,6 @@ const MovesPage = lazy(() => import('./pages/MovesPage').then((m) => ({ default:
 const TeamBuilderPage = lazy(() =>
   import('./pages/TeamBuilderPage').then((m) => ({ default: m.TeamBuilderPage })),
 );
-const BattleSessionPage = lazy(() =>
-  import('./pages/BattleSessionPage').then((m) => ({ default: m.BattleSessionPage })),
-);
 const CalcdexPage = lazy(() =>
   import('./pages/CalcdexPage').then((m) => ({ default: m.CalcdexPage })),
 );
@@ -339,8 +336,6 @@ export function App() {
         return <PracticePage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'replays':
         return <ReplayPage pokemon={pokemon} smogon={smogon} />;
-      case 'session':
-        return <BattleSessionPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'planner':
         return <PlannerPage pokemon={pokemon} />;
       case 'pc':

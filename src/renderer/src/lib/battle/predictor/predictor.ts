@@ -10,23 +10,9 @@
  * `applyEventAndPredict` exported below.
  */
 
-import { produce } from 'immer';
-import type { BattleEvent } from '../events';
-import { applyEvent } from '../events';
-import type {
-  BattlePokemon,
-  BattleState,
-  PokemonId,
-  PredictedSet,
-  PredictorEvidence,
-  SideId,
-} from '../state';
-import { parseId } from '../state';
-import { calcDamage, type DamageOutcome } from '../damage';
-import type { BattlePokemonSpec, FieldSpec } from '../types';
-import { toFieldSpec, toSpec } from '../stateBridge';
+import type { DamageOutcome } from '../damage';
 import { generateCandidateSets } from './setGenerator';
-import type { CandidateSet, OpponentModel, PredictorContext } from './types';
+import type { CandidateSet, OpponentModel, PredictedSet, PredictorContext, PredictorEvidence } from './types';
 
 // ---------------------------------------------------------------------------
 // Init
@@ -67,99 +53,6 @@ export function initOpponentModel(speciesName: string, level: number, ctx: Predi
       },
     ],
   };
-}
-
-// ---------------------------------------------------------------------------
-// Top-level wrapper: applyEvent + then re-run predictor on the changed slot
-// ---------------------------------------------------------------------------
-
-/**
- * Apply an event then run the predictor for the affected opponent slot(s).
- * The predictor is a strict superset of `applyEvent` - calling code that
- * doesn't care about uncertainty (e.g. the search engine's chance node
- * branches) can keep using `applyEvent` directly to skip the cost.
- */
-export function applyEventAndPredict(
-  state: BattleState,
-  event: BattleEvent,
-  ctx: PredictorContext,
-): BattleState {
-  const next = applyEvent(state, event);
-  return runPredictorOnEvent(state, next, event, ctx);
-}
-
-/**
- * Update the predictor models in `next` based on the observation contained in
- * `event`. Reads from both `prev` (e.g. to compute observed damage = HP delta)
- * and `next` (post-event state). Returns a new state with the model updated.
- */
-export function runPredictorOnEvent(
-  prev: BattleState,
-  next: BattleState,
-  event: BattleEvent,
-  ctx: PredictorContext,
-): BattleState {
-  return produce(next, (draft) => {
-    switch (event.type) {
-      case 'PokemonRevealed': {
-        if (event.side !== 'opponent') break;
-        const p = draft.sides.opponent.team[event.slot];
-        if (!p) break;
-        p.uncertainty = initOpponentModel(p.identity.species, p.identity.level, ctx);
-        break;
-      }
-
-      case 'MoveUsed': {
-        if (parseId(event.actor).side !== 'opponent') break;
-        const p = mutPokemon(draft, event.actor);
-        if (!p || !p.uncertainty) break;
-        p.uncertainty = narrowByMove(p.uncertainty, event.move);
-        break;
-      }
-
-      case 'AbilityRevealed': {
-        if (parseId(event.target).side !== 'opponent') break;
-        const p = mutPokemon(draft, event.target);
-        if (!p || !p.uncertainty) break;
-        p.uncertainty = narrowByAbility(p.uncertainty, event.ability);
-        break;
-      }
-
-      case 'ItemRevealed': {
-        if (parseId(event.target).side !== 'opponent') break;
-        const p = mutPokemon(draft, event.target);
-        if (!p || !p.uncertainty) break;
-        p.uncertainty = narrowByItem(p.uncertainty, event.item);
-        break;
-      }
-
-      case 'Terastallized': {
-        if (parseId(event.target).side !== 'opponent') break;
-        const p = mutPokemon(draft, event.target);
-        if (!p || !p.uncertainty || !event.teraType) break;
-        p.uncertainty = narrowByTera(p.uncertainty, event.teraType);
-        break;
-      }
-
-      case 'Damaged': {
-        if (parseId(event.target).side !== 'player') break; // we only learn from damage *we* take
-        if (!event.cause) break; // `cause` doubles as the move name for inversion
-        const oppSlot = next.activeSlot.opponent;
-        const attacker = draft.sides.opponent.team[oppSlot];
-        const defender = mutPokemon(draft, event.target);
-        if (!attacker || !defender || !attacker.uncertainty) break;
-        attacker.uncertainty = narrowByDamageInState(
-          attacker.uncertainty,
-          attacker,
-          defender,
-          event.cause,
-          event.amount,
-          prev,
-        );
-        break;
-      }
-    }
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -283,25 +176,6 @@ export function narrowByDamage(
   };
 }
 
-function narrowByDamageInState(
-  model: OpponentModel,
-  attacker: BattlePokemon,
-  defender: BattlePokemon,
-  moveName: string,
-  observedDamage: number,
-  prevState: BattleState,
-): OpponentModel {
-  const field: FieldSpec = toFieldSpec(prevState, 'opponent');
-  const defSpec: BattlePokemonSpec = toSpec(defender);
-  return narrowByDamage(
-    model,
-    moveName,
-    { amount: observedDamage, unit: 'hp' },
-    (c) => calcDamage(9, candidateToSpec(c, attacker), defSpec, moveName, field),
-    defender.identity.species,
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
@@ -363,29 +237,6 @@ function emptyEvidence(reason: string): PredictorEvidence {
   return { ts: Date.now(), observation: 'init', effect: reason };
 }
 
-function mutPokemon(draft: BattleState, id: PokemonId): BattlePokemon | null {
-  const { side, slot } = parseId(id);
-  return draft.sides[side].team[slot] ?? null;
-}
-
-function candidateToSpec(c: PredictedSet, attacker: BattlePokemon): BattlePokemonSpec {
-  return {
-    speciesName: attacker.identity.species,
-    level: attacker.identity.level,
-    nature: c.nature,
-    ability: c.ability || undefined,
-    item: c.item ?? undefined,
-    teraType: c.teraType ?? undefined,
-    isTerastallized: attacker.battle.isTerastallized,
-    ivs: c.ivs,
-    evs: c.evs,
-    moves: c.moves.map((m) => ({ name: m })),
-    currentHPPercent: 100, // attacker side - we care about output damage, not their KO chance
-    status: attacker.battle.status ?? undefined,
-    boosts: attacker.battle.boosts,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Public read helpers for UI
 // ---------------------------------------------------------------------------
@@ -401,5 +252,4 @@ export function eliminatedCandidates(model: OpponentModel): PredictedSet[] {
   return model.candidates.filter((c) => c.eliminated);
 }
 
-// Re-export for the bridge module's typings.
-export type { CandidateSet, OpponentModel, PredictorContext, SideId };
+export type { CandidateSet, OpponentModel, PredictorContext };

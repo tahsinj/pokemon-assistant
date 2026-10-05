@@ -17,8 +17,12 @@ Five areas around the home screen orb:
   audit, EV / IV planner, breeding odds
 - **Battle**: damage calc (`@smogon/calc`) with a one-on-one matchup view, a
   whole-team view and roll histograms; practice battles on the Showdown
-  simulator against three bot levels, with hints and take-backs; replay
-  review for Showdown replays; a battle tracker with set prediction
+  simulator against three bot levels (Random, Greedy, Search), with
+  explained hints, take-backs and a position graph; replay review for
+  Showdown replays, saved Practice logs and battles entered by hand, with a
+  quick review from revealed moves and a search review that rebuilds each
+  turn in the simulator. The bots and hints never see hidden sets: they
+  track what was revealed and fill in the rest with a set predictor.
 - **Counters**: Counter Draft
 - **Meta**: usage stats for the active format
 
@@ -36,6 +40,8 @@ npm run check      # eslint, prose lint, CSS lint, typecheck, tests
 npm test           # vitest
 npm run test:ui    # Playwright: every page at 1100x700 and 1920x1080
 npm run build      # renderer -> dist/, electron -> dist-electron/
+npm run test:electron  # loads the built app in Electron and starts a battle
+npm run bots:gauntlet  # bot-vs-bot games, writes docs/bot-elo.md
 npm run pack:win   # Windows installer into release/
 ```
 

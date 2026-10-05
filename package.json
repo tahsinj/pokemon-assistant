@@ -12,7 +12,6 @@
     "build:electron": "node -e \"require('fs').rmSync('dist-electron',{recursive:true,force:true})\" && tsc -p tsconfig.electron.json",
     "build": "npm run build:renderer && npm run build:electron",
     "pack:win": "npm run build && electron-builder --win --x64",
-    "bench": "node scripts/bench-recommend.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -61,7 +60,6 @@
     "@pkmn/sim": "^0.10.11",
     "@smogon/calc": "^0.12.0",
     "fuse.js": "^7.3.0",
-    "immer": "^11.1.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sql.js": "^1.14.1"

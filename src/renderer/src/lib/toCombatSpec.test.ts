@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromPcRecord, fromTeamMember, toCombatFields, toSessionSpec } from './toCombatSpec';
+import { fromPcRecord, fromTeamMember, toCombatFields } from './toCombatSpec';
 import type { Pokemon } from './types';
 import type { PcPokemonRecord, TeamMemberPersist } from './bridgeTypes';
 
@@ -98,18 +98,5 @@ describe('fromTeamMember', () => {
     );
     expect(f.evs.atk).toBe(252);
     expect(f.evs.hp).toBe(0);
-  });
-});
-
-describe('toSessionSpec', () => {
-  it('produces makePokemon-shaped data with named moves only', () => {
-    const s = toSessionSpec(fromPcRecord(rec), garchomp, []);
-    expect(s.moves).toEqual([
-      { name: 'Earthquake' },
-      { name: 'Scale Shot' },
-      { name: 'Swords Dance' },
-    ]);
-    expect(s.item).toBe('Loaded Dice');
-    expect(s.level).toBe(78);
   });
 });

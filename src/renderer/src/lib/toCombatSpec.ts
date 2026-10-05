@@ -91,33 +91,3 @@ export function toCombatFields(
     moves: padMoves(input.moves, fallbackMoves),
   };
 }
-
-/** Spec arg for battle/state's makePokemon - typed structurally to keep this lib light. */
-export interface SessionSpec {
-  speciesName: string;
-  level: number;
-  nature: string;
-  ability: string;
-  item: string | null;
-  ivs: BaseStats;
-  evs: BaseStats;
-  moves: { name: string }[];
-}
-
-export function toSessionSpec(
-  input: CombatImportInput,
-  species: Pokemon,
-  fallbackMoves: string[],
-): SessionSpec {
-  const fields = toCombatFields(input, species, fallbackMoves);
-  return {
-    speciesName: fields.speciesName,
-    level: fields.level,
-    nature: fields.nature,
-    ability: fields.ability,
-    item: input.item,
-    ivs: fields.ivs,
-    evs: fields.evs,
-    moves: fields.moves.filter(Boolean).map((name) => ({ name })),
-  };
-}
