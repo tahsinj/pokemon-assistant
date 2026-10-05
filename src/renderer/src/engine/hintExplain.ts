@@ -20,7 +20,7 @@ import { setViews, type SetTracking } from './setTracker';
 import type { BattleRequest, SideId } from './types';
 
 export interface HintExplanation {
-  /** "Earthquake → Gholdengo: 45–53% (2HKO)" when the hint is a move. */
+  /** "Earthquake -> Gholdengo: 45-53% (2HKO)" when the hint is a move. */
   outgoing: string | null;
   /** The foe's strongest move from its likeliest set, into whoever is in after the hint. */
   incoming: string | null;
