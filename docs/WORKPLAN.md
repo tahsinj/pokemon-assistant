@@ -49,6 +49,7 @@ tests in another, and uploads screenshots. Both must stay green.
 | `src/renderer/src/App.tsx` | Home screen, area bar, format picker, page routing |
 | `src/renderer/src/lib/areas.ts` | Areas, tools and their one name each. Add new tools here |
 | `src/renderer/src/lib/formats.ts`, `data.ts` | Format profiles and the per-format data view |
+| `src/renderer/src/engine/` | Simulator wrapper, bots, practice session, client state (`clientState.ts`, `clientSpec.ts`), set tracking (`setTracker.ts`), replays |
 | `src/renderer/src/lib/battle/` | Calc wrapper (`damage.ts`), homegrown battle state (`events.ts`, `state.ts`), search and predictor |
 | `src/renderer/src/pages/` | One file per tool |
 | `src/renderer/src/styles.css` | The only stylesheet; tokens at the top |
@@ -84,9 +85,9 @@ replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 5.3.
 
 Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
-hints, Replay Review and the calc extras work. Left: the predictor adapter
-(1.3), hidden-set sampling for Search (1.4), manual entry and retiring the
-Battle Tracker (1.6), and a Windows installer check (section 6).
+hints, Replay Review, the calc extras and the predictor on client state
+work. Left: hidden-set sampling for Search (1.4), manual entry and retiring
+the Battle Tracker (1.6), and a Windows installer check (section 6).
 
 ### 1.1 Dependencies
 
@@ -112,10 +113,16 @@ Battle Tracker (1.6), and a Windows installer check (section 6).
 
 - [x] Feed protocol lines into a `@pkmn/client` `Battle`
   (`engine/clientState.ts`); the Practice page renders from it.
-- [ ] Adapter from client state to what `lib/battle/predictor/` and
+- [x] Adapter from client state to what `lib/battle/predictor/` and
   `search/explain.ts` read, so both keep working on the new state.
+  `engine/setTracker.ts` walks protocol lines and keeps a predictor model
+  per foe Pokémon (reveals always, damage rolls when your own sets are
+  known); `engine/clientSpec.ts` builds calc inputs and the field from
+  client state. The predictor and explain no longer import the old state.
 - Done when: predictor and explain tests pass against client state built
-  from a recorded log.
+  from a recorded log. `engine/setTracker.test.ts` plays 30 seeded battles
+  with the real foe sets in the pool and checks the real set is never ruled
+  out (also run once over 1300 games from both seats, with no misses).
 
 ### 1.4 Bots
 

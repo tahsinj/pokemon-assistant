@@ -182,7 +182,7 @@ describe('generateCandidateSets', () => {
 describe('initOpponentModel', () => {
   it('seeds a model with normalized weights summing to 1', () => {
     const p = makeOppGarchomp();
-    const model = initOpponentModel(p, ctx);
+    const model = initOpponentModel(p.identity.species, p.identity.level, ctx);
     expect(model.candidates.length).toBeGreaterThan(0);
     const total = model.candidates.filter((c) => !c.eliminated).reduce((a, c) => a + c.weight, 0);
     expect(total).toBeCloseTo(1, 5);
@@ -194,7 +194,7 @@ describe('initOpponentModel', () => {
 describe('narrowByMove', () => {
   it('eliminates candidates that do not contain the move', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     // Earthquake should be in every Garchomp set.
     const eq = narrowByMove(seeded, 'Earthquake');
     expect(eq.candidates.every((c) => c.eliminated || c.moves.includes('Earthquake'))).toBe(true);
@@ -210,7 +210,7 @@ describe('narrowByMove', () => {
 
   it('always adds an evidence row, even when nothing changes', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     const after = narrowByMove(seeded, 'Earthquake');
     expect(after.evidence.length).toBe(seeded.evidence.length + 1);
     expect(after.evidence[after.evidence.length - 1].observation).toContain('Earthquake');
@@ -220,14 +220,14 @@ describe('narrowByMove', () => {
 describe('narrowByAbility / narrowByItem / narrowByTera', () => {
   it('narrowByAbility filters mismatched candidates', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     const after = narrowByAbility(seeded, 'Rough Skin');
     expect(after.candidates.every((c) => c.eliminated || c.ability === 'Rough Skin')).toBe(true);
   });
 
   it('narrowByItem locks the item', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     const after = narrowByItem(seeded, 'Choice Band');
     const live = after.candidates.filter((c) => !c.eliminated);
     expect(live.every((c) => c.item === 'Choice Band')).toBe(true);
@@ -235,7 +235,7 @@ describe('narrowByAbility / narrowByItem / narrowByTera', () => {
 
   it('narrowByTera locks tera type', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     const after = narrowByTera(seeded, 'Dragon');
     const live = after.candidates.filter((c) => !c.eliminated);
     expect(live.every((c) => c.teraType === 'Dragon')).toBe(true);
@@ -315,7 +315,7 @@ describe('applyEventAndPredict integration', () => {
 describe('topCandidates ordering', () => {
   it('returns the top-K candidates sorted by weight', () => {
     const p = makeOppGarchomp();
-    const seeded = initOpponentModel(p, ctx);
+    const seeded = initOpponentModel(p.identity.species, p.identity.level, ctx);
     const top = topCandidates(seeded, 2);
     expect(top.length).toBeLessThanOrEqual(2);
     for (let i = 1; i < top.length; i++) {

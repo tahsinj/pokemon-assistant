@@ -345,7 +345,7 @@ function buildPV(
     formatPVStep({
       turn: state.turn,
       side: 'player',
-      actor: us,
+      actor: us.identity.species,
       action: playerAction,
       outcome: playerAction.kind === 'move' ? outgoing : null,
       defenderName: them.identity.species,
@@ -358,7 +358,7 @@ function buildPV(
       formatPVStep({
         turn: state.turn,
         side: 'opponent',
-        actor: them,
+        actor: them.identity.species,
         action: { kind: 'move', move: opponentReply.move },
         outcome: opponentReply.outcome,
         defenderName: us.identity.species,
@@ -392,7 +392,7 @@ function buildPV(
             formatPVStep({
               turn: afterTurn.turn,
               side: 'player',
-              actor: us2,
+              actor: us2.identity.species,
               action: bestAction,
               outcome: out2,
               defenderName: them2.identity.species,

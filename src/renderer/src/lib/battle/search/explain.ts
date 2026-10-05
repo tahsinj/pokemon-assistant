@@ -18,7 +18,7 @@
 
 import type { DamageOutcome } from '../damage';
 import type { Action, Assumption, PVStep, ThreatAnalysis } from './types';
-import type { BattlePokemon, PredictedSet } from '../state';
+import type { PredictedSet } from '../predictor/types';
 
 // ---------------------------------------------------------------------------
 // Damage / KO
@@ -225,7 +225,8 @@ export function assumeNoOpponentSwitch(): Assumption {
 export interface PVRecordInput {
   turn: number;
   side: 'player' | 'opponent';
-  actor: BattlePokemon | null;
+  /** Species name of the Pokémon acting, or null when unknown. */
+  actor: string | null;
   action: Action;
   outcome?: DamageOutcome | null;
   defenderName?: string;
@@ -236,7 +237,7 @@ export interface PVRecordInput {
  * UI renders; the structured `action` lets the UI render an icon / button.
  */
 export function formatPVStep(input: PVRecordInput): PVStep {
-  const actor = input.actor?.identity.species ?? '?';
+  const actor = input.actor ?? '?';
   let text: string;
   if (input.action.kind === 'switch') {
     text = `${input.side === 'player' ? 'We' : 'They'} switch (slot ${input.action.toSlot + 1}).`;

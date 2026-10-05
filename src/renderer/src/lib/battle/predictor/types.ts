@@ -1,14 +1,29 @@
-/**
- * Predictor types. Re-exports the inline shape stored on
- * `BattlePokemon.uncertainty` so the predictor module is the canonical owner
- * of these types, even though they appear on `state.ts` to keep import
- * cycles out of the reducer.
- */
+/** Predictor types. Kept free of any battle-state model so both state models can use them. */
 
-import type { Move, Pokemon } from '../../types';
-import type { PredictedSet, PredictorEvidence } from '../state';
+import type { BaseStats, Move, Pokemon } from '../../types';
 
-export type { PredictedSet, PredictorEvidence };
+export interface PredictedSet {
+  id: string; // e.g. "garchomp:offensive-scarf"
+  label: string; // human-readable archetype
+  nature: string;
+  ability: string;
+  item: string | null;
+  teraType: string | null;
+  ivs: BaseStats;
+  evs: BaseStats;
+  moves: string[]; // display names, up to 4
+  /** Posterior weight in [0, 1]; sum across non-eliminated candidates = 1. */
+  weight: number;
+  /** True once an observation contradicted this set. Kept for explanation. */
+  eliminated: boolean;
+  eliminatedReason?: string;
+}
+
+export interface PredictorEvidence {
+  ts: number;
+  observation: string;
+  effect: string;
+}
 
 /** A candidate set the generator can produce, before posterior weights. */
 export interface CandidateSet {
@@ -18,8 +33,8 @@ export interface CandidateSet {
   ability: string;
   item: string | null;
   teraType: string | null;
-  ivs: import('../../types').BaseStats;
-  evs: import('../../types').BaseStats;
+  ivs: BaseStats;
+  evs: BaseStats;
   moves: string[];
   /** Prior probability from the generator, before any observations. */
   prior: number;

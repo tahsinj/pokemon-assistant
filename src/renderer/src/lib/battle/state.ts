@@ -13,6 +13,9 @@
 
 import type { BaseStats, StatKey } from '../types';
 import type { Terrain, Weather } from './types';
+import type { PredictedSet, PredictorEvidence } from './predictor/types';
+
+export type { PredictedSet, PredictorEvidence };
 
 // ---------------------------------------------------------------------------
 // Identifiers
@@ -174,29 +177,6 @@ export interface PokemonUncertainty {
   confidence: number;
   /** Append-only trail of observations and their effect on the distribution. */
   evidence: PredictorEvidence[];
-}
-
-export interface PredictedSet {
-  id: string; // e.g. "garchomp:offensive-scarf"
-  label: string; // human-readable archetype
-  nature: string;
-  ability: string;
-  item: string | null;
-  teraType: string | null;
-  ivs: BaseStats;
-  evs: BaseStats;
-  moves: string[]; // display names, up to 4
-  /** Posterior weight in [0, 1]; sum across non-eliminated candidates = 1. */
-  weight: number;
-  /** True once an observation contradicted this set. Kept for explanation. */
-  eliminated: boolean;
-  eliminatedReason?: string;
-}
-
-export interface PredictorEvidence {
-  ts: number;
-  observation: string;
-  effect: string;
 }
 
 // ---------------------------------------------------------------------------

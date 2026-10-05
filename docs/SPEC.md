@@ -815,9 +815,9 @@ Status:
   Practice plays full battles in a worker with hints, take-backs, a position
   graph and saved logs; Battle > Replay Review loads Showdown replays and
   flags weak move choices from public information. The calc has 30 golden
-  tests, roll histograms and Send to practice. Left for M3, tracked in
-  [WORKPLAN.md](WORKPLAN.md) section 1: the predictor on the new state,
-  hidden-set sampling for Search, search-based replay review, manual entry
+  tests, roll histograms and Send to practice. The set predictor runs on
+  `@pkmn/client` state (`engine/setTracker.ts`). Left for M3, tracked in
+  [WORKPLAN.md](WORKPLAN.md) section 1: hidden-set sampling for Search, search-based replay review, manual entry
   and retiring the Battle Tracker, and a packaged-app check.
 
 ## 8. Risks

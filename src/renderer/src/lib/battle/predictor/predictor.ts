@@ -22,7 +22,7 @@ import type {
   SideId,
 } from '../state';
 import { parseId } from '../state';
-import { calcDamage } from '../damage';
+import { calcDamage, type DamageOutcome } from '../damage';
 import type { BattlePokemonSpec, FieldSpec } from '../types';
 import { toFieldSpec, toSpec } from '../stateBridge';
 import { generateCandidateSets } from './setGenerator';
@@ -36,11 +36,8 @@ import type { CandidateSet, OpponentModel, PredictorContext } from './types';
  * Build an initial OpponentModel for a revealed opponent. Candidates come
  * either from a custom pool (usage-based sets) or the generator.
  */
-export function initOpponentModel(
-  pokemon: BattlePokemon,
-  ctx: PredictorContext,
-): OpponentModel {
-  const species = ctx.pokemonByName[pokemon.identity.species.toLowerCase()];
+export function initOpponentModel(speciesName: string, level: number, ctx: PredictorContext): OpponentModel {
+  const species = ctx.pokemonByName[speciesName.toLowerCase()];
   if (!species) {
     return { candidates: [], confidence: 0, evidence: [emptyEvidence('species not in dex')] };
   }
@@ -65,7 +62,7 @@ export function initOpponentModel(
     evidence: [
       {
         ts: Date.now(),
-        observation: `revealed ${pokemon.identity.species} L${pokemon.identity.level}`,
+        observation: `revealed ${speciesName} L${level}`,
         effect: `seeded ${initial.length} candidate set${initial.length === 1 ? '' : 's'}`,
       },
     ],
@@ -108,7 +105,7 @@ export function runPredictorOnEvent(
         if (event.side !== 'opponent') break;
         const p = draft.sides.opponent.team[event.slot];
         if (!p) break;
-        p.uncertainty = initOpponentModel(p, ctx);
+        p.uncertainty = initOpponentModel(p.identity.species, p.identity.level, ctx);
         break;
       }
 
@@ -151,14 +148,13 @@ export function runPredictorOnEvent(
         const attacker = draft.sides.opponent.team[oppSlot];
         const defender = mutPokemon(draft, event.target);
         if (!attacker || !defender || !attacker.uncertainty) break;
-        attacker.uncertainty = narrowByDamage(
+        attacker.uncertainty = narrowByDamageInState(
           attacker.uncertainty,
           attacker,
           defender,
           event.cause,
           event.amount,
           prev,
-          ctx,
         );
         break;
       }
@@ -171,10 +167,10 @@ export function runPredictorOnEvent(
 // ---------------------------------------------------------------------------
 
 export function narrowByMove(model: OpponentModel, moveName: string): OpponentModel {
-  const m = moveName.toLowerCase();
+  const m = toId(moveName);
   return reweight(
     model,
-    (c) => c.moves.some((mv) => mv.toLowerCase() === m),
+    (c) => c.moves.some((mv) => toId(mv) === m),
     {
       observation: `used ${moveName}`,
       eliminatedReason: `does not have ${moveName}`,
@@ -185,7 +181,7 @@ export function narrowByMove(model: OpponentModel, moveName: string): OpponentMo
 export function narrowByAbility(model: OpponentModel, ability: string): OpponentModel {
   return reweight(
     model,
-    (c) => c.ability.toLowerCase() === ability.toLowerCase(),
+    (c) => toId(c.ability) === toId(ability),
     {
       observation: `ability revealed: ${ability}`,
       eliminatedReason: `ability mismatch`,
@@ -196,7 +192,7 @@ export function narrowByAbility(model: OpponentModel, ability: string): Opponent
 export function narrowByItem(model: OpponentModel, item: string): OpponentModel {
   return reweight(
     model,
-    (c) => (c.item ?? '').toLowerCase() === item.toLowerCase(),
+    (c) => toId(c.item ?? '') === toId(item),
     {
       observation: `item revealed: ${item}`,
       eliminatedReason: `item mismatch`,
@@ -207,7 +203,7 @@ export function narrowByItem(model: OpponentModel, item: string): OpponentModel 
 export function narrowByTera(model: OpponentModel, teraType: string): OpponentModel {
   return reweight(
     model,
-    (c) => (c.teraType ?? '').toLowerCase() === teraType.toLowerCase(),
+    (c) => toId(c.teraType ?? '') === toId(teraType),
     {
       observation: `terastallized: ${teraType}`,
       eliminatedReason: `tera type mismatch`,
@@ -215,40 +211,55 @@ export function narrowByTera(model: OpponentModel, teraType: string): OpponentMo
   );
 }
 
+/** Damage a move was seen to deal, as shown in the battle. */
+export interface ObservedDamage {
+  /** In HP (`unit: 'hp'`) or percent of the target's max HP (`unit: 'pct'`). */
+  amount: number;
+  unit: 'hp' | 'pct';
+  /** Allowed error either side, for HP shown as a rounded percentage. */
+  tolerance?: number;
+  /** The target fainted or hung on at 1 HP, so the move could have done more. */
+  atLeast?: boolean;
+}
+
+/**
+ * Reweight candidates by how well each explains the damage one hit dealt.
+ * `outcomeFor` runs the calc for a candidate as the attacker, or returns
+ * null when the calc can't judge it. Candidates
+ * whose whole roll range misses the observation are eliminated; inside the
+ * range the likelihood peaks at the midpoint and halves at the edges.
+ */
 export function narrowByDamage(
   model: OpponentModel,
-  attacker: BattlePokemon,
-  defender: BattlePokemon,
   moveName: string,
-  observedDamage: number,
-  prevState: BattleState,
-  ctx: PredictorContext,
+  observed: ObservedDamage,
+  outcomeFor: (c: PredictedSet) => DamageOutcome | null,
+  targetName: string,
 ): OpponentModel {
   if (!moveName) return model;
-  const species = ctx.pokemonByName[attacker.identity.species.toLowerCase()];
-  if (!species) return model;
-  const field: FieldSpec = toFieldSpec(prevState, 'opponent');
-  const defSpec: BattlePokemonSpec = toSpec(defender);
-
+  const tol = observed.tolerance ?? 0;
   const updated: PredictedSet[] = model.candidates.map((c) => {
     if (c.eliminated) return c;
-    const attSpec: BattlePokemonSpec = candidateToSpec(c, attacker);
-    const outcome = calcDamage(9, attSpec, defSpec, moveName, field);
-    if (outcome.error || outcome.isZero) return c;
-    const low = outcome.min;
-    const high = outcome.max;
-    if (observedDamage < low || observedDamage > high) {
+    const outcome = outcomeFor(c);
+    if (!outcome || outcome.error || outcome.isZero) return c;
+    const low = observed.unit === 'hp' ? outcome.min : outcome.pctMin;
+    const high = observed.unit === 'hp' ? outcome.max : outcome.pctMax;
+    const range = observed.unit === 'hp' ? `${low}-${high}` : `${low.toFixed(1)}-${high.toFixed(1)}%`;
+    const shown = observed.unit === 'hp' ? `${observed.amount}` : `${observed.amount.toFixed(1)}%`;
+    const tooLow = high + tol < observed.amount;
+    const tooHigh = !observed.atLeast && low - tol > observed.amount;
+    if (tooLow || tooHigh) {
       return {
         ...c,
         eliminated: true,
-        eliminatedReason: `${moveName} dealt ${observedDamage}, candidate predicts ${low}-${high}`,
+        eliminatedReason: `${moveName} dealt ${shown}, candidate predicts ${range}`,
         weight: 0,
       };
     }
-    // Soft likelihood inside the range: peak weight at the midpoint, half at edges.
+    if (observed.atLeast) return c;
     const mid = (low + high) / 2;
     const spread = Math.max(1, (high - low) / 2);
-    const distance = Math.abs(observedDamage - mid);
+    const distance = Math.max(0, Math.abs(observed.amount - mid) - tol);
     const likelihood = Math.max(0.5, 1 - 0.5 * (distance / spread));
     return { ...c, weight: c.weight * likelihood };
   });
@@ -256,19 +267,39 @@ export function narrowByDamage(
   const before = model.candidates.filter((c) => !c.eliminated).length;
   const after = updated.filter((c) => !c.eliminated).length;
   const normalized = normalizeWeights(updated);
+  const amount = observed.unit === 'hp' ? `${observed.amount} HP` : `${Math.round(observed.amount)}%`;
   const evidence: PredictorEvidence = {
     ts: Date.now(),
-    observation: `${moveName} dealt ${observedDamage} HP to ${defender.identity.species}`,
+    observation: `${moveName} dealt ${observed.atLeast ? 'at least ' : ''}${amount} to ${targetName}`,
     effect:
       before === after
         ? `reweighted ${after} candidate${after === 1 ? '' : 's'} by damage roll`
-        : `narrowed ${before} → ${after} candidates`,
+        : `narrowed ${before} -> ${after} candidates`,
   };
   return {
     candidates: normalized,
     confidence: confidenceOf(normalized),
     evidence: [...model.evidence, evidence],
   };
+}
+
+function narrowByDamageInState(
+  model: OpponentModel,
+  attacker: BattlePokemon,
+  defender: BattlePokemon,
+  moveName: string,
+  observedDamage: number,
+  prevState: BattleState,
+): OpponentModel {
+  const field: FieldSpec = toFieldSpec(prevState, 'opponent');
+  const defSpec: BattlePokemonSpec = toSpec(defender);
+  return narrowByDamage(
+    model,
+    moveName,
+    { amount: observedDamage, unit: 'hp' },
+    (c) => calcDamage(9, candidateToSpec(c, attacker), defSpec, moveName, field),
+    defender.identity.species,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +322,7 @@ function reweight(
   const evidence: PredictorEvidence = {
     ts: Date.now(),
     observation: meta.observation,
-    effect: before === after ? 'no change' : `narrowed ${before} → ${after} candidates`,
+    effect: before === after ? 'no change' : `narrowed ${before} -> ${after} candidates`,
   };
   return {
     candidates: normalized,
@@ -325,6 +356,8 @@ function confidenceOf(sets: PredictedSet[]): number {
   }
   return Math.max(0, Math.min(1, 1 - h / lnN));
 }
+
+const toId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 function emptyEvidence(reason: string): PredictorEvidence {
   return { ts: Date.now(), observation: 'init', effect: reason };

@@ -203,13 +203,10 @@ describe('assumption builders', () => {
 
 describe('formatPVStep', () => {
   it('renders a move step with damage range and KO line', () => {
-    const garchomp = {
-      identity: { species: 'Garchomp', level: 50 },
-    } as never;
     const step = formatPVStep({
       turn: 5,
       side: 'player',
-      actor: garchomp,
+      actor: 'Garchomp',
       action: { kind: 'move', move: 'Earthquake' },
       outcome: stubOutcome(),
       defenderName: 'Tatsugiri',
