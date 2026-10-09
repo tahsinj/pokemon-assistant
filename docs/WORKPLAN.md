@@ -5,8 +5,8 @@ Everything left to do, in order, as tasks small enough to pick up cold.
 build, where, and how to tell it is done. Tick the boxes as tasks land and
 keep the "Status" line of each milestone current.
 
-M0 to M3 are done (see the Status list in SPEC.md section 7). Next up is
-M4.
+M0 to M4 are done (see the Status list in SPEC.md section 7). Next up is
+M5.
 
 ## 0. Before you start
 
@@ -211,9 +211,7 @@ section 6, where it waits for a Windows machine.
 Goal: counters come from simulated battles and a learned matchup model.
 Acceptance is the metrics in SPEC 5.5, published in a model card.
 
-Status: in progress. Simulation data, the Gen 9 OU matchup model, the model
-runtime, Counter Draft v2, Checks and the Raid Planner are done. Left: the
-National Dex OU model and publishing the packs release.
+Status: done (see SPEC.md section 7).
 
 ### 2.1 Simulation data (`tools/simgen/`)
 
@@ -234,21 +232,21 @@ National Dex OU model and publishing the packs release.
   `ingest/`, `features/`, `train/`, `eval/`, `export/` (see `ml/README.md`).
 - [x] Logistic regression baseline, then LightGBM. Metrics: log loss, Brier,
   Spearman against Smogon checks and counters.
-- [ ] Export `model.onnx`, `metrics.json`, `MODEL_CARD.md` per format. Gen 9
-  OU is done ([model card](models/matchup-gen9ou.md): Brier 0.122 against
-  0.176 for a coin flip, well calibrated, Spearman 0.075 against Smogon's
-  checks); National Dex OU waits on its simulation run.
+- [x] Export `model.onnx`, `metrics.json`, `MODEL_CARD.md` per format:
+  [Gen 9 OU](models/matchup-gen9ou.md) (Brier 0.122 against 0.176 for a
+  coin flip) and [National Dex OU](models/matchup-gen9nationaldex.md)
+  (0.114 against 0.194), both well calibrated.
 
 ### 2.3 Model runtime and packs
 
 - [x] ML worker with `onnxruntime-web`, models loaded lazily per tool
   (`src/renderer/src/ml/`); the Electron smoke test runs a model from a pack
   over `file://`.
-- [ ] Data packs (SPEC 5.1): `packs.json` manifest on this repo's GitHub
+- [x] Data packs (SPEC 5.1): `packs.json` manifest on this repo's GitHub
   Releases with sizes and SHA-256, downloaded into userData, checked at most
-  once a day, works offline with the last download. The app side is done
-  (`src/main/packs.ts`, tested); `npm run publish-packs -- --publish`
-  uploads the models to the `packs` release, which has not been run yet.
+  once a day, works offline with the last download (`src/main/packs.ts`).
+  Both matchup models are on the `packs` release; `npm run publish-packs --
+  --publish` uploads new ones.
 - [x] Every ML result says whether the model or the heuristic produced it;
   the heuristic stays as the fallback.
 

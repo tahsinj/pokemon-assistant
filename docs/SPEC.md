@@ -834,6 +834,31 @@ Status:
     section 6); the Electron smoke test covers the built app on Linux in
     CI and on macOS locally.
 
+- **M4 done.** `npm run simgen` plays one-on-one games between sets drawn
+  from usage data (a quarter with off-meta changes) with the Search bot on
+  both sides, and stores the calc features from
+  `src/renderer/src/ml/matchupFeatures.ts` with each pair. `ml/` trains a
+  logistic regression baseline and LightGBM per format and exports ONNX
+  with a model card: [Gen 9 OU](models/matchup-gen9ou.md) (20,000 pairs,
+  Brier 0.122 against 0.176 for a coin flip) and
+  [National Dex OU](models/matchup-gen9nationaldex.md) (10,000 pairs, 0.114
+  against 0.194), both well calibrated. The app downloads them from the
+  `packs` release, checked against the manifest's SHA-256, at most once a
+  day, and runs them in a worker with `onnxruntime-web`; without a model it
+  falls back to calc heuristics and says so. Counter Draft picks on win
+  chances with a shared-weakness penalty and verifies a draft in 200
+  simulated battles; Checks ranks the box or the meta against one Pokémon;
+  the Raid Planner ranks the box against a boss with editable rules.
+  Notes:
+  - Spearman against Smogon's checks and counters is near zero (0.075 for
+    Gen 9 OU, -0.119 for National Dex), while listed checks get a 76% and
+    80% predicted win chance. Smogon's numbers come from team battles and
+    rank only the checks among themselves, so they are a sanity check here,
+    not a target.
+  - Labels come from the Search bot on both sides.
+  - Simulated raids apply the HP multiplier and boosts; the boss's extra
+    actions per turn count only in the quick estimate.
+
 ## 8. Risks
 
 | Risk | Impact | Mitigation |
