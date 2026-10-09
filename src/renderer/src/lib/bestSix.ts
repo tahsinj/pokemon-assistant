@@ -33,7 +33,7 @@ export interface BestSixOptions {
   presets?: TeamPresetId[];
   /** Top-quality pool kept for the combinatorial search. */
   poolSize?: number;
-  /** Candidates below targetLevel x ratio are excluded (pcCounters convention). */
+  /** Candidates below targetLevel x ratio are excluded. */
   minLevelRatio?: number;
   /** Reference level; default = 90th-percentile level across the PC. */
   refLevel?: number;

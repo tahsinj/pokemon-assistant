@@ -41,6 +41,7 @@ const ReplayPage = lazy(() => import('./pages/ReplayPage').then((m) => ({ defaul
 const CounterDraftPage = lazy(() =>
   import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
 );
+const ChecksPage = lazy(() => import('./pages/ChecksPage').then((m) => ({ default: m.ChecksPage })));
 
 const FIRST_TABS = Object.fromEntries(AREAS.map((a) => [a.id, a.tools[0]])) as Record<AreaId, ToolId>;
 
@@ -346,6 +347,8 @@ export function App() {
         return <SmogonPage pokemon={pokemon} smogon={smogon} />;
       case 'draft':
         return <CounterDraftPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'checks':
+        return <ChecksPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:
         return null;
     }

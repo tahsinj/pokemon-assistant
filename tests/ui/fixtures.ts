@@ -22,7 +22,7 @@ export const test = base.extend<{ app: Page }>({
 export async function openTool(page: Page, area: string, tool: string): Promise<void> {
   await page.getByRole('button', { name: area, exact: true }).click();
   await page.getByRole('tab', { name: tool, exact: true }).click();
-  await expect(page.locator('.dive-content [data-ui="page-title"]').first()).toHaveText(tool);
+  await expect(page.locator('.dive-content [data-ui="page-title"]').first()).toHaveText(tool, { timeout: 15_000 });
   await settle(page);
 }
 

@@ -3,7 +3,8 @@ import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { CompetitiveIntel } from './CompetitiveIntel';
 import { CoverageThreats } from './CoverageThreats';
-import { SpeciesCounters } from './SpeciesCounters';
+import { openChecksFor } from '../lib/checksHandoff';
+import { useOpenTool } from '../lib/areas';
 import { bst } from '../lib/stats';
 import { competitiveMoveset, suggestMoveset, tmPriorities } from '../lib/recommender';
 import { defensiveProfile } from '../lib/typechart';
@@ -21,12 +22,12 @@ export function PokemonDexDetail({
   p: Pokemon;
   moves: Record<string, Move>;
   smogon: SmogonBundle | null;
-  /** Full dex list - needed to rank counters in the Counters tab. */
+  /** Full dex list, for the coverage and threats panel. */
   allPokemon: Pokemon[];
   onSelectSpecies: (id: string) => void;
 }) {
   const intel = smogon?.species[p.id] ?? null;
-  const [view, setView] = useState<'overview' | 'counters'>('overview');
+  const tool = useOpenTool();
   const [moveTab, setMoveTab] = useState<'best' | 'levelup' | 'tm'>('best');
   const suggested =
     moveTab === 'tm'
@@ -43,37 +44,20 @@ export function PokemonDexDetail({
     .map((lm) => ({ learn: lm.learn, mv: moves[lm.move] }))
     .filter((x) => x.mv);
 
-  const tabBar = (
-    <div className="flex items-center gap-1 mono-panel rounded-full p-0.5 self-start">
-      {(
-        [
-          ['overview', 'Overview'],
-          ['counters', 'Counters'],
-        ] as const
-      ).map(([id, label]) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => setView(id)}
-          aria-pressed={view === id}
-          className={`font-mono-hud text-[14px] uppercase tracking-wider px-4 py-1 rounded-full transition-colors ${
-            view === id ? 'bg-accent-2 text-black' : 'text-ink-2 hover:text-ink-1'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
-  if (view === 'counters') {
-    return (
-      <div className="flex flex-col gap-4">
-        {tabBar}
-        <SpeciesCounters target={p} allPokemon={allPokemon} moves={moves} />
-      </div>
-    );
-  }
+  // Counters live in the Counters area now; this sends the species there.
+  const tabBar = tool ? (
+    <button
+      type="button"
+      className="chunky ghost font-display text-[12px] self-start"
+      style={{ padding: '6px 14px' }}
+      onClick={() => {
+        openChecksFor(p.id);
+        tool.goTo('checks');
+      }}
+    >
+      FIND CHECKS
+    </button>
+  ) : null;
 
   return (
     <div className="flex flex-col gap-4">

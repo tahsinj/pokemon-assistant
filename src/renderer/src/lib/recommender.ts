@@ -1,6 +1,5 @@
 import type { Move, Pokemon } from './types';
 import type { SmogonSpeciesIntel } from './smogon';
-import { effectiveness } from './typechart';
 import { resolveSetMoves } from './smogonSets';
 
 /**
@@ -332,44 +331,4 @@ export function tmPriorities(
     .sort((a, b) => b.usage - a.usage || b.score - a.score)
     .slice(0, limit)
     .map(({ move, score, reasons }) => ({ move, score, reasons }));
-}
-
-// Score how well "candidate" counters "target". Higher = better counter.
-export function counterScore(candidate: Pokemon, target: Pokemon, moves: Record<string, Move>): number {
-  // Offensive: best learnable move effectiveness vs target
-  const cMoves = learnableMoves(candidate, moves).filter((m) => m.category !== 'Status' && m.power > 0);
-  let bestOffense = 0;
-  for (const m of cMoves) {
-    const eff = effectiveness(m.type, target.types);
-    const stab = candidate.types.includes(m.type) ? 1.5 : 1;
-    const att = candidate.baseStats.atk >= candidate.baseStats.spa ? candidate.baseStats.atk : candidate.baseStats.spa;
-    const score = m.power * eff * stab * (att / 100);
-    if (score > bestOffense) bestOffense = score;
-  }
-
-  // Defensive: worst-case multiplier target's STAB vs candidate
-  let worstDefense = 1;
-  for (const t of target.types) {
-    const mult = effectiveness(t, candidate.types);
-    if (mult > worstDefense) worstDefense = mult;
-  }
-  const defenseScore = 100 / worstDefense;
-
-  // Speed tiebreak
-  const speedAdvantage = candidate.baseStats.spe - target.baseStats.spe;
-
-  return bestOffense + defenseScore * 0.5 + speedAdvantage * 0.2;
-}
-
-export function topCounters(
-  target: Pokemon,
-  all: Pokemon[],
-  moves: Record<string, Move>,
-  limit = 12,
-) {
-  return all
-    .filter((p) => p.id !== target.id)
-    .map((p) => ({ p, score: counterScore(p, target, moves) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
 }

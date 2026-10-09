@@ -23,6 +23,8 @@ export interface MatchupCell {
   theirPctMax: number;      // % of my HP their best move deals
   moveName: string | null;  // the PC mon's best damaging move (null = no damage)
   score: number;            // signed; higher favors the PC mon
+  /** Chance the PC mon wins one on one, from the matchup model or the rules here. */
+  win?: number;
 }
 
 function bestDamaging(outcomes: DamageOutcome[]): DamageOutcome | null {
@@ -66,7 +68,7 @@ function toBattleSpec(
   input: CombatImportInput,
   species: Pokemon,
   fallbackMoves: string[],
-  opts?: { tera?: string | null; dynamax?: boolean; ability?: string | null },
+  opts?: { tera?: string | null; ability?: string | null },
 ): { spec: BattlePokemonSpec; fields: ReturnType<typeof toCombatFields> } {
   const fields = toCombatFields(input, species, fallbackMoves);
   const spec: BattlePokemonSpec = {
@@ -83,7 +85,6 @@ function toBattleSpec(
     spec.isTerastallized = true;
     spec.teraType = opts.tera;
   }
-  if (opts?.dynamax) spec.isDynamaxed = true;
   return { spec, fields };
 }
 
@@ -101,27 +102,38 @@ function speedOf(species: Pokemon, fields: ReturnType<typeof toCombatFields>): n
   return fields.item === 'Choice Scarf' ? Math.floor(stats.spe * 1.5) : stats.spe;
 }
 
-export function evaluateMatchup(
-  pcSide: { rec: PcPokemonRecord; p: Pokemon },
-  oppSide: { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; dynamax?: boolean; assumedAbility?: string | null },
-  moves: Record<string, Move>,
-): MatchupCell {
-  return evaluateSpecMatchup(
-    { p: pcSide.p, input: fromPcRecord(pcSide.rec) },
-    {
-      p: oppSide.p,
-      input: oppSide.set.input,
-      tera: oppSide.teraType,
-      dynamax: oppSide.dynamax,
-      // Tier-aware (set by the caller per assumption tab); direct callers fall
-      // back to the conservative worst-case ability.
-      ability:
-        oppSide.assumedAbility !== undefined
-          ? oppSide.assumedAbility
-          : defensiveAbility(oppSide.p, oppSide.set.ability),
-    },
-    moves,
-  );
+type PcSide = { rec: PcPokemonRecord; p: Pokemon };
+type OppSide = { p: Pokemon; level: number; set: AssumedSet; teraType?: string | null; assumedAbility?: string | null };
+
+function oppInput(oppSide: OppSide) {
+  return {
+    p: oppSide.p,
+    input: oppSide.set.input,
+    tera: oppSide.teraType,
+    // Tier-aware (set by the caller per assumption tab); direct callers fall
+    // back to the conservative worst-case ability.
+    ability: oppSide.assumedAbility !== undefined ? oppSide.assumedAbility : defensiveAbility(oppSide.p, oppSide.set.ability),
+  };
+}
+
+/** Calc input for a PC Pokémon, as `evaluateMatchup` sees it. */
+export function pcSpec(pcSide: PcSide, moves: Record<string, Move>): BattlePokemonSpec {
+  return toBattleSpec(fromPcRecord(pcSide.rec), pcSide.p, bestDamagingMoveNames(pcSide.p, moves)).spec;
+}
+
+/** Calc input for an opponent with an assumed set, as `evaluateMatchup` sees it. */
+export function opponentSpec(oppSide: OppSide, moves: Record<string, Move>): BattlePokemonSpec {
+  const opp = oppInput(oppSide);
+  return toBattleSpec(opp.input, opp.p, bestDamagingMoveNames(opp.p, moves), { tera: opp.tera, ability: opp.ability }).spec;
+}
+
+/** The two calc inputs `evaluateMatchup` works from, for the matchup model. */
+export function matchupSpecs(pcSide: PcSide, oppSide: OppSide, moves: Record<string, Move>): { me: BattlePokemonSpec; them: BattlePokemonSpec } {
+  return { me: pcSpec(pcSide, moves), them: opponentSpec(oppSide, moves) };
+}
+
+export function evaluateMatchup(pcSide: PcSide, oppSide: OppSide, moves: Record<string, Move>): MatchupCell {
+  return evaluateSpecMatchup({ p: pcSide.p, input: fromPcRecord(pcSide.rec) }, oppInput(oppSide), moves);
 }
 
 /**
@@ -133,7 +145,7 @@ export function evaluateMatchup(
  */
 export function evaluateSpecMatchup(
   mine: { p: Pokemon; input: CombatImportInput; tera?: string | null; ability?: string | null },
-  opp: { p: Pokemon; input: CombatImportInput; tera?: string | null; dynamax?: boolean; ability?: string | null },
+  opp: { p: Pokemon; input: CombatImportInput; tera?: string | null; ability?: string | null },
   moves: Record<string, Move>,
 ): MatchupCell {
   const myFallback = bestDamagingMoveNames(mine.p, moves);
@@ -142,7 +154,6 @@ export function evaluateSpecMatchup(
   const me = toBattleSpec(mine.input, mine.p, myFallback, { tera: mine.tera, ability: mine.ability });
   const them = toBattleSpec(opp.input, opp.p, oppFallback, {
     tera: opp.tera,
-    dynamax: opp.dynamax,
     ability: opp.ability,
   });
 

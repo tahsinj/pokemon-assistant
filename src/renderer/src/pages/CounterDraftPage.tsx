@@ -1,8 +1,20 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Pokemon, Move } from '../lib/types';
 import type { SmogonBundle } from '../lib/smogon';
 import { TYPES } from '../lib/typechart';
-import { draftCounterTeam, evaluateTeam, type DraftResult, type Candidate, type OpponentEntry } from '../lib/counterDraft';
+import {
+  draftCounterTeam,
+  evaluateTeam,
+  matchupPairs,
+  type DraftResult,
+  type Candidate,
+  type OpponentEntry,
+  type WinMatrix,
+} from '../lib/counterDraft';
+import { useFormat } from '../lib/formats';
+import { scoreMatchups, type ScoreSource } from '../ml/matchup';
+import { packSpecs } from '../engine/verify';
+import { runVerify, type VerifyProgress } from '../engine/verifyClient';
 import type { OpponentBulk } from '../lib/opponentSet';
 import {
   loadSavedDrafts,
@@ -34,8 +46,6 @@ interface OppSlot {
   /** Whether THIS opponent terastallizes (per-mon, not a format-wide switch). */
   tera?: boolean;
   teraType?: string | null;
-  /** Whether THIS opponent Dynamaxes (doubles its HP for the matchup math). */
-  dynamax?: boolean;
 }
 
 const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -69,6 +79,22 @@ export function CounterDraftPage({
   const [mode, setMode] = useState(6); // team size per side (3v3 ... 6v6)
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>(() => loadSavedDrafts());
   const [label, setLabel] = useState('');
+  const activeFormat = useFormat();
+  /** Where the current win chances came from. */
+  const [source, setSource] = useState<ScoreSource | null>(null);
+  const [verify, setVerify] = useState<VerifyProgress | null>(null);
+  const stopVerify = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopVerify.current?.(), []);
+
+  /** Win chances for every candidate against every opponent: the model's, or null for the calc rules. */
+  const winChances = async (cands: Candidate[], entries: OpponentEntry[], b: OpponentBulk): Promise<WinMatrix | undefined> => {
+    const pairs = matchupPairs(cands, entries, moves, smogon, b);
+    const flat = pairs.flat();
+    const scored = await scoreMatchups(activeFormat.id, flat);
+    setSource(scored.source === 'model' ? 'model' : 'heuristic');
+    if (scored.source !== 'model') return undefined;
+    return pairs.map((row, i) => row.map((_, j) => scored.win[i * entries.length + j]));
+  };
 
   // PC mons usable against a given opponent team. In a flat-level format both
   // sides are normalized, so the underlevel gate doesn't apply (every mon is
@@ -128,8 +154,8 @@ export function CounterDraftPage({
   );
 
   // All current format knobs in one bag so the change handlers can re-run with
-  // the NEW value (React state updates are async within a tick). Tera/Dynamax
-  // are per-opponent (see OppSlot), not format-wide.
+  // the NEW value (React state updates are async within a tick). Tera is
+  // per-opponent (see OppSlot), not format-wide.
   type Format = { bulk: OpponentBulk; flat: number | null; size: number };
   const format = (over?: Partial<Format>): Format =>
     ({ bulk, flat: flatLevel, size: mode, ...over });
@@ -139,18 +165,49 @@ export function CounterDraftPage({
       p: o.p,
       level: f.flat ?? o.level,
       teraType: o.tera ? (o.teraType ?? defaultTera(o.p)) : null,
-      dynamax: !!o.dynamax,
     }));
 
-  const runDraftWith = (opps: OppSlot[], f: Format) =>
-    setResult(draftCounterTeam(toEntries(opps, f), candidatesFor(opps, f.flat), moves, smogon, f.bulk, undefined, f.size));
-  const runDraft = () => runDraftWith(opponents, format());
+  const cancelVerify = () => {
+    stopVerify.current?.();
+    stopVerify.current = null;
+    setVerify(null);
+  };
+  // Stopping keeps the score so far.
+  const haltVerify = () => {
+    stopVerify.current?.();
+    stopVerify.current = null;
+    setVerify((v) => (v ? { ...v, stopped: true } : v));
+  };
+
+  const runDraftWith = async (opps: OppSlot[], f: Format) => {
+    cancelVerify();
+    const entries = toEntries(opps, f);
+    const cands = candidatesFor(opps, f.flat);
+    const wins = await winChances(cands, entries, f.bulk);
+    setResult(draftCounterTeam(entries, cands, moves, smogon, f.bulk, undefined, f.size, wins));
+  };
+  const runDraft = () => void runDraftWith(opponents, format());
 
   // Re-score the EXISTING drafted team (no re-draft) under updated assumptions.
-  const rescore = (opps: OppSlot[], f: Format) =>
-    setResult((prev) =>
-      prev ? { ...prev, ...evaluateTeam(prev.team, toEntries(opps, f), moves, smogon, f.bulk) } : prev,
-    );
+  const rescore = async (opps: OppSlot[], f: Format) => {
+    if (!result) return;
+    cancelVerify();
+    const entries = toEntries(opps, f);
+    const wins = await winChances(result.team, entries, f.bulk);
+    setResult((prev) => (prev ? { ...prev, ...evaluateTeam(prev.team, entries, moves, smogon, f.bulk, undefined, wins) } : prev));
+  };
+
+  // Play the drafted team against theirs, with the sets the scores assumed.
+  const startVerify = (games: number) => {
+    if (!result) return;
+    cancelVerify();
+    const entries = toEntries(opponents, format());
+    const pairs = matchupPairs(result.team, entries, moves, smogon, bulk);
+    const teamA = packSpecs(pairs.map((row) => row[0][0]));
+    const teamB = packSpecs(pairs[0].map((pair) => pair[1]));
+    setVerify({ games: 0, total: games, score: 0, low: 0, high: 1 });
+    stopVerify.current = runVerify({ format: activeFormat.showdownFormat, teamA, teamB }, games, setVerify);
+  };
 
   // Save the current opponent team (label optional) for later re-analysis.
   const saveCurrent = () => {
@@ -177,20 +234,20 @@ export function CounterDraftPage({
       .filter((o): o is OppSlot => !!o.p)
       .slice(0, mode);
     setOpponents(opps);
-    runDraftWith(opps, format());
+    void runDraftWith(opps, format());
   };
 
   // Switching tabs re-scores the SAME drafted team under the new assumption.
   const changeBulk = (next: OpponentBulk) => {
     setBulk(next);
-    rescore(opponents, format({ bulk: next }));
+    void rescore(opponents, format({ bulk: next }));
   };
 
   // Changing the battle level re-drafts: the eligible pool and the best answers
   // genuinely differ once levels are flattened (no level-gap advantage).
   const changeFlatLevel = (next: number | null) => {
     setFlatLevel(next);
-    if (result) runDraftWith(opponents, format({ flat: next }));
+    if (result) void runDraftWith(opponents, format({ flat: next }));
   };
 
   // Switching format (3v3 ... 6v6) caps the opponent team and the drafted answer
@@ -199,28 +256,23 @@ export function CounterDraftPage({
     setMode(next);
     const trimmed = opponents.slice(0, next);
     if (trimmed.length !== opponents.length) setOpponents(trimmed);
-    if (result) runDraftWith(trimmed, format({ size: next }));
+    if (result) void runDraftWith(trimmed, format({ size: next }));
   };
 
-  // Toggling one opponent's Tera/Dynamax changes the matchups, so re-draft (a
-  // Tera mon may need a different answer; Dynamax doubles its HP).
+  // Toggling one opponent's Tera changes the matchups, so re-draft (a Tera
+  // mon may need a different answer).
   const toggleTeraFor = (i: number) => {
     const next = opponents.map((o, idx) =>
       idx === i ? { ...o, tera: !o.tera, teraType: o.teraType ?? defaultTera(o.p) } : o,
     );
     setOpponents(next);
-    if (result) runDraftWith(next, format());
-  };
-  const toggleDynamaxFor = (i: number) => {
-    const next = opponents.map((o, idx) => (idx === i ? { ...o, dynamax: !o.dynamax } : o));
-    setOpponents(next);
-    if (result) runDraftWith(next, format());
+    if (result) void runDraftWith(next, format());
   };
   // Tweaking one opponent's Tera type re-scores the current team.
   const setTeraTypeFor = (i: number, teraType: string) => {
     const next = opponents.map((o, idx) => (idx === i ? { ...o, teraType } : o));
     setOpponents(next);
-    if (result && next[i].tera) rescore(next, format());
+    if (result && next[i].tera) void rescore(next, format());
   };
 
   return (
@@ -270,7 +322,7 @@ export function CounterDraftPage({
             </div>
           </div>
           <div className="text-[13px] text-ink-2 leading-snug max-w-[240px]">
-            Tera &amp; Dynamax are per-opponent - toggle them on each mon below.
+            Tera is per opponent: toggle it on each Pokémon below.
           </div>
         </div>
 
@@ -330,19 +382,6 @@ export function CounterDraftPage({
                   }`}
                 >
                   Tera
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleDynamaxFor(i)}
-                  aria-pressed={!!o.dynamax}
-                  title={`Whether ${o.p.name} Dynamaxes (doubles its HP for the matchup math)`}
-                  className={`font-mono-hud text-[14px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition ${
-                    o.dynamax
-                      ? 'bg-accent border-transparent text-[#100b06]'
-                      : 'border-white/15 text-ink-2 hover:border-accent-2'
-                  }`}
-                >
-                  Dmax
                 </button>
               </div>
               {o.tera && (
@@ -418,7 +457,7 @@ export function CounterDraftPage({
           <div className="glass rounded-[14px] p-3.5">
             <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
               <div className="font-mono-hud text-[14px] uppercase tracking-[0.2em] text-accent-2">
-                Coverage - your draft vs their team
+                Win chances
               </div>
               <div className="flex items-center gap-1 mono-panel rounded-full p-0.5" title="Assumed opponent investment">
                 {BULK_TABS.map((b) => (
@@ -458,7 +497,7 @@ export function CounterDraftPage({
                       title={cell.moveName ? `${cell.moveName} · ${cell.label} ${cell.sub}` : cell.label}
                       className={`h-[46px] rounded-[7px] border flex flex-col items-center justify-center font-mono-hud leading-none gap-0.5 px-1 ${VERDICT_CLASS[cell.verdict]}`}
                     >
-                      <span className="text-[14px]">{cell.label} <span className="opacity-85 text-[12px]">{cell.sub}</span></span>
+                      <span className="text-[14px]">{cell.win != null ? `${Math.round(cell.win * 100)}%` : cell.label}</span>
                       <span className="text-[12px] opacity-70 truncate max-w-full">{cell.moveName ?? '-'}</span>
                     </div>
                   ))}
@@ -466,10 +505,16 @@ export function CounterDraftPage({
               ))}
             </div>
             <div className="flex gap-4 mt-3 font-mono-hud text-[14px] text-ink-2">
-              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-accent-2" />outspeed + KO / wall</span>
-              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-[#e9a425]" />trade / check</span>
-              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-danger" />loses</span>
+              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-accent-2" />likely wins</span>
+              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-[#e9a425]" />close</span>
+              <span><i className="inline-block w-2.5 h-2.5 rounded-[3px] mr-1.5 align-middle bg-danger" />likely loses</span>
             </div>
+            <p data-ui="score-source" className="font-sans text-[13px] text-ink-2 mt-2 mb-0">
+              {source === 'model'
+                ? 'Percentages are one-on-one win chances from the matchup model, trained on simulated battles.'
+                : 'Percentages come from damage calc rules (who KOs first). The matchup model will be used once it has downloaded.'}
+            </p>
+            <VerifyPanel progress={verify} onStart={startVerify} onStop={haltVerify} />
           </div>
 
           <div className="glass rounded-[14px] p-3.5 flex flex-col gap-3">
@@ -536,6 +581,40 @@ export function CounterDraftPage({
         </div>
       )}
     </ModuleFrame>
+  );
+}
+
+function VerifyPanel({
+  progress,
+  onStart,
+  onStop,
+}: {
+  progress: VerifyProgress | null;
+  onStart: (games: number) => void;
+  onStop: () => void;
+}) {
+  const pct = (x: number) => `${Math.round(100 * x)}%`;
+  const running = !!progress && progress.games < progress.total && !progress.error && !progress.stopped;
+  return (
+    <div data-ui="verify" className="border-t border-dashed border-white/10 mt-3 pt-3 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        className="chunky font-display text-[12px]"
+        style={{ padding: '6px 14px' }}
+        onClick={() => (running ? onStop() : onStart(200))}
+      >
+        {running ? 'STOP' : 'VERIFY IN 200 BATTLES'}
+      </button>
+      <span className="font-sans text-[14px] text-ink-1">
+        {!progress
+          ? 'Plays your draft against their team with the Search bot on both sides.'
+          : progress.error
+            ? progress.error
+            : progress.games === 0
+              ? 'Starting battles...'
+              : `Your team wins ${pct(progress.score / progress.games)} (${pct(progress.low)} to ${pct(progress.high)}) after ${progress.games} ${progress.stopped ? `battles; stopped` : `of ${progress.total} battles`}.`}
+      </span>
+    </div>
   );
 }
 

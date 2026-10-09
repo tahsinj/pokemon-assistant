@@ -4,6 +4,9 @@ import { greedyBot } from './greedy';
 import { series } from './match';
 import { randomBot } from './random';
 import { searchBot } from './search';
+import { wilson } from '../wilson';
+
+export { wilson };
 
 export interface PairResult {
   a: string;
@@ -13,15 +16,6 @@ export interface PairResult {
   /** 95% Wilson interval for A's score rate. */
   low: number;
   high: number;
-}
-
-export function wilson(score: number, n: number, z = 1.96): [number, number] {
-  if (!n) return [0, 1];
-  const p = score / n;
-  const d = 1 + (z * z) / n;
-  const c = p + (z * z) / (2 * n);
-  const m = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
-  return [(c - m) / d, (c + m) / d];
 }
 
 const eloDiff = (rate: number) => -400 * Math.log10(1 / Math.min(0.99, Math.max(0.01, rate)) - 1);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { draftCounterTeam, evaluateTeam } from './counterDraft';
+import { draftCounterTeam, evaluateTeam, pickTeam, teamValue } from './counterDraft';
 import type { Pokemon, Move } from './types';
 import type { PcPokemonRecord } from './bridgeTypes';
 import type { MatchupCell } from './matchup';
@@ -64,5 +64,41 @@ describe('evaluateTeam', () => {
     expect(easy.matrix[0][0].verdict).toBe('win');
     expect(hard.matrix[0][0].verdict).toBe('trade');
     expect(easy.oppOrder).toEqual(opponents);
+  });
+});
+
+describe('drafting from win chances', () => {
+  it('uses the model\'s chances for the pick and the verdicts', () => {
+    const opponents = [{ p: mon('A'), level: 100 }, { p: mon('B'), level: 100 }];
+    const candidates = [rec('x'), rec('y'), rec('z')];
+    // The calc rules would say everything loses; the model disagrees for x and y.
+    const wins = [
+      [0.9, 0.2],
+      [0.2, 0.85],
+      [0.3, 0.3],
+    ];
+    const res = draftCounterTeam(opponents, candidates, {} as Record<string, Move>, null, 'maxIv', () => cell('lose', -40), 2, wins);
+    expect(res.team.map((t) => t.p.id).sort()).toEqual(['x', 'y']);
+    const xRow = res.team.findIndex((t) => t.p.id === 'x');
+    expect(res.matrix[xRow][0].verdict).toBe('win');
+    expect(res.matrix[xRow][0].win).toBe(0.9);
+    expect(res.matrix[xRow][1].verdict).toBe('lose');
+  });
+
+  it('prefers a team without a shared weakness', () => {
+    // a and b both crush opponent 0 and both lose badly to opponent 1; c is decent at both.
+    const wins = [
+      [0.95, 0.1],
+      [0.95, 0.1],
+      [0.7, 0.65],
+    ];
+    expect(pickTeam(wins, 2).sort()).toEqual([0, 2]);
+  });
+
+  it('values backups and punishes members who all lose to one threat', () => {
+    const threat = [1, 1];
+    expect(teamValue([[0.9, 0.9], [0.8, 0.8]], threat)).toBeGreaterThan(teamValue([[0.9, 0.9]], threat));
+    // A second member who also loses to the same threat is worth less than one who covers it.
+    expect(teamValue([[0.9, 0.1], [0.9, 0.1]], threat)).toBeLessThan(teamValue([[0.9, 0.1], [0.5, 0.6]], threat));
   });
 });

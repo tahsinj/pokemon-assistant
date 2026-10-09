@@ -4,7 +4,7 @@
  * Counter Picker "my PC" mode). Loads once on mount; `reload()` refreshes.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PcBoxSummary, PcPokemonRecord } from './bridgeTypes';
 
 export interface PcCollection {
@@ -46,8 +46,8 @@ export function usePcCollection(): PcCollection {
     reload();
   }, [reload]);
 
-  const boxNameById: Record<string, string> = {};
-  for (const b of boxes) boxNameById[b.id] = b.name;
+  // Stable between renders, so pages can memoize on it.
+  const boxNameById = useMemo(() => Object.fromEntries(boxes.map((b) => [b.id, b.name])) as Record<string, string>, [boxes]);
 
   return { available, loading, boxes, mons, boxNameById, reload };
 }
