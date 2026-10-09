@@ -11,6 +11,8 @@ export default defineConfig(
       'dist-electron/**',
       'release/**',
       'src/renderer/public/**',
+      'ml/.venv/**',
+      'ml/data/**',
     ],
   },
   js.configs.recommended,

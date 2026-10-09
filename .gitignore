@@ -25,3 +25,4 @@ playwright-report/
 # Generated simulation data and trained models
 ml/data/
 ml/.venv/
+__pycache__/
