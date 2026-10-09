@@ -343,7 +343,10 @@ Small items, any time. Each is one commit.
 
 Decided so far: the PC Box's TR planning became "Moves to teach", limited to
 moves learnable in the selected format with a format toggle in the panel;
-Practice defaults to the Search bot.
+Practice defaults to the Search bot. Trained models are published to a
+rolling `packs` release on this repo (`npm run publish-packs -- --publish`).
+The team model (M5) trains on replays from Showdown's public replay API,
+fetched politely and cached; only derived data is kept.
 
 - Fetch Smogon sample sets at runtime instead of bundling their move lists
   and spreads?
