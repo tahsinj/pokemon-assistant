@@ -4,7 +4,9 @@
  * worker, a bad file) resolves to null, and callers fall back to their
  * heuristic.
  */
-import type { MlRequest, MlResponse } from './ml.worker';
+import type { Feed, MlRequest, MlResponse } from './ml.worker';
+
+export type { Feed };
 
 type Body = MlRequest extends infer R ? (R extends { id: number } ? Omit<R, 'id'> : never) : never;
 
@@ -70,6 +72,27 @@ export async function runModel(name: string, rows: number[][]): Promise<number[]
   try {
     const out = await call({ type: 'run', name, data, rows: rows.length, cols }, [data.buffer]);
     return out ? Array.from(out) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Run a loaded model on named inputs and return one float output, or null when it can't run. */
+export async function runFeeds(name: string, feeds: Record<string, Feed>, output: string): Promise<Float32Array | null> {
+  if (!(await loadModel(name))) return null;
+  try {
+    const transfer = Object.values(feeds).map((f) => f.data.buffer);
+    return (await call({ type: 'feeds', name, feeds, output }, transfer)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** A downloaded JSON pack, parsed, or null when there is none. */
+export async function loadJsonPack<T>(name: string): Promise<T | null> {
+  try {
+    const bytes = await window.assistant?.packsGet?.(name);
+    return bytes ? (JSON.parse(new TextDecoder().decode(bytes)) as T) : null;
   } catch {
     return null;
   }

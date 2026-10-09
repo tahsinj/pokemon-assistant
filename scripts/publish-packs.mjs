@@ -14,19 +14,29 @@ const OUT = 'ml/data/packs';
 const TAG = 'packs';
 const publish = process.argv.includes('--publish');
 
+// Pack name prefix, the file the trainer writes, and the metrics file that dates it.
+const KINDS = [
+  { prefix: 'matchup', file: 'matchup.onnx', metrics: 'metrics.json' },
+  { prefix: 'team', file: 'team.onnx', metrics: 'team-metrics.json' },
+  { prefix: 'team-vocab', file: 'team-vocab.json', metrics: 'team-metrics.json' },
+  { prefix: 'meta-teams', file: 'meta-teams.json', metrics: 'team-metrics.json' },
+];
+
 mkdirSync(OUT, { recursive: true });
 const packs = [];
 for (const format of readdirSync(MODELS)) {
-  const model = path.join(MODELS, format, 'matchup.onnx');
-  const metrics = path.join(MODELS, format, 'metrics.json');
-  if (!existsSync(model) || !existsSync(metrics)) continue;
-  const bytes = readFileSync(model);
-  const sha256 = createHash('sha256').update(bytes).digest('hex');
-  // The version is the training date plus a hash prefix, so a retrain gets a new file name.
-  const version = `${JSON.parse(readFileSync(metrics, 'utf8')).trained}-${sha256.slice(0, 8)}`;
-  const file = `matchup-${format}-${version}.onnx`;
-  copyFileSync(model, path.join(OUT, file));
-  packs.push({ name: `matchup-${format}`, kind: 'model', format, version, file, size: bytes.length, sha256 });
+  for (const kind of KINDS) {
+    const source = path.join(MODELS, format, kind.file);
+    const metrics = path.join(MODELS, format, kind.metrics);
+    if (!existsSync(source) || !existsSync(metrics)) continue;
+    const bytes = readFileSync(source);
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    // The version is the training date plus a hash prefix, so a retrain gets a new file name.
+    const version = `${JSON.parse(readFileSync(metrics, 'utf8')).trained}-${sha256.slice(0, 8)}`;
+    const file = `${kind.prefix}-${format}-${version}${path.extname(kind.file)}`;
+    copyFileSync(source, path.join(OUT, file));
+    packs.push({ name: `${kind.prefix}-${format}`, kind: 'model', format, version, file, size: bytes.length, sha256 });
+  }
 }
 if (!packs.length) {
   console.error(`No trained models under ${MODELS}; run ml/train first.`);

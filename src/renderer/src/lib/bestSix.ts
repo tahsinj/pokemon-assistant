@@ -119,7 +119,7 @@ const STAT_ORDER: (keyof BaseStats)[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'
 // Slaking, Archeops) into the pool; a heavy multiplier keeps them out.
 const DETRIMENTAL_ABILITIES = new Set(['slowstart', 'defeatist', 'truant']);
 
-interface PoolMember {
+export interface PoolMember {
   rec: PcPokemonRecord;
   p: Pokemon;
   intel: SmogonSpeciesIntel | null;
@@ -677,18 +677,29 @@ function buildIvChanges(
 // Entry point
 // ---------------------------------------------------------------------------
 
-export function buildBestTeams(
+/** The box after the format, level and ability filters, best Pokémon first, with teammate chemistry. */
+export interface BoxPool {
+  members: PoolMember[];
+  /** The best `poolSize` members, which the searches pick from. */
+  pool: PoolMember[];
+  chem: number[][];
+  refLevel: number;
+  excludedUnderleveled: number;
+  excludedBanned: number;
+  excludedDetrimental: number;
+  dedupedSpecies: number;
+}
+
+export function buildPool(
   records: PcPokemonRecord[],
   pokemonById: Record<string, Pokemon>,
   moves: Record<string, Move>,
   smogon: SmogonBundle | null,
   opts: BestSixOptions = {},
-): BestSixResult {
-  const presets = opts.presets ?? (['balanced', 'offense', 'defense'] as TeamPresetId[]);
+): BoxPool {
   const poolLimit = opts.poolSize ?? 30;
   const minLevelRatio = opts.minLevelRatio ?? 0.6;
   const legalOnly = opts.legalOnly ?? true;
-  const allowItem = opts.allowItem ?? (() => true);
 
   // Drop banned mons first so the team is legal in the format, and mons
   // whose ability strictly cripples them (Slow Start / Truant / Defeatist) -
@@ -786,6 +797,53 @@ export function buildBestTeams(
       chem[j][i] = v;
     }
   }
+
+  return { members, pool, chem, refLevel, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies };
+}
+
+/**
+ * A team from pool indices, with per-member advice and its Classic evaluation
+ * (balanced weights) for the weaknesses and coverage lines.
+ */
+export function candidateFor(
+  box: BoxPool,
+  idx: number[],
+  preset: TeamPresetId,
+  label: string,
+  moves: Record<string, Move>,
+  allowItem: (name: string) => boolean = () => true,
+): TeamCandidate {
+  const team = idx.map((i) => box.pool[i]);
+  const ev = evaluateTeam(team, box.chem, idx, PRESETS.balanced);
+  return {
+    preset,
+    label,
+    score: Math.round(ev.score * 100) / 100,
+    breakdown: {
+      quality: Math.round(ev.breakdown.quality * 100) / 100,
+      chemistry: Math.round(ev.breakdown.chemistry * 100) / 100,
+      defense: Math.round(ev.breakdown.defense * 100) / 100,
+      offense: Math.round(ev.breakdown.offense * 100) / 100,
+      roles: Math.round(ev.breakdown.roles * 100) / 100,
+    },
+    members: team.map((m) => buildAdvice(m, box.refLevel, moves, allowItem)),
+    stackedWeaknesses: ev.stacked,
+    uncoveredTypes: ev.uncovered,
+  };
+}
+
+export function buildBestTeams(
+  records: PcPokemonRecord[],
+  pokemonById: Record<string, Pokemon>,
+  moves: Record<string, Move>,
+  smogon: SmogonBundle | null,
+  opts: BestSixOptions = {},
+): BestSixResult {
+  const presets = opts.presets ?? (['balanced', 'offense', 'defense'] as TeamPresetId[]);
+  const legalOnly = opts.legalOnly ?? true;
+  const allowItem = opts.allowItem ?? (() => true);
+  const box = buildPool(records, pokemonById, moves, smogon, opts);
+  const { members, pool, chem, refLevel, excludedUnderleveled, excludedBanned, excludedDetrimental, dedupedSpecies } = box;
 
   // One candidate per preset, with a diversity guard against near-duplicates.
   const candidates: TeamCandidate[] = [];

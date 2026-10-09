@@ -1,6 +1,7 @@
 """A tiny matchup model for the app's tests: same inputs as the real one,
 a few trees trained on made-up data, so the runtime can be exercised
-without a downloaded pack.
+without a downloaded pack. The team model's fixture is export/team_fixture.py
+(LightGBM and PyTorch can deadlock when loaded in one process).
 
 Usage: uv run python -m export.fixture
 """
@@ -13,7 +14,8 @@ import numpy as np
 from export.onnx import export_lightgbm
 from ingest.sim import feature_names
 
-OUT = Path(__file__).resolve().parent.parent.parent / "tests" / "fixtures" / "matchup-tiny.onnx"
+FIXTURES = Path(__file__).resolve().parent.parent.parent / "tests" / "fixtures"
+OUT = FIXTURES / "matchup-tiny.onnx"
 
 
 def main() -> None:

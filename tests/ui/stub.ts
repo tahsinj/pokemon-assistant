@@ -83,7 +83,7 @@ export function installAssistantStub(): void {
     // Packs exist only when a test serves one (see counters.spec.ts).
     packsGet: async (name: string) => {
       if (!(window as unknown as { stablabTestPacks?: boolean }).stablabTestPacks) return null;
-      const res = await fetch(`/__packs/${name}.onnx`);
+      const res = await fetch(`/__packs/${name}`);
       return res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
     },
   };

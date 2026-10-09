@@ -29,7 +29,7 @@ test('Counter Draft scores with the calc rules when no model is downloaded, and 
 
 test('Counter Draft runs the matchup model when its pack is there', async ({ app }) => {
   const model = readFileSync('tests/fixtures/matchup-tiny.onnx');
-  await app.route('**/__packs/matchup-gen9ou.onnx', (route) => route.fulfill({ body: model, contentType: 'application/octet-stream' }));
+  await app.route('**/__packs/matchup-gen9ou', (route) => route.fulfill({ body: model, contentType: 'application/octet-stream' }));
   await app.evaluate(() => {
     (window as unknown as { stablabTestPacks: boolean }).stablabTestPacks = true;
   });

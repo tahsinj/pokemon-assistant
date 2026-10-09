@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Move, Pokemon, HeldItem } from '../lib/types';
-import { buildBestTeams, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
+import { buildBestTeams, buildPool, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
+import { searchTeams, usageSpecies, type ModelCandidate, type ModelSearchResult } from '../lib/teamSearch';
+import { loadTeamScorer } from '../ml/teamModel';
+import { Segmented } from '../components/hud/Segmented';
 import type { LoadedTeamRecord, MemberDetail, TeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
 import { getTeamDraft, getTeamDraftMeta, setTeamDraft, setTeamDraftMeta } from '../lib/teamDraft';
 import { SpeciesList } from '../components/SpeciesList';
@@ -467,9 +470,31 @@ export function TeamBuilderPage({
   const [expandedAdvice, setExpandedAdvice] = useState<string | null>(null);
   const [legalOnly, setLegalOnly] = useState(true);
 
-  const onAnalyzePc = () => {
+  // Model teams come from the team model; Classic is the weighted heuristic, and the fallback.
+  const [bestMode, setBestMode] = useState<'model' | 'classic'>('model');
+  const [modelTeams, setModelTeams] = useState<ModelSearchResult | null>(null);
+  const [modelNote, setModelNote] = useState<string | null>(null);
+  const searchRun = useRef(0);
+
+  const onAnalyzePc = async () => {
     setBestSix(buildBestTeams(pc.mons, pokemonById, moves, smogon, { legalOnly, allowItem }));
     setExpandedAdvice(null);
+    setModelTeams(null);
+    const run = ++searchRun.current;
+    setModelNote('Loading the team model...');
+    const scorer = await loadTeamScorer(format.id);
+    if (run !== searchRun.current) return;
+    if (!scorer) {
+      setModelNote('The team model has not downloaded yet, so these are Classic teams.');
+      return;
+    }
+    const box = buildPool(pc.mons, pokemonById, moves, smogon, { legalOnly, allowItem });
+    const result = await searchTeams(box, scorer, moves, allowItem, usageSpecies(smogon, pokemonById), {
+      onProgress: (text) => run === searchRun.current && setModelNote(text),
+    });
+    if (run !== searchRun.current) return;
+    setModelTeams(result);
+    setModelNote(result ? null : 'The team model could not run, so these are Classic teams.');
   };
 
   const applyCandidate = (c: TeamCandidate) => {
@@ -1023,7 +1048,7 @@ export function TeamBuilderPage({
                   type="button"
                   className="chunky font-display text-[12px]"
                   style={{ '--c': 'var(--hud-accent-2)', padding: '6px 12px' } as React.CSSProperties}
-                  onClick={onAnalyzePc}
+                  onClick={() => void onAnalyzePc()}
                   disabled={pc.mons.length < 3}
                 >
                   ANALYZE PC · {pc.mons.length}
@@ -1075,6 +1100,24 @@ export function TeamBuilderPage({
               </div>
             )}
 
+            {bestSix && (
+              <div className="flex flex-wrap items-center gap-3 mb-2.5">
+                <Segmented
+                  value={bestMode}
+                  onChange={setBestMode}
+                  options={[
+                    { id: 'model', label: 'Team model' },
+                    { id: 'classic', label: 'Classic' },
+                  ]}
+                />
+                <span data-ui="team-source" className="font-sans text-[14px] text-ink-2">
+                  {bestMode === 'classic'
+                    ? 'Classic: a weighted sum of quality, teammate usage, weaknesses, coverage and roles.'
+                    : modelNote ??
+                      (modelTeams ? `Team model: the meta score is the mean win chance against high-rated teams from ${modelTeams.month}.` : '')}
+                </span>
+              </div>
+            )}
             {!bestSix ? (
               <div className="font-mono-hud text-[14px] text-ink-2 py-3 text-center">
                 {pc.mons.length < 3
@@ -1113,25 +1156,35 @@ export function TeamBuilderPage({
                   </div>
                 )}
                 <div className="grid grid-cols-3 gap-2.5 items-start">
-                  {bestSix.candidates.map((c) => (
+                  {(bestMode === 'model' && modelTeams ? modelTeams.candidates : bestSix.candidates).map((c: TeamCandidate | ModelCandidate) => (
                   <div key={c.preset} className="rounded-[10px] border border-white/10 bg-white/[.03] p-2.5 flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-display text-[14px] font-bold text-ink-0">{c.label}</span>
-                      <span className="font-mono-hud text-[14px] tabular-nums text-accent-2">
-                        {c.score.toFixed(1)}
+                      <span className="font-mono-hud text-[14px] tabular-nums text-accent-2" title={'metaScore' in c ? 'Meta score' : 'Classic score'}>
+                        {'metaScore' in c ? `${(c.metaScore * 100).toFixed(1)}%` : c.score.toFixed(1)}
                       </span>
                     </div>
-                    <div
-                      className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2"
-                      title="quality · chemistry · defense · offense · roles"
-                    >
-                      Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
-                      {c.breakdown.defense.toFixed(1)} · O {c.breakdown.offense.toFixed(1)} · R{' '}
-                      {c.breakdown.roles.toFixed(1)}
-                    </div>
+                    {'metaScore' in c ? (
+                      <div className="font-sans text-[13px] text-ink-2">
+                        Hardest meta teams:{' '}
+                        {c.worst
+                          .map((w) => `${w.species.slice(0, 3).map((id) => pokemonById[id]?.name ?? id).join(', ')}... (${Math.round(w.win * 100)}%)`)
+                          .join('; ')}
+                      </div>
+                    ) : (
+                      <div
+                        className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2"
+                        title="quality · chemistry · defense · offense · roles"
+                      >
+                        Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
+                        {c.breakdown.defense.toFixed(1)} · O {c.breakdown.offense.toFixed(1)} · R{' '}
+                        {c.breakdown.roles.toFixed(1)}
+                      </div>
+                    )}
                     <div className="flex flex-col gap-1">
-                      {c.members.map((a) => {
+                      {c.members.map((a, mi) => {
                         const key = `${c.preset}:${a.rec.id}`;
+                        const adds = 'contributions' in c ? c.contributions[mi] : null;
                         const lines = adviceLines(a);
                         return (
                           <div key={a.rec.id} className="rounded-[8px] border border-white/5 bg-black/20">
@@ -1145,9 +1198,16 @@ export function TeamBuilderPage({
                               <span className="font-display text-[13px] font-semibold flex-1 min-w-0 truncate text-ink-0">
                                 {a.rec.nickname || a.p.name}
                               </span>
-                              <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 flex-shrink-0">
-                                {a.role} · Lv {a.rec.level}
-                              </span>
+                              {adds != null ? (
+                                <span className="font-mono-hud text-[14px] text-accent-2 flex-shrink-0" title={`Meta score lost without this member (${a.role}, Lv ${a.rec.level})`}>
+                                  {adds >= 0 ? '+' : ''}
+                                  {(adds * 100).toFixed(1)}%
+                                </span>
+                              ) : (
+                                <span className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2 flex-shrink-0">
+                                  {a.role} · Lv {a.rec.level}
+                                </span>
+                              )}
                               {lines.length > 0 && (
                                 <span
                                   className="font-mono-hud text-[14px] px-1.5 py-0.5 rounded-full flex-shrink-0"
@@ -1201,6 +1261,20 @@ export function TeamBuilderPage({
                   </div>
                 ))}
                 </div>
+                {bestMode === 'model' && modelTeams && modelTeams.addList.length > 0 && (
+                  <div data-ui="add-list" className="mt-2.5 rounded-[10px] border border-white/10 bg-white/[.03] p-2.5">
+                    <div className="font-mono-hud text-[14px] uppercase tracking-wider text-accent-2 mb-1">Worth adding</div>
+                    {modelTeams.addList.map((a) => (
+                      <div key={a.p.id} className="flex items-center gap-2 font-sans text-[14px] text-ink-1">
+                        <PokemonSprite dex={a.p.dex} name={a.p.name} size="xs" />
+                        <span className="font-display font-semibold text-ink-0">{a.p.name}</span>
+                        <span className="text-ink-2">
+                          +{(a.gain * 100).toFixed(1)}% meta score in place of {a.replaces}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
