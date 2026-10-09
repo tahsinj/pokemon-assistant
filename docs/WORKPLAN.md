@@ -5,8 +5,8 @@ Everything left to do, in order, as tasks small enough to pick up cold.
 build, where, and how to tell it is done. Tick the boxes as tasks land and
 keep the "Status" line of each milestone current.
 
-M0, M1 and M2 are done (see the Status list in SPEC.md section 7). Next up is
-M3.
+M0 to M3 are done (see the Status list in SPEC.md section 7). Next up is
+M4.
 
 ## 0. Before you start
 
@@ -84,12 +84,8 @@ Goal: battles run on the real Showdown engine. Practice battles against bots,
 replay review, and the calc extras from SPEC 5.4. Acceptance is SPEC 5.2 and
 5.3.
 
-Status: mostly done. Engine, bots 0 to 2 with a gauntlet, Practice with
-hints, Replay Review, the calc extras and the predictor on client state
-work, Search plans with sampled foe sets instead of the real ones, and hints
-explain themselves; Replay Review ranks every turn with the search and takes
-battles entered by hand, and the Battle Tracker is gone. Left: a Windows
-installer check (section 6).
+Status: done (see SPEC.md section 7). The Windows installer check moved to
+section 6, where it waits for a Windows machine.
 
 ### 1.1 Dependencies
 
@@ -147,9 +143,8 @@ installer check (section 6).
   per decision; Search beat Greedy 47 of 60 in a first check.
 - [x] `npm run bots:gauntlet` writes `docs/bot-elo.md`; the `Bot gauntlet`
   workflow runs 60 games per pairing weekly and on bot changes.
-- Result (100 games each, [bot-elo.md](bot-elo.md)): Greedy beats Random 96%,
-  Search beats Greedy 72%, Search beats Random 99%. The spec asks for 500
-  games; run `npm run bots:gauntlet -- --games 500` (about 1.5 hours).
+- Result (500 games each, [bot-elo.md](bot-elo.md)): Greedy beats Random
+  97%, Search beats Greedy 76%, Search beats Random 98%.
 
 ### 1.5 Practice page
 
@@ -209,14 +204,14 @@ installer check (section 6).
 ### 1.8 Wrap up
 
 - [x] README: practice and replay review in the features list.
-- [ ] SPEC.md status: M3 done with notes, like M2's.
+- [x] SPEC.md status: M3 done with notes, like M2's.
 
 ## 2. M4: Counters v2
 
 Goal: counters come from simulated battles and a learned matchup model.
 Acceptance is the metrics in SPEC 5.5, published in a model card.
 
-Status: not started. Needs M3's engine and level 2 bot.
+Status: in progress. Simulation data (2.1) is next.
 
 ### 2.1 Simulation data (`tools/simgen/`)
 

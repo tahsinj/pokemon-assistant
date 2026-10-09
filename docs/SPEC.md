@@ -808,20 +808,31 @@ Status:
     (`border-danger/40`) also produced no CSS before and now work.
   - Counter Draft still offers a Dynamax toggle, which neither format
     allows. Counter Draft v2 in M4 replaces it.
-- **M3 mostly done.** Battles run on `@pkmn/sim` (`src/renderer/src/engine/`):
-  50 seeded games replay identically through a stock `BattleStream`. Bots:
-  Random, Greedy and Search, measured by `npm run bots:gauntlet` (Greedy
-  beats Random 96%, Search beats Greedy 72%, 100 games each). Battle >
-  Practice plays full battles in a worker with hints, take-backs, a position
-  graph and saved logs; Battle > Replay Review loads Showdown replays and
-  flags weak move choices from public information. The calc has 30 golden
-  tests, roll histograms and Send to practice. The set predictor runs on
-  `@pkmn/client` state (`engine/setTracker.ts`); Search and the hint plan
-  with foe sets drawn from it instead of the real ones, and hints explain
-  themselves (damage both ways, speed, the assumed set). Replay Review can
-  rebuild each turn in the simulator and rank it with the search. Left for
-  M3, tracked in [WORKPLAN.md](WORKPLAN.md) section 1: manual entry and
-  retiring the Battle Tracker, and a packaged-app check.
+- **M3 done.** Battles run on `@pkmn/sim` (`src/renderer/src/engine/`):
+  50 seeded games replay identically through a stock `BattleStream` (5.2).
+  Bots Random, Greedy and Search over 500 games each
+  ([bot-elo.md](bot-elo.md)): Greedy beats Random 97%, Search beats Greedy
+  76%, Search beats Random 98% (5.3 asks for 90% and 65%). Battle >
+  Practice plays full battles in a worker with explained hints,
+  take-backs, a position graph and saved logs. Battle > Replay Review
+  loads Showdown replays, Practice logs and battles entered by hand, with a
+  quick review from revealed moves and a search review that rebuilds each
+  turn in the simulator. The calc has 30 golden tests, roll histograms and
+  Send to practice. The Battle Tracker, its reducer and the old expectimax
+  search are gone. Notes:
+  - The set predictor runs on `@pkmn/client` state
+    (`engine/setTracker.ts`). Search and the hint never see hidden sets:
+    they search copies of the battle where the foe's unrevealed parts are
+    drawn from the predictor. A test over 1300 seeded games checked that
+    the predictor never rules out the real set.
+  - Search is one ply on the real engine plus a calc-based second ply,
+    about 50 ms per decision.
+  - The search review copies HP, status, boosts, Tera, hazards and weather
+    into the rebuilt battle, not volatiles such as Substitute or choice
+    locks.
+  - The Windows installer has not been tried by hand yet (WORKPLAN.md
+    section 6); the Electron smoke test covers the built app on Linux in
+    CI and on macOS locally.
 
 ## 8. Risks
 
