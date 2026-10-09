@@ -18,6 +18,7 @@ LOG = "\n".join([
     "|turn|2",
     "|move|p1a: Fists|U-turn|p2a: Kingambit|[from]move: Copycat",
     "|turn|3",
+    "|player|p2|",
     "|win|Ash",
 ])
 

@@ -17,6 +17,8 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8.3"]
+# The team model's set transformer; not needed for the matchup model or the tests.
+train = ["torch>=2.5"]
 
 [tool.uv]
 package = false

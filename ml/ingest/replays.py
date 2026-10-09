@@ -6,10 +6,15 @@ never fetches a replay twice; they are never committed or shipped. Only the
 derived rows (teams, ratings, winner, what each Pokemon revealed) feed
 training.
 
-Usage: uv run python -m ingest.replays --format gen9ou --count 20000 [--min-rating 1300]
+Usage: uv run python -m ingest.replays --format gen9ou --count 12000 [--min-rating 1300]
+       [--months 2026-07,2026-08,2026-09,2026-10]
+
+With --months the count is split evenly across those months, each crawled
+back from its last day, so a later month can be held out for testing.
 """
 
 import argparse
+import calendar
 import json
 import re
 import time
@@ -51,7 +56,8 @@ def derive(replay: dict) -> dict | None:
         if len(parts) < 2:
             continue
         kind = parts[1]
-        if kind == "player" and len(parts) >= 4 and parts[2] in teams:
+        # A player leaving repeats the line with an empty name.
+        if kind == "player" and len(parts) >= 4 and parts[2] in teams and parts[3]:
             names[parts[2]] = parts[3]
             if len(parts) >= 6 and parts[5].strip().isdigit():
                 ratings[parts[2]] = int(parts[5])
@@ -130,13 +136,21 @@ def _get(url: str) -> bytes:
         return res.read()
 
 
-def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT) -> int:
-    """Fetch up to `count` rated replays at or above `min_rating`, newest first. Returns how many are cached."""
+def month_end(month: str) -> int:
+    """Unix time of the first second after `month` ("2026-09")."""
+    year, mon = (int(x) for x in month.split("-"))
+    year, mon = (year + 1, 1) if mon == 12 else (year, mon + 1)
+    return calendar.timegm((year, mon, 1, 0, 0, 0))
+
+
+def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT, before: int | None = None, since: int = 0) -> int:
+    """Fetch `count` more rated replays at or above `min_rating`, newest first from `before`,
+    stopping at `since`. Returns how many it added."""
     raw = root / "raw" / fmt
     raw.mkdir(parents=True, exist_ok=True)
     have = {p.stem for p in raw.glob("*.json")}
-    before = None
-    while len(have) < count:
+    added = 0
+    while added < count:
         query = {"format": fmt}
         if before:
             query["before"] = str(before)
@@ -151,13 +165,16 @@ def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT) -> int:
             try:
                 (raw / f"{entry['id']}.json").write_bytes(_get(f"{API}/{entry['id']}.json"))
                 have.add(entry["id"])
+                added += 1
             except OSError as err:
                 print(f"skipped {entry['id']}: {err}")
             time.sleep(PAUSE)
-            if len(have) >= count:
+            if added >= count:
                 break
         print(f"{fmt}: {len(have)} replays cached, back to {time.strftime('%Y-%m-%d', time.gmtime(before))}", flush=True)
-    return len(have)
+        if before <= since:
+            break
+    return added
 
 
 def build(fmt: str, root: Path = ROOT) -> int:
@@ -176,10 +193,20 @@ def main() -> None:
     ap.add_argument("--format", default="gen9ou")
     ap.add_argument("--count", type=int, default=20000)
     ap.add_argument("--min-rating", type=int, default=1300)
+    ap.add_argument("--months", default="")
     ap.add_argument("--derive-only", action="store_true")
     args = ap.parse_args()
     if not args.derive_only:
-        crawl(args.format, args.count, args.min_rating)
+        months = [m for m in args.months.split(",") if m]
+        if not months:
+            crawl(args.format, args.count, args.min_rating)
+        for i, month in enumerate(months):
+            start = calendar.timegm((*(int(x) for x in month.split("-")), 1, 0, 0, 0))
+            # The months already crawled count toward the share, so a restart picks up where it stopped.
+            have = sum(1 for p in (ROOT / "raw" / args.format).glob("*.json")) if (ROOT / "raw" / args.format).exists() else 0
+            share = args.count * (i + 1) // len(months) - have
+            if share > 0:
+                crawl(args.format, share, args.min_rating, before=month_end(month), since=start)
     print(f"{args.format}: {build(args.format)} usable games")
 
 
