@@ -109,4 +109,13 @@ export interface AssistantApi {
   pcPokemonSave: (payload: SavePcPokemonPayload) => Promise<{ id: string }>;
   pcPokemonDelete: (id: string) => Promise<void>;
   pcPokemonMove: (id: string, boxId: string, slot: number) => Promise<void>;
+  /** Data packs; missing in older builds and in plain browsers. */
+  packsGet?: (name: string) => Promise<Uint8Array | null>;
+  packsStatus?: () => Promise<PackStatus>;
+  packsRefresh?: () => Promise<PackStatus>;
+}
+
+export interface PackStatus {
+  checkedAt: number;
+  packs: { name: string; version: string; have: boolean }[];
 }

@@ -19,4 +19,11 @@ contextBridge.exposeInMainWorld('assistant', {
   pcPokemonDelete: (id: string) => ipcRenderer.invoke('pc:pokemon:delete', id),
   pcPokemonMove: (id: string, boxId: string, slot: number) =>
     ipcRenderer.invoke('pc:pokemon:move', id, boxId, slot),
+
+  /** A downloaded data pack (a model file), or null when there is none yet. */
+  packsGet: (name: string) => ipcRenderer.invoke('packs:get', name) as Promise<Uint8Array | null>,
+  packsStatus: () =>
+    ipcRenderer.invoke('packs:status') as Promise<{ checkedAt: number; packs: { name: string; version: string; have: boolean }[] }>,
+  packsRefresh: () =>
+    ipcRenderer.invoke('packs:refresh') as Promise<{ checkedAt: number; packs: { name: string; version: string; have: boolean }[] }>,
 });

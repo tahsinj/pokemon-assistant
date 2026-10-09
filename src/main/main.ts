@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, net } from 'electron';
 import path from 'node:path';
 import {
   createPcBox,
@@ -18,6 +18,7 @@ import {
 } from './db';
 import { registerSpriteSchemePrivileged, registerSpriteProtocol } from './spriteCache';
 import { migrateLegacyUserData } from './legacyUserData';
+import { MANIFEST_URL, PackStore } from './packs';
 
 // STABLAB_LOAD_BUILD=1 runs the built renderer from an unpackaged Electron,
 // as the installed app does (the Electron smoke test uses it).
@@ -101,6 +102,19 @@ async function bootstrap() {
     return undefined;
   });
 
+  // STABLAB_PACKS_URL points at another manifest (a local build, a test server).
+  const packs = new PackStore(
+    path.join(app.getPath('userData'), 'packs'),
+    (url) => net.fetch(url),
+    process.env.STABLAB_PACKS_URL ?? MANIFEST_URL,
+  );
+  void packs.refresh();
+  ipcMain.handle('packs:get', (_e, name: string) => packs.get(name));
+  ipcMain.handle('packs:status', () => packs.status());
+  ipcMain.handle('packs:refresh', async () => {
+    await packs.refresh(true);
+    return packs.status();
+  });
 
   createWindow();
 }

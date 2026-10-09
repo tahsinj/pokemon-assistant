@@ -13,6 +13,12 @@ def export_lightgbm(model, n_features: int, path: Path, sample: np.ndarray) -> N
     gives the same win chances as LightGBM itself."""
     onx = convert_lightgbm(model, initial_types=[("features", FloatTensorType([None, n_features]))],
                            zipmap=False, target_opset=15)
+    # The converter declares a batch of one for the label output; make it follow the input.
+    for output in onx.graph.output:
+        dims = output.type.tensor_type.shape.dim
+        if dims:
+            dims[0].ClearField("dim_value")
+            dims[0].dim_param = "N"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(onx.SerializeToString())
     options = ort.SessionOptions()
