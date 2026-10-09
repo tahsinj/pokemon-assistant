@@ -18,7 +18,7 @@ export interface CheckRow {
   features: number[];
 }
 
-function likeliest(id: string, pool: Record<string, CandidateSet[]>, usage: SmogonBundle): PokemonSet | null {
+export function likeliest(id: string, pool: Record<string, CandidateSet[]>, usage: SmogonBundle): PokemonSet | null {
   const c = (pool[id] ?? []).reduce<CandidateSet | null>((a, b) => (!a || b.prior > a.prior ? b : a), null);
   if (!c) return null;
   const name = Dex.species.get(id).name;

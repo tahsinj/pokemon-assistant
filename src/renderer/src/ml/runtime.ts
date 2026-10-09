@@ -4,9 +4,8 @@
  * worker, a bad file) resolves to null, and callers fall back to their
  * heuristic.
  */
-import type { Feed, MlRequest, MlResponse } from './ml.worker';
-
-export type { Feed };
+import type { Feed } from './feed';
+import type { MlRequest, MlResponse } from './ml.worker';
 
 type Body = MlRequest extends infer R ? (R extends { id: number } ? Omit<R, 'id'> : never) : never;
 

@@ -1,10 +1,10 @@
 /**
  * The team strength model: P(team A beats team B) from species and known
  * sets, and the meta score built on it (a team's mean win chance against
- * recent high-rated teams). Everything loads from data packs; null means the
- * model isn't downloaded, and callers fall back to Classic.
+ * recent high-rated teams). No I/O here, so the app (teamPacks.ts) and Node
+ * tools can both use it.
  */
-import { loadJsonPack, runFeeds } from './runtime';
+import type { Feed } from './feed';
 
 /** One Pokémon as the model sees it; anything unknown is left out. */
 export interface TeamMon {
@@ -17,12 +17,12 @@ export interface TeamMon {
   moves?: string[];
 }
 
-interface Vocab {
+export interface Vocab {
   slots: number;
   tokens: Record<string, number>;
 }
 
-interface MetaTeams {
+export interface MetaTeams {
   month: string;
   teams: { species: string[]; revealed: Record<string, { item?: string; ability?: string; tera?: string; moves?: string[] }> }[];
 }
@@ -68,10 +68,11 @@ export interface TeamScorer {
   metaScores(teams: TeamMon[][], sample?: number): Promise<number[] | null>;
 }
 
-export async function loadTeamScorer(format: string): Promise<TeamScorer | null> {
-  const [vocab, meta] = await Promise.all([loadJsonPack<Vocab>(`team-vocab-${format}`), loadJsonPack<MetaTeams>(`meta-teams-${format}`)]);
-  if (!vocab || !meta) return null;
-  const name = `team-${format}`;
+/** Runs the team model on named inputs; null when it can't. */
+export type TeamRunner = (feeds: Record<string, Feed>) => Promise<Float32Array | null>;
+
+/** A scorer over any way of running the model: the page's worker, or onnxruntime in Node. */
+export function makeTeamScorer(vocab: Vocab, meta: MetaTeams, run: TeamRunner): TeamScorer {
   const metaTeams: TeamMon[][] = meta.teams.map((t) =>
     t.species.map((species) => {
       const r = t.revealed[species] ?? {};
@@ -91,7 +92,7 @@ export async function loadTeamScorer(format: string): Promise<TeamScorer | null>
     // Equal ratings: the model scores the teams, not the players.
     const ratings = new Float32Array(pairs.length * 2);
     const dims = [pairs.length, 6, vocab.slots];
-    const out = await runFeeds(name, { team_a: { data: a, dims }, team_b: { data: b, dims }, ratings: { data: ratings, dims: [pairs.length, 2] } }, 'win');
+    const out = await run({ team_a: { data: a, dims }, team_b: { data: b, dims }, ratings: { data: ratings, dims: [pairs.length, 2] } });
     return out ? Array.from(out) : null;
   };
 

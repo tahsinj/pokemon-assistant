@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Move, Pokemon, HeldItem } from '../lib/types';
 import { buildBestTeams, buildPool, type BestSixResult, type MemberAdvice, type TeamCandidate } from '../lib/bestSix';
 import { searchTeams, usageSpecies, type ModelCandidate, type ModelSearchResult } from '../lib/teamSearch';
-import { loadTeamScorer } from '../ml/teamModel';
+import { loadTeamScorer } from '../ml/teamPacks';
 import { Segmented } from '../components/hud/Segmented';
 import type { LoadedTeamRecord, MemberDetail, TeamTag, SaveTeamPayload } from '../lib/bridgeTypes';
 import { getTeamDraft, getTeamDraftMeta, setTeamDraft, setTeamDraftMeta } from '../lib/teamDraft';

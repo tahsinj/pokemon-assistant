@@ -6,11 +6,7 @@ import wasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.wasm?url';
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.wasmPaths = { wasm: wasmUrl };
 
-/** A named input: float32 or int64 values with their shape. */
-export interface Feed {
-  data: Float32Array | BigInt64Array;
-  dims: number[];
-}
+import type { Feed } from './feed';
 
 export type MlRequest =
   | { id: number; type: 'load'; name: string; bytes: Uint8Array }
