@@ -10,7 +10,9 @@ Usage: uv run python -m ingest.replays --format gen9ou --count 12000 [--min-rati
        [--months 2026-07,2026-08,2026-09,2026-10]
 
 With --months the count is split evenly across those months, each crawled
-back from its last day, so a later month can be held out for testing.
+back from its last day, so a later month can be held out for testing. The
+months are crawled in turns of a few hundred replays, so all of them grow
+together, and each month's position is saved so a crawl can resume.
 """
 
 import argparse
@@ -130,10 +132,21 @@ def _mon(ident: str, nick: dict[str, str]) -> str | None:
     return f"{side}:{sp}" if sp else None
 
 
+_last_request = 0.0
+
+
 def _get(url: str) -> bytes:
+    """One request at a time, at least PAUSE seconds apart (counting the request itself)."""
+    global _last_request
+    wait = PAUSE - (time.monotonic() - _last_request)
+    if wait > 0:
+        time.sleep(wait)
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return res.read()
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            return res.read()
+    finally:
+        _last_request = time.monotonic()
 
 
 def month_end(month: str) -> int:
@@ -143,9 +156,9 @@ def month_end(month: str) -> int:
     return calendar.timegm((year, mon, 1, 0, 0, 0))
 
 
-def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT, before: int | None = None, since: int = 0) -> int:
+def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT, before: int | None = None, since: int = 0) -> tuple[int, int | None]:
     """Fetch `count` more rated replays at or above `min_rating`, newest first from `before`,
-    stopping at `since`. Returns how many it added."""
+    stopping at `since`. Returns how many it added and where it stopped."""
     raw = root / "raw" / fmt
     raw.mkdir(parents=True, exist_ok=True)
     have = {p.stem for p in raw.glob("*.json")}
@@ -155,7 +168,6 @@ def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT, before: int 
         if before:
             query["before"] = str(before)
         page = json.loads(_get(f"{API}/search.json?{urllib.parse.urlencode(query)}"))
-        time.sleep(PAUSE)
         if not page:
             break
         for entry in page:
@@ -168,13 +180,32 @@ def crawl(fmt: str, count: int, min_rating: int, root: Path = ROOT, before: int 
                 added += 1
             except OSError as err:
                 print(f"skipped {entry['id']}: {err}")
-            time.sleep(PAUSE)
             if added >= count:
                 break
         print(f"{fmt}: {len(have)} replays cached, back to {time.strftime('%Y-%m-%d', time.gmtime(before))}", flush=True)
         if before <= since:
             break
-    return added
+    return added, before
+
+
+def crawl_months(fmt: str, months: list[str], count: int, min_rating: int, root: Path = ROOT, turn: int = 300) -> None:
+    """`count` replays spread evenly over `months`, a turn of `turn` per month at a time."""
+    state_file = root / f"{fmt}.cursors.json"
+    state = json.loads(state_file.read_text()) if state_file.exists() else {}
+    for m in months:
+        state.setdefault(m, {"before": month_end(m), "added": 0, "done": False})
+    share = count // len(months)
+    while any(not state[m]["done"] and state[m]["added"] < share for m in months):
+        for m in months:
+            s = state[m]
+            if s["done"] or s["added"] >= share:
+                continue
+            start = calendar.timegm((*(int(x) for x in m.split("-")), 1, 0, 0, 0))
+            added, before = crawl(fmt, min(turn, share - s["added"]), min_rating, root, before=s["before"], since=start)
+            s["added"] += added
+            s["done"] = before is None or before <= start
+            s["before"] = before
+            state_file.write_text(json.dumps(state))
 
 
 def build(fmt: str, root: Path = ROOT) -> int:
@@ -200,13 +231,8 @@ def main() -> None:
         months = [m for m in args.months.split(",") if m]
         if not months:
             crawl(args.format, args.count, args.min_rating)
-        for i, month in enumerate(months):
-            start = calendar.timegm((*(int(x) for x in month.split("-")), 1, 0, 0, 0))
-            # The months already crawled count toward the share, so a restart picks up where it stopped.
-            have = sum(1 for p in (ROOT / "raw" / args.format).glob("*.json")) if (ROOT / "raw" / args.format).exists() else 0
-            share = args.count * (i + 1) // len(months) - have
-            if share > 0:
-                crawl(args.format, share, args.min_rating, before=month_end(month), since=start)
+        else:
+            crawl_months(args.format, months, args.count, args.min_rating)
     print(f"{args.format}: {build(args.format)} usable games")
 
 
