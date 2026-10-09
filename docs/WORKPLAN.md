@@ -211,7 +211,9 @@ section 6, where it waits for a Windows machine.
 Goal: counters come from simulated battles and a learned matchup model.
 Acceptance is the metrics in SPEC 5.5, published in a model card.
 
-Status: in progress. Simulation data (2.1) works; the matchup model (2.2) is next.
+Status: in progress. Simulation data, the Gen 9 OU matchup model, the model
+runtime, Counter Draft v2 and Checks are done. Left: the National Dex OU
+model, publishing the packs release, and the raid planner (2.5).
 
 ### 2.1 Simulation data (`tools/simgen/`)
 
@@ -228,29 +230,40 @@ Status: in progress. Simulation data (2.1) works; the matchup model (2.2) is nex
 
 ### 2.2 Matchup model (`ml/`)
 
-- [ ] Python project: uv, Python 3.12, polars, LightGBM, onnx. Folders
-  `ingest/`, `features/`, `train/`, `eval/`, `export/`.
-- [ ] Logistic regression baseline, then LightGBM. Metrics: log loss, Brier,
+- [x] Python project: uv, Python 3.12, polars, LightGBM, onnx. Folders
+  `ingest/`, `features/`, `train/`, `eval/`, `export/` (see `ml/README.md`).
+- [x] Logistic regression baseline, then LightGBM. Metrics: log loss, Brier,
   Spearman against Smogon checks and counters.
-- [ ] Export `model.onnx`, `metrics.json`, `MODEL_CARD.md` per format.
+- [ ] Export `model.onnx`, `metrics.json`, `MODEL_CARD.md` per format. Gen 9
+  OU is done ([model card](models/matchup-gen9ou.md): Brier 0.122 against
+  0.176 for a coin flip, well calibrated, Spearman 0.075 against Smogon's
+  checks); National Dex OU waits on its simulation run.
 
 ### 2.3 Model runtime and packs
 
-- [ ] ML worker with `onnxruntime-web`, models loaded lazily per tool.
+- [x] ML worker with `onnxruntime-web`, models loaded lazily per tool
+  (`src/renderer/src/ml/`); the Electron smoke test runs a model from a pack
+  over `file://`.
 - [ ] Data packs (SPEC 5.1): `packs.json` manifest on this repo's GitHub
   Releases with sizes and SHA-256, downloaded into userData, checked at most
-  once a day, works offline with the last download.
-- [ ] Every ML result says whether the model or the heuristic produced it;
+  once a day, works offline with the last download. The app side is done
+  (`src/main/packs.ts`, tested); `npm run publish-packs -- --publish`
+  uploads the models to the `packs` release, which has not been run yet.
+- [x] Every ML result says whether the model or the heuristic produced it;
   the heuristic stays as the fallback.
 
 ### 2.4 Counter Draft v2
 
-- [ ] Score each box mon against each opponent with the matchup model; greedy
-  plus swap pick of 6 with the shared-weakness penalty.
-- [ ] Verify: 200 games of the drafted team against the opponent team with
-  level 2 bots, shown as a win rate with a confidence interval.
-- [ ] Remove the Dynamax toggle (neither format allows Dynamax).
-- [ ] Move the Pokédex counters tab into the Counters area.
+- [x] Score each box mon against each opponent with the matchup model; greedy
+  plus swap pick of 6 with the shared-weakness penalty. Without a model the
+  calc rules give the win chances.
+- [x] Verify: 200 games of the drafted team against the opponent team with
+  level 2 bots, shown as a win rate with a confidence interval, run across
+  workers and stoppable.
+- [x] Remove the Dynamax toggle (neither format allows Dynamax).
+- [x] Move the Pokédex counters tab into the Counters area: the new Checks
+  tool ranks your box or the meta against one Pokémon by win chance, and the
+  Pokédex has a "Find checks" button.
 
 ### 2.5 Raid planner
 

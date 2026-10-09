@@ -24,6 +24,7 @@
     "test:ui": "playwright test",
     "bots:gauntlet": "node scripts/bots-gauntlet.mjs",
     "simgen": "node scripts/simgen.mjs",
+    "publish-packs": "node scripts/publish-packs.mjs",
     "test:electron": "node scripts/electron-smoke.mjs"
   },
   "devDependencies": {
