@@ -206,7 +206,7 @@ export function CounterDraftPage({
     const teamA = packSpecs(pairs.map((row) => row[0][0]));
     const teamB = packSpecs(pairs[0].map((pair) => pair[1]));
     setVerify({ games: 0, total: games, score: 0, low: 0, high: 1 });
-    stopVerify.current = runVerify({ format: activeFormat.showdownFormat, teamA, teamB }, games, setVerify);
+    stopVerify.current = runVerify({ kind: 'teams', format: activeFormat.showdownFormat, teamA, teamB }, games, setVerify);
   };
 
   // Save the current opponent team (label optional) for later re-analysis.

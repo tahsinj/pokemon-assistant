@@ -21,7 +21,7 @@ export interface VerifyProgress {
 
 /** Start `total` games; returns a stop function. `onProgress` fires after every game. */
 export function runVerify(
-  job: Omit<VerifyJob, 'seeds'>,
+  job: VerifyJob extends infer J ? (J extends { seeds: number[] } ? Omit<J, 'seeds'> : never) : never,
   total: number,
   onProgress: (p: VerifyProgress) => void,
   firstSeed = 1,
@@ -47,7 +47,7 @@ export function runVerify(
         if (games >= total) stop();
       };
       worker.onerror = () => report('A verification worker stopped.');
-      worker.postMessage({ ...job, seeds } satisfies VerifyJob);
+      worker.postMessage({ ...job, seeds } as VerifyJob);
       workers.push(worker);
     }
   } catch {

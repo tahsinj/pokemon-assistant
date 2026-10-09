@@ -212,8 +212,8 @@ Goal: counters come from simulated battles and a learned matchup model.
 Acceptance is the metrics in SPEC 5.5, published in a model card.
 
 Status: in progress. Simulation data, the Gen 9 OU matchup model, the model
-runtime, Counter Draft v2 and Checks are done. Left: the National Dex OU
-model, publishing the packs release, and the raid planner (2.5).
+runtime, Counter Draft v2, Checks and the Raid Planner are done. Left: the
+National Dex OU model and publishing the packs release.
 
 ### 2.1 Simulation data (`tools/simgen/`)
 
@@ -267,12 +267,14 @@ model, publishing the packs release, and the raid planner (2.5).
 
 ### 2.5 Raid planner
 
-- [ ] New tool `raid` ("Raid Planner") in the Counters area.
-- [ ] `RaidRules` from SPEC 5.5.3 with Normal, Tough and Brutal presets; every
+- [x] New tool `raid` ("Raid Planner") in the Counters area
+  (`pages/RaidPage.tsx`, `lib/raid.ts`).
+- [x] `RaidRules` from SPEC 5.5.3 with Normal, Tough and Brutal presets; every
   knob editable.
-- [ ] Quick estimate from the calc per box mon; simulated ranking through a
-  custom format that applies the HP multiplier and boosts.
-- [ ] Output: ranked counters with the best moveset and what to change.
+- [x] Quick estimate from the calc per box mon; simulated ranking through a
+  custom format that applies the HP multiplier and boosts (the boss's extra
+  actions per turn count in the estimate only).
+- [x] Output: ranked counters with the best moveset and what to change.
 
 ## 3. M5: Team builder v2
 

@@ -42,6 +42,7 @@ const CounterDraftPage = lazy(() =>
   import('./pages/CounterDraftPage').then((m) => ({ default: m.CounterDraftPage })),
 );
 const ChecksPage = lazy(() => import('./pages/ChecksPage').then((m) => ({ default: m.ChecksPage })));
+const RaidPage = lazy(() => import('./pages/RaidPage').then((m) => ({ default: m.RaidPage })));
 
 const FIRST_TABS = Object.fromEntries(AREAS.map((a) => [a.id, a.tools[0]])) as Record<AreaId, ToolId>;
 
@@ -349,6 +350,8 @@ export function App() {
         return <CounterDraftPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       case 'checks':
         return <ChecksPage pokemon={pokemon} moves={moves} smogon={smogon} />;
+      case 'raid':
+        return <RaidPage pokemon={pokemon} moves={moves} smogon={smogon} />;
       default:
         return null;
     }

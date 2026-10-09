@@ -1,12 +1,10 @@
 /** Plays verification games off the UI thread. See verifyClient.ts. */
-import { playTeams } from './verify';
+import type { RaidRules } from '../lib/raid';
+import { playRaid, playTeams } from './verify';
 
-export interface VerifyJob {
-  format: string;
-  teamA: string;
-  teamB: string;
-  seeds: number[];
-}
+export type VerifyJob =
+  | { kind: 'teams'; format: string; teamA: string; teamB: string; seeds: number[] }
+  | { kind: 'raid'; member: string; boss: string; rules: RaidRules; seeds: number[] };
 
 const scope = self as unknown as {
   onmessage: ((e: MessageEvent<VerifyJob>) => void) | null;
@@ -14,10 +12,11 @@ const scope = self as unknown as {
 };
 
 scope.onmessage = (e) => {
-  const { format, teamA, teamB, seeds } = e.data;
-  for (const seed of seeds) {
+  const job = e.data;
+  for (const seed of job.seeds) {
     try {
-      scope.postMessage({ score: playTeams(format, teamA, teamB, seed) });
+      const score = job.kind === 'teams' ? playTeams(job.format, job.teamA, job.teamB, seed) : playRaid(job.member, job.boss, job.rules, seed).score;
+      scope.postMessage({ score });
     } catch (err) {
       scope.postMessage({ error: err instanceof Error ? err.message : String(err) });
     }

@@ -51,3 +51,18 @@ test('Checks ranks the box and the meta against one Pokémon, and the Pokédex s
   for (const [name, check] of Object.entries(checks_)) expect(await app.evaluate(check), name).toEqual([]);
   await snap(app, testInfo, 'checks');
 });
+
+test('the Raid Planner ranks the box against a boss and simulates the best', async ({ app }, testInfo) => {
+  test.setTimeout(120_000);
+  await openTool(app, 'Counters', 'Raid Planner');
+  await app.getByPlaceholder('Search species…').fill('Heatran');
+  await app.locator('[data-ui="species-row"]').first().click();
+  const raid = app.locator('[data-ui="raid"]');
+  await expect(raid.locator('[data-ui="species-row"]').first()).toBeVisible();
+  await app.locator('[data-ui="raid-rules"]').getByRole('button', { name: 'Brutal' }).click();
+  await expect(app.getByLabel('HP x')).toHaveValue('8');
+  await app.getByRole('button', { name: /SIMULATE TOP/ }).click();
+  await expect(raid).toContainText('Simulated: wins', { timeout: 90_000 });
+  for (const [name, check] of Object.entries(checks_)) expect(await app.evaluate(check), name).toEqual([]);
+  await snap(app, testInfo, 'raid');
+});
