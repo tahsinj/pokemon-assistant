@@ -21,3 +21,6 @@ CLAUDE.md
 # Test output
 test-results/
 playwright-report/
+
+# Generated simulation data and trained models
+ml/data/

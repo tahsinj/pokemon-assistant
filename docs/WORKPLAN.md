@@ -211,18 +211,20 @@ section 6, where it waits for a Windows machine.
 Goal: counters come from simulated battles and a learned matchup model.
 Acceptance is the metrics in SPEC 5.5, published in a model card.
 
-Status: in progress. Simulation data (2.1) is next.
+Status: in progress. Simulation data (2.1) works; the matchup model (2.2) is next.
 
 ### 2.1 Simulation data (`tools/simgen/`)
 
-- [ ] Node package using the M3 engine module under `worker_threads`.
-- [ ] Sample set pairs from the usage data per format, plus off-meta variants
+- [x] Node package using the M3 engine module under `worker_threads`
+  (`npm run simgen`, see `tools/simgen/README.md`).
+- [x] Sample set pairs from the usage data per format, plus off-meta variants
   (odd EVs, weaker moves, no item) so casual boxes get sensible scores.
-- [ ] 1v1 battles: a custom format with one Pokémon per side, level 2 bots on
-  both sides, several games per pairing.
-- [ ] Output JSONL: both sets, win, HP left, turns, forced out, plus the calc
-  features computed in TypeScript (SPEC 6.3: Python never re-implements
-  mechanics).
+- [x] 1v1 battles: `gen9customgame` with one Pokémon per side, level 2 bots
+  on both sides, several games per pairing with sides swapped.
+- [x] Output JSONL: both sets, win, HP left, turns (being forced out in a
+  1v1 is fainting, so HP left covers it), plus the calc features from
+  `src/renderer/src/ml/matchupFeatures.ts`, which the app reuses at
+  inference.
 
 ### 2.2 Matchup model (`ml/`)
 

@@ -23,6 +23,7 @@
     "fetch-usage": "node scripts/fetch-usage.mjs",
     "test:ui": "playwright test",
     "bots:gauntlet": "node scripts/bots-gauntlet.mjs",
+    "simgen": "node scripts/simgen.mjs",
     "test:electron": "node scripts/electron-smoke.mjs"
   },
   "devDependencies": {

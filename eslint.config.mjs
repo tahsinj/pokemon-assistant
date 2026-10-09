@@ -30,7 +30,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['src/main/**/*.ts', 'src/preload/**/*.ts', 'scripts/**/*.mjs', '*.config.*'],
+    files: ['src/main/**/*.ts', 'src/preload/**/*.ts', 'scripts/**/*.mjs', 'tools/**/*.ts', '*.config.*'],
     languageOptions: { globals: globals.node },
   },
 );
