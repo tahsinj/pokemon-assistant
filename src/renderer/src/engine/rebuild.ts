@@ -107,16 +107,20 @@ function patchPokemon(engine: Engine, side: SideId, i: number, c: ClientPokemon)
 }
 
 function patchField(engine: Engine, client: ClientBattle): void {
-  const field = engine.battle.field;
+  const battle = engine.battle;
+  const field = battle.field;
+  // The simulator wants a Pokémon behind every field effect; either active will do.
+  const source = battle.p1.active[0] ?? battle.p2.active[0];
   field.clearWeather();
   field.clearTerrain();
   const weather = client.field.weather && WEATHER[client.field.weather];
-  if (weather) field.setWeather(weather);
-  if (client.field.terrain) field.setTerrain(`${toID(client.field.terrain)}terrain`);
-  for (const id of Object.keys(client.field.pseudoWeather)) field.addPseudoWeather(id);
+  if (weather) field.setWeather(weather, source);
+  if (client.field.terrain) field.setTerrain(`${toID(client.field.terrain)}terrain`, source);
+  for (const id of Object.keys(client.field.pseudoWeather)) field.addPseudoWeather(id, source);
   for (const side of ['p1', 'p2'] as const) {
+    const setter = battle[side === 'p1' ? 'p2' : 'p1'].active[0] ?? source;
     for (const [id, c] of Object.entries(client[side].sideConditions)) {
-      for (let n = 0; n < Math.max(1, c.level); n++) engine.battle[side].addSideCondition(id);
+      for (let n = 0; n < Math.max(1, c.level); n++) battle[side].addSideCondition(id, setter);
     }
   }
 }

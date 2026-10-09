@@ -88,6 +88,46 @@ describe('replays', () => {
     const flags = searchReview(replay, 'p1', ctx);
     expect(flags.length).toBeGreaterThan(0);
     expect(flags[0].text).toMatch(/search prefers/);
+    expect(flags[0].text).toMatch(/ at \d+% against /);
+    expect(flags.some((f) => f.text.includes('Expected line:'))).toBe(true);
     expect(searchReview(replay, 'p2', ctx).length).toBeLessThan(flags.length);
   }, 120_000);
+
+  it('rebuilds weather and hazards from the replay', () => {
+    const log = [
+      '|player|p1|A|',
+      '|player|p2|B|',
+      '|poke|p1|Pelipper|',
+      '|poke|p2|Garchomp|',
+      '|tier|[Gen 9] OU',
+      '|start',
+      '|switch|p1a: Pelipper|Pelipper|100/100',
+      '|-weather|RainDance|[from] ability: Drizzle|[of] p1a: Pelipper',
+      '|switch|p2a: Garchomp|Garchomp|100/100',
+      '|turn|1',
+      '|move|p2a: Garchomp|Stealth Rock|p1a: Pelipper',
+      '|-sidestart|p1: A|move: Stealth Rock',
+      '|move|p1a: Pelipper|Surf|p2a: Garchomp',
+      '|-damage|p2a: Garchomp|70/100',
+      '|turn|2',
+      '|move|p2a: Garchomp|Spikes|p1a: Pelipper',
+      '|-sidestart|p1: A|Spikes',
+      '|move|p1a: Pelipper|Surf|p2a: Garchomp',
+      '|-damage|p2a: Garchomp|40/100',
+      '|turn|3',
+      '|move|p2a: Garchomp|Spikes|p1a: Pelipper',
+      '|-sidestart|p1: A|Spikes',
+      '|move|p1a: Pelipper|Surf|p2a: Garchomp',
+      '|-damage|p2a: Garchomp|0 fnt',
+      '|faint|p2a: Garchomp',
+      '|win|A',
+    ].join('\n');
+    const rebuilt = rebuildAt(parseReplay(log), 3, 'p1', engineContext())!;
+    const battle = rebuilt.engine.battle;
+    expect(battle.field.weather).toBe('raindance');
+    expect(battle.p1.sideConditions.stealthrock).toBeDefined();
+    // The start of turn 3 comes before the second layer of Spikes.
+    expect(battle.p1.sideConditions.spikes?.layers).toBe(1);
+    expect(Math.round((100 * battle.p2.active[0].hp) / battle.p2.active[0].maxhp)).toBe(40);
+  });
 });

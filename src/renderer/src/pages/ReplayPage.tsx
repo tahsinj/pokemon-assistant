@@ -12,6 +12,7 @@ import { Segmented } from '../components/hud/Segmented';
 import { ActiveCard, BattleLog, EvalGraph } from '../components/battle/BattleParts';
 import { clientBattle } from '../engine/clientState';
 import { linesUpTo, parseReplay, replayJsonUrl, type Replay } from '../engine/replay';
+import { takeReviewHandoff } from '../engine/handoff';
 import { replayEvals, reviewReplay, searchReviewTurn, type Flag } from '../engine/review';
 import type { SideId } from '../engine/types';
 import { manualLines, type ManualEvent, type ManualSetup } from '../engine/manualLog';
@@ -20,13 +21,22 @@ import { ManualComposer, ManualSetupForm } from '../components/battle/ManualEntr
 type ReviewMode = 'quick' | 'search';
 
 export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
-  const [replay, setReplay] = useState<Replay | null>(null);
+  // A practice battle sent from Practice opens straight into the search review of your side.
+  const [handoff] = useState(() => {
+    const log = takeReviewHandoff();
+    try {
+      return log ? parseReplay(log) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [replay, setReplay] = useState<Replay | null>(handoff);
   const [link, setLink] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [turn, setTurn] = useState(0);
+  const [turn, setTurn] = useState(() => (handoff ? handoff.turnStarts.length + 1 : 0));
   const [side, setSide] = useState<SideId>('p1');
-  const [mode, setMode] = useState<ReviewMode>('quick');
+  const [mode, setMode] = useState<ReviewMode>(handoff ? 'search' : 'quick');
   /** A battle typed in by hand; `setup` is null while its teams are being entered. */
   const [manual, setManual] = useState<{ setup: ManualSetup | null; events: ManualEvent[] } | null>(null);
   const [searched, setSearched] = useState<{ flags: Flag[]; done: number }>({ flags: [], done: 0 });

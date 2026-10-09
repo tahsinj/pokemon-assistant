@@ -37,6 +37,9 @@ test('a practice battle against the random bot plays to the end', async ({ app }
   await expect(result).toHaveText(/won|Tie/);
   await expect(app.locator('[data-ui="battle-log"]')).toContainText('won the battle');
   await snap(app, testInfo, 'practice-end');
+  await app.getByRole('button', { name: 'REVIEW' }).click();
+  await expect(app.locator('.dive-content [data-ui="page-title"]').first()).toHaveText('Replay Review');
+  await expect(app.locator('[data-ui="review"]')).toContainText('Rebuilds each turn');
 });
 
 test('practice can use the best six from the PC box', async ({ app }) => {

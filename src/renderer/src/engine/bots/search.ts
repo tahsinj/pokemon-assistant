@@ -113,7 +113,7 @@ function quickScore(battle: Battle, side: SideId, moveSlot: { move: string } | u
 }
 
 /** The foe's plausible replies in a determinized copy: its best moves and its best switch. */
-function foeReplies(world: Engine, side: SideId, n: number): string[] {
+export function foeReplies(world: Engine, side: SideId, n: number): string[] {
   const foe = foeOf(side);
   const req = world.request(foe);
   if (!req || req.wait || !req.active) return ['default'];
@@ -132,7 +132,7 @@ function foeReplies(world: Engine, side: SideId, n: number): string[] {
 }
 
 /** Our candidate actions: every move, Tera only on the best move, every switch. */
-function candidates(engine: Engine, side: SideId, req: BattleRequest): string[] {
+export function candidates(engine: Engine, side: SideId, req: BattleRequest): string[] {
   const all = legalChoices(req);
   const plain = all.filter((c) => !c.endsWith('terastallize'));
   const teras = all.filter((c) => c.endsWith('terastallize'));
@@ -149,6 +149,17 @@ export interface RankedAction {
   choice: string;
   /** Expected position value after the turn (see `evaluate`), higher is better. */
   score: number;
+  /** The foe's reply that did this action the most harm ("Earthquake", "switch to Gholdengo"). */
+  worstReply?: string;
+}
+
+/** A foe choice in words, read from the copy it was played in. */
+function replyLabel(world: Engine, foe: SideId, reply: string): string {
+  const [kind, n] = reply.split(' ');
+  const side = world.battle[foe];
+  if (kind === 'switch') return `switch to ${side.pokemon[Number(n) - 1]?.name ?? 'another Pokémon'}`;
+  if (kind === 'move') return side.active[0]?.moveSlots[Number(n) - 1]?.move ?? reply;
+  return 'its default choice';
 }
 
 let rollCounter = 0;
@@ -169,7 +180,7 @@ export function rankActions(
   const o = { ...DEFAULTS, ...options };
   const foe = foeOf(side);
   const mine = candidates(engine, side, req);
-  const totals = new Map<string, { sum: number; worlds: number }>();
+  const totals = new Map<string, { sum: number; worlds: number; worstReply?: string }>();
   for (let w = 0; w < o.worlds; w++) {
     const world = engine.clone();
     determinize(world, view, foe, seededRandom(++rollCounter));
@@ -199,11 +210,12 @@ export function rankActions(
       const t = totals.get(action) ?? { sum: 0, worlds: 0 };
       t.sum += 0.5 * worst + 0.5 * mean;
       t.worlds++;
+      t.worstReply ??= replyLabel(world, foe, replies[perReply.indexOf(worst)]);
       totals.set(action, t);
     }
   }
   return [...totals]
-    .map(([choice, t]) => ({ choice, score: t.sum / t.worlds }))
+    .map(([choice, t]) => ({ choice, score: t.sum / t.worlds, worstReply: t.worstReply }))
     .sort((x, y) => y.score - x.score);
 }
 

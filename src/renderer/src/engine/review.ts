@@ -139,8 +139,19 @@ function choiceLabel(choice: string, req: BattleRequest): string {
 /** How far below the search's best a choice must score to be flagged, in Pokémon (see `evaluate`). */
 const SEARCH_GAP = 0.3;
 
-/** One turn of the search review: the rebuilt battle, the choice made, and the search's ranking. */
+/**
+ * One turn of the search review: the rebuilt battle, the choice made, and
+ * the search's ranking. A turn the simulator can't rebuild is skipped.
+ */
 export function searchReviewTurn(replay: Replay, turn: number, side: SideId, ctx: PredictorContext): Flag | null {
+  try {
+    return reviewTurn(replay, turn, side, ctx);
+  } catch {
+    return null;
+  }
+}
+
+function reviewTurn(replay: Replay, turn: number, side: SideId, ctx: PredictorContext): Flag | null {
   const rebuilt = rebuildAt(replay, turn, side, ctx);
   const req = rebuilt?.engine.request(side);
   if (!rebuilt || !req?.active || req.forceSwitch?.[0]) return null;
@@ -152,11 +163,16 @@ export function searchReviewTurn(replay: Replay, turn: number, side: SideId, ctx
   if (!chosen || !best || best.choice === chosen.choice) return null;
   const gap = best.score - chosen.score;
   if (gap < SEARCH_GAP) return null;
-  const me = rebuilt.engine.battle[side].active[0]?.name ?? 'It';
+  const battle = rebuilt.engine.battle;
+  const mine = battle[side].active[0];
+  const theirs = battle[side === 'p1' ? 'p2' : 'p1'].active[0];
+  const hp = (p: typeof mine) => `${Math.round((100 * p.hp) / p.maxhp)}%`;
+  const where = mine && theirs ? ` (${mine.name} at ${hp(mine)} against ${theirs.name} at ${hp(theirs)})` : '';
+  const line = best.worstReply ? ` Expected line: ${choiceLabel(best.choice, req)}, then ${theirs?.name ?? 'the foe'}'s most dangerous answer, ${best.worstReply}.` : '';
   return {
     turn,
     gap,
-    text: `${me}: ${choiceLabel(choice, req)} was played; the search prefers ${choiceLabel(best.choice, req)} (about ${gap.toFixed(1)} Pokémon better).`,
+    text: `${mine?.name ?? 'It'}${where}: ${choiceLabel(choice, req)} was played; the search prefers ${choiceLabel(best.choice, req)}, about ${gap.toFixed(1)} Pokémon better.${line}`,
   };
 }
 

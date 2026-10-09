@@ -23,7 +23,8 @@ import { ActiveCard, BattleLog, EvalGraph } from '../components/battle/BattlePar
 import { sampleMetaTeam } from '../engine/metaTeam';
 import { membersToShowdown } from '../engine/teamText';
 import { validateTeam } from '../engine/engine';
-import { takePracticeHandoff } from '../engine/handoff';
+import { sendToReview, takePracticeHandoff } from '../engine/handoff';
+import { useOpenTool } from '../lib/areas';
 import { buildSmogonSetPool } from '../lib/battle/predictor/smogonPriors';
 import { isFainted, type BattleRequest, type RequestPokemon } from '../engine/types';
 
@@ -204,6 +205,14 @@ export function PracticePage({
     }
   };
 
+  const tool = useOpenTool();
+  // Replay Review runs the search on every one of your turns.
+  const review = async () => {
+    if (!client.current || !tool) return;
+    sendToReview(await client.current.exportLog());
+    tool.goTo('replays');
+  };
+
   const exportLog = async () => {
     if (!client.current) return;
     const text = await client.current.exportLog();
@@ -283,6 +292,7 @@ export function PracticePage({
       onChoose={(c) => void act((cl) => cl.choose(c))}
       onUndo={() => void act((cl) => cl.undo())}
       onExport={() => void exportLog()}
+      onReview={tool ? () => void review() : undefined}
       onRematch={() => {
         setHints(null);
         if (lastOptions) void run({ ...lastOptions, seed: undefined });
@@ -353,6 +363,7 @@ function BattleView({
   onChoose,
   onUndo,
   onExport,
+  onReview,
   onRematch,
   onNew,
 }: {
@@ -366,6 +377,7 @@ function BattleView({
   onChoose: (choice: string) => void;
   onUndo: () => void;
   onExport: () => void;
+  onReview?: () => void;
   onRematch: () => void;
   onNew: () => void;
 }) {
@@ -418,6 +430,11 @@ function BattleView({
               <span data-ui="battle-result" className="font-display text-[20px] font-bold text-ink-0 mr-auto">
                 {resultText}
               </span>
+              {onReview && (
+                <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={onReview}>
+                  REVIEW
+                </button>
+              )}
               <button type="button" className="chunky font-display text-[12px]" style={{ '--c': 'var(--hud-accent-2)', padding: '6px 14px' } as React.CSSProperties} onClick={onRematch}>
                 REMATCH
               </button>
