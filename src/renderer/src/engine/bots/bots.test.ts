@@ -17,3 +17,11 @@ describe('search bot', () => {
     expect(score / games).toBeGreaterThanOrEqual(5 / 6);
   }, 120_000);
 });
+
+describe('MCTS bot', () => {
+  it('beats random (strength against Search is measured by npm run bots:gauntlet)', async () => {
+    const { mctsBot } = await import('./mcts');
+    const { score, games } = series(mctsBot({ iterations: 30 }), randomBot(9), 4);
+    expect(score / games).toBeGreaterThanOrEqual(3 / 4);
+  }, 180_000);
+});

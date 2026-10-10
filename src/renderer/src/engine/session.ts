@@ -8,15 +8,16 @@ import { greedyBot } from './bots/greedy';
 import { randomBot } from './bots/random';
 import { evaluate, rankActions, searchBot, viewKeeper } from './bots/search';
 import { engineContext } from './bots/setPool';
+import { mctsBot } from './bots/mcts';
 import type { Bot } from './bots/bot';
 import type { CandidateSet } from '../lib/battle/predictor/types';
 import type { SetTracking } from './setTracker';
 import { explainHint, type HintExplanation } from './hintExplain';
 import type { BattleRequest, SideId } from './types';
 
-export type BotLevel = 0 | 1 | 2;
+export type BotLevel = 0 | 1 | 2 | 3;
 
-export const BOT_NAMES: Record<BotLevel, string> = { 0: 'Random', 1: 'Greedy', 2: 'Search' };
+export const BOT_NAMES: Record<BotLevel, string> = { 0: 'Random', 1: 'Greedy', 2: 'Search', 3: 'MCTS' };
 
 /** One suggested action from the hint button. */
 export interface Hint {
@@ -58,6 +59,7 @@ export interface SessionView {
 }
 
 function makeBot(level: BotLevel, seed: number, setPool?: Record<string, CandidateSet[]>): Bot {
+  if (level === 3) return mctsBot({}, setPool);
   return level === 0 ? randomBot(seed) : level === 1 ? greedyBot : searchBot({}, setPool);
 }
 

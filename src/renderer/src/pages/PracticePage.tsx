@@ -320,6 +320,7 @@ const BOT_HINT: Record<BotLevel, string> = {
   0: 'Picks any legal move or switch at random.',
   1: 'Picks the move that does the most damage and switches out of a sure KO.',
   2: 'Plays each option against your likely replies on the simulator and picks the best. Thinks for a moment each turn.',
+  3: 'Tries each option many times against your likely replies and plays a few turns ahead. The strongest bot; thinks for a second or more each turn.',
 };
 
 function TeamSelect({

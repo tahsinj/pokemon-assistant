@@ -1,7 +1,8 @@
 // Plays the bots against each other and writes docs/bot-elo.md.
 //
-// Usage: node scripts/bots-gauntlet.mjs [--games 100] [--ci]
-//   --ci  fewer games, no file written, exit 1 if a level fails to beat the one below it
+// Usage: node scripts/bots-gauntlet.mjs [--games 100] [--ci] [--only MCTS-Search,MCTS-Greedy]
+//   --ci    fewer games, no file written, exit 1 if a level fails to beat the one below it
+//   --only  just those pairings; prints results without writing the file
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,7 +27,10 @@ await build({
 });
 const g = await import(pathToFileURL(out).href);
 
-const results = g.runGauntlet(games, (line) => console.log(line));
+const oi = args.indexOf('--only');
+const only = oi >= 0 ? args[oi + 1] : undefined;
+const results = g.runGauntlet(games, (line) => console.log(line), only);
+if (only) process.exit(0);
 for (const e of g.eloTable(results)) console.log(`${e.name}: ${e.elo}`);
 
 if (ci) {
