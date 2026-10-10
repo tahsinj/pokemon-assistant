@@ -299,12 +299,20 @@ Status: not started.
 
 ## 4. M6: Bots v2
 
-Status: not started.
+Status: in progress. Level 3, review polish and the gauntlet are done; level 4
+is the stretch goal.
 
-- [ ] Level 3: information-set MCTS with determinization (hidden sets sampled
-  from the predictor), time-boxed, on a small worker pool.
-- [ ] Post-game review polish: clearer flagged turns, principal variation.
-- [ ] Full gauntlet in CI on a schedule; Elo table in the README.
+- [x] Level 3 (`engine/bots/mcts.ts`): Monte Carlo search with
+  determinization (hidden sets sampled from the predictor), decoupled UCT
+  for the simultaneous choice, Greedy rollouts, a fixed simulation count
+  with a time cap. It runs in the Practice worker; at 1 to 2 seconds a
+  decision a worker pool hasn't been needed. Beats Search 64 of 100.
+- [x] Post-game review polish: flagged turns give both actives' HP and the
+  expected line (the search's pick and the foe's most dangerous answer);
+  REVIEW at the end of a practice battle opens it in Replay Review with the
+  search review running.
+- [x] Full gauntlet in CI on a schedule (weekly, now with level 3); Elo table
+  in the README.
 - [ ] Level 4 (stretch): policy and value network by behavior cloning on
   high-rated replays, exported to ONNX, used as priors in MCTS.
 

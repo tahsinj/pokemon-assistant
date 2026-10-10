@@ -26,6 +26,25 @@ Five areas around the home screen orb:
 - **Counters**: Counter Draft
 - **Meta**: usage stats for the active format
 
+## Bots
+
+Practice offers four bots. Strength is measured by play: `npm run
+bots:gauntlet` plays each level against the ones below it on random battle
+teams under Gen 9 OU rules (sides swapped every game), and a weekly CI job
+reruns a shorter version. Latest run, 100 games per pairing
+([details](docs/bot-elo.md)):
+
+| Bot | How it picks | Elo |
+| --- | --- | --- |
+| Random (level 0) | Any legal choice | 1000 |
+| Greedy (level 1) | Most damage now, switches out of a sure KO | 1552 |
+| Search (level 2) | One turn on the simulator against the foe's likely replies, plus a calc-based second turn | 1780 |
+| MCTS (level 3) | Monte Carlo search: both sides choose by UCB, a few turns of rollout | 1794 |
+
+MCTS beats Search 64% of the time but does a little worse than Search against
+Greedy, so the chained Elo puts them close. Every bot above level 1 plans with
+sets sampled from what it has seen, never the foe's real ones.
+
 ## Getting started
 
 ```bash
