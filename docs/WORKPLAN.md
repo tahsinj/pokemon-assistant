@@ -5,8 +5,9 @@ Everything left to do, in order, as tasks small enough to pick up cold.
 build, where, and how to tell it is done. Tick the boxes as tasks land and
 keep the "Status" line of each milestone current.
 
-M0 to M4 are done (see the Status list in SPEC.md section 7). Next up is
-M5.
+M0 to M4 are done (see the Status list in SPEC.md section 7). M5 needs only
+its training, proof and publishing runs (steps in section 3); M6 is done
+apart from the level 4 stretch goal.
 
 ## 0. Before you start
 
@@ -279,23 +280,50 @@ Status: done (see SPEC.md section 7).
 Goal: build teams from the box with a learned team model. Acceptance is the
 Classic vs model comparison in the README.
 
-Status: not started.
+Status: in progress. All the code is in; the model has not been trained on
+the full data yet. Next steps, in order:
 
-- [ ] Replay ingestion (`ml/ingest/`): check and record each dataset's
-  license first (SPEC 6.1); keep derived data only; time split by month.
-- [ ] Team model: logistic regression on species and pairs, then the set
-  transformer from SPEC 5.6, with both ratings as inputs set equal at
-  inference. Metrics: AUC and calibration on a later month.
-- [ ] Meta score: mean predicted win rate against about 500 sampled meta
-  teams; replaces the weighted sum in `lib/bestSix.ts`.
-- [ ] Box search: legal candidates only, beam search (width about 64) plus
-  single swaps, three diverse results.
-- [ ] Add list: species not in the box that raise the best team's meta score
-  most, with the reason.
-- [ ] Explanations: per-member contribution, worst meta matchups. Classic
-  stays as the fallback and as an option.
-- [ ] Proof: Classic vs model teams, 500 simulated games each against meta
-  teams with level 2 bots; result with a confidence interval in the README.
+1. Train: `cd ml && uv sync --group train && uv run --group train python -m
+   train.team --format gen9ou`. It reads `ml/data/replays/gen9ou.jsonl`
+   (13,093 games, July to October 2026, crawled on the owner's machine and
+   not committed; rerun the crawl below on a new machine), holds out the
+   latest month, and writes `ml/data/models/gen9ou/` (team.onnx, vocab,
+   meta teams, metrics) plus `docs/models/team-gen9ou.md`.
+2. Proof: `npm run teamproof -- --games 500` writes
+   `docs/team-proof-gen9ou.md`; copy the result into the README.
+3. Publish: `npm run publish-packs -- --publish` adds the team model, its
+   vocabulary and the meta teams to the `packs` release next to the matchup
+   models. The Team Builder then uses it (Classic until then).
+4. Repeat for National Dex OU: crawl with `--format gen9nationaldex`, train,
+   prove, publish.
+
+The crawl (resumable; positions in `ml/data/replays/<format>.cursors.json`):
+`uv run python -m ingest.replays --format gen9ou --count 12000 --months
+2026-07,2026-08,2026-09,2026-10`. It makes one request a second, so 12,000
+replays take a few hours.
+
+- [x] Replay ingestion (`ml/ingest/replays.py`): Showdown's public replay
+  API (decision in section 7), rated games of 1300 and up, months crawled
+  in turns; raw logs stay in a local cache and only derived rows (teams,
+  ratings, winner, revealed sets) are used. License: public replays, no
+  dataset terms; recorded in the model card the trainer writes.
+- [ ] Team model (`ml/train/team.py`): logistic regression on species, then
+  the set transformer from SPEC 5.6 (antisymmetric, ratings as inputs and
+  set equal at inference, revealed sets dropped at random so species-only
+  teams score). Metrics: AUC and calibration on the held-out latest month.
+  Code and tests done; waiting on step 1.
+- [x] Meta score: mean predicted win chance against the meta teams shipped
+  with the model (`ml/teamModel.ts`).
+- [x] Box search (`lib/teamSearch.ts`): bestSix's legal, levelled pool, beam
+  search (width 32 on a 40-team sample of the meta), single swaps, three
+  different teams re-scored on the whole meta.
+- [x] Add list: species not in the box that raise the best team's meta score
+  most, with the member they would replace.
+- [x] Explanations: per-member contribution, hardest meta teams. Classic
+  stays as the fallback and as an option (Team Builder switch).
+- [ ] Proof: `npm run teamproof` (`tools/teamproof`) plays both teams against
+  the same meta teams and seeds and reports win rates and the paired
+  difference with confidence intervals. Waiting on steps 1 and 2.
 
 ## 4. M6: Bots v2
 

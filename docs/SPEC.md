@@ -859,6 +859,22 @@ Status:
   - Simulated raids apply the HP multiplier and boosts; the boss's extra
     actions per turn count only in the quick estimate.
 
+- **M5 in progress.** Replays come from Showdown's public replay API
+  (`ml/ingest/replays.py`, one request a second, derived data only); 13,093
+  rated Gen 9 OU games from July to October 2026 are crawled locally. The
+  set transformer and its logistic baseline (`ml/train/team.py`), the meta
+  score, the box search with add list and explanations (`lib/teamSearch.ts`,
+  Team Builder's "Team model" switch with Classic as the fallback), and the
+  proof tool (`npm run teamproof`) are built and tested. Left: train, run
+  the proof, publish; the steps are in [WORKPLAN.md](WORKPLAN.md)
+  section 3.
+- **M6 mostly done.** Level 3 MCTS with determinization and decoupled UCT
+  beats Search 64 of 100 ([bot-elo.md](bot-elo.md)); flagged turns in the
+  search review give HP and the expected line, and a finished practice
+  battle opens in Replay Review in one click; the weekly gauntlet includes
+  level 3 and the Elo table is in the README. Level 4 (a learned policy and
+  value network) is the stretch goal and not started.
+
 ## 8. Risks
 
 | Risk | Impact | Mitigation |
