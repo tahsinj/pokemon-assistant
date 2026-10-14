@@ -470,8 +470,8 @@ export function TeamBuilderPage({
   const [expandedAdvice, setExpandedAdvice] = useState<string | null>(null);
   const [legalOnly, setLegalOnly] = useState(true);
 
-  // Model teams come from the team model; Classic is the weighted heuristic, and the fallback.
-  const [bestMode, setBestMode] = useState<'model' | 'classic'>('model');
+  // Classic, the weighted heuristic, is the default: the team model hasn't beaten it in play yet (README).
+  const [bestMode, setBestMode] = useState<'model' | 'classic'>('classic');
   const [modelTeams, setModelTeams] = useState<ModelSearchResult | null>(null);
   const [modelNote, setModelNote] = useState<string | null>(null);
   const searchRun = useRef(0);

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as checks from './checks';
 import { test, expect, openTool, snap } from './fixtures';
 
-test('the Team Builder builds teams from the box with the team model, and Classic stays available', async ({ app }, testInfo) => {
+test('the Team Builder opens on Classic and builds teams from the box with the team model on request', async ({ app }, testInfo) => {
   test.setTimeout(120_000);
   const fixture = (name: string) => readFileSync(`tests/fixtures/${name}`);
   await app.route(/\/__packs\/team-(gen9ou|gen9nationaldex)$/, (route) => route.fulfill({ body: fixture('team-tiny.onnx') }));
@@ -14,10 +14,10 @@ test('the Team Builder builds teams from the box with the team model, and Classi
   await openTool(app, 'Box', 'Team Builder');
   await app.getByRole('button', { name: /ANALYZE PC/ }).click();
   const source = app.locator('[data-ui="team-source"]');
+  await expect(source).toContainText('Classic: a weighted sum');
+  await app.getByRole('button', { name: 'Team model', exact: true }).click();
   await expect(source).toContainText('Team model: the meta score', { timeout: 60_000 });
   await expect(app.getByText('Hardest meta teams').first()).toBeVisible();
   for (const [name, check] of Object.entries(checks)) expect(await app.evaluate(check), name).toEqual([]);
   await snap(app, testInfo, 'team-model');
-  await app.getByRole('button', { name: 'Classic', exact: true }).click();
-  await expect(source).toContainText('Classic: a weighted sum');
 });

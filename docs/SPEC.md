@@ -868,7 +868,8 @@ Status:
   with a vocabulary and 500 meta teams. The Team Builder's "Team model"
   mode searches the box (beam search plus swaps, three different teams),
   shows each member's contribution and the hardest meta teams, and lists
-  species worth adding; Classic stays as an option and the fallback.
+  species worth adding. Classic is the default and the fallback, since the
+  model hasn't beaten it in play yet.
   Notes:
   - Revealed sets were dropped from the inputs: replays reveal them over
     the whole game and the winner shows more, so with them the model

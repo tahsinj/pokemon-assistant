@@ -52,7 +52,8 @@ transformer trained on about 13,000 rated Gen 9 OU replays from Showdown
 (July to October 2026), scoring a team by its mean win chance against
 high-rated teams from the latest month ([model card](docs/models/team-gen9ou.md)).
 It reads species only; revealed sets would leak who won. Classic, the
-weighted heuristic, stays as an option and as the fallback.
+weighted heuristic, is the default and the fallback; the model is one switch
+away.
 
 Does it pick better teams? For one box of 30 Pokémon, each method's team
 played 500 games against the same 100 meta teams on the same seeds, with the
