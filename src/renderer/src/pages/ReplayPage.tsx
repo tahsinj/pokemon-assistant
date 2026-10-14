@@ -12,7 +12,7 @@ import { Segmented } from '../components/hud/Segmented';
 import { ActiveCard, BattleLog, EvalGraph } from '../components/battle/BattleParts';
 import { clientBattle } from '../engine/clientState';
 import { linesUpTo, parseReplay, replayJsonUrl, type Replay } from '../engine/replay';
-import { takeReviewHandoff } from '../engine/handoff';
+import { clearReviewHandoff, reviewHandoff } from '../engine/handoff';
 import { replayEvals, reviewReplay, searchReviewTurn, type Flag } from '../engine/review';
 import type { SideId } from '../engine/types';
 import { manualLines, type ManualEvent, type ManualSetup } from '../engine/manualLog';
@@ -23,7 +23,7 @@ type ReviewMode = 'quick' | 'search';
 export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: SmogonBundle | null }) {
   // A practice battle sent from Practice opens straight into the search review of your side.
   const [handoff] = useState(() => {
-    const log = takeReviewHandoff();
+    const log = reviewHandoff();
     try {
       return log ? parseReplay(log) : null;
     } catch {
@@ -46,6 +46,7 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
   );
 
   const open = (text: string) => {
+    clearReviewHandoff();
     try {
       const r = parseReplay(text);
       setReplay(r);
@@ -128,7 +129,10 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
       <button type="button" className="chunky font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={() => void fetchLink()} disabled={loading}>
         {loading ? 'LOADING…' : 'LOAD LINK'}
       </button>
-      <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={() => setManual({ setup: null, events: [] })}>
+      <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 14px' }} onClick={() => {
+          clearReviewHandoff();
+          setManual({ setup: null, events: [] });
+        }}>
         ENTER BY HAND
       </button>
       <label className="chunky ghost font-display text-[12px] cursor-pointer" style={{ padding: '6px 14px' }}>
@@ -179,6 +183,7 @@ export function ReplayPage({ pokemon, smogon }: { pokemon: Pokemon[]; smogon: Sm
       subtitle={`${names.p1} vs ${names.p2}${replay.format ? ` · ${replay.format}` : ''} · ${total} turns`}
       side={
         <button type="button" className="chunky ghost font-display text-[12px]" style={{ padding: '6px 12px' }} onClick={() => {
+            clearReviewHandoff();
             setReplay(null);
             setManual(null);
           }}

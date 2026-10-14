@@ -25,8 +25,14 @@ export function sendToReview(log: string): void {
   review = log;
 }
 
-export function takeReviewHandoff(): string | null {
-  const log = review;
+/**
+ * The practice log waiting for Replay Review. It stays until `clearReviewHandoff`,
+ * because the page can mount more than once while it opens.
+ */
+export function reviewHandoff(): string | null {
+  return review;
+}
+
+export function clearReviewHandoff(): void {
   review = null;
-  return log;
 }
