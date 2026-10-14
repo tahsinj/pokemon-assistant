@@ -859,15 +859,24 @@ Status:
   - Simulated raids apply the HP multiplier and boosts; the boss's extra
     actions per turn count only in the quick estimate.
 
-- **M5 in progress.** Replays come from Showdown's public replay API
-  (`ml/ingest/replays.py`, one request a second, derived data only); 13,093
-  rated Gen 9 OU games from July to October 2026 are crawled locally. The
-  set transformer and its logistic baseline (`ml/train/team.py`), the meta
-  score, the box search with add list and explanations (`lib/teamSearch.ts`,
-  Team Builder's "Team model" switch with Classic as the fallback), and the
-  proof tool (`npm run teamproof`) are built and tested. Left: train, run
-  the proof, publish; the steps are in [WORKPLAN.md](WORKPLAN.md)
-  section 3.
+- **M5 done** (Gen 9 OU; National Dex OU follows the same steps, WORKPLAN.md
+  section 3). 13,093 rated Gen 9 OU games from July to October 2026 came
+  from Showdown's public replay API (`ml/ingest/replays.py`, one request a
+  second, derived data only). The set transformer reads species only and
+  scores AUC 0.528 on the held-out month (logistic baseline 0.526,
+  [model card](models/team-gen9ou.md)); it ships on the `packs` release
+  with a vocabulary and 500 meta teams. The Team Builder's "Team model"
+  mode searches the box (beam search plus swaps, three different teams),
+  shows each member's contribution and the hardest meta teams, and lists
+  species worth adding; Classic stays as an option and the fallback.
+  Notes:
+  - Revealed sets were dropped from the inputs: replays reveal them over
+    the whole game and the winner shows more, so with them the model
+    reached 0.62 AUC partly by reading the result.
+  - The proof ([team-proof-gen9ou.md](team-proof-gen9ou.md), in the README):
+    500 games each against the same meta teams, team model 50.0%, Classic
+    48.6%, difference +1.4% (-4.3% to 7.1%). No measurable gain yet; more
+    replays are the obvious next step.
 - **M6 mostly done.** Level 3 MCTS with determinization and decoupled UCT
   beats Search 64 of 100 ([bot-elo.md](bot-elo.md)); flagged turns in the
   search review give HP and the expected line, and a finished practice

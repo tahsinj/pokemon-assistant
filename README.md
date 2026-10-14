@@ -45,6 +45,29 @@ MCTS beats Search 64% of the time but does a little worse than Search against
 Greedy, so the chained Elo puts them close. Every bot above level 1 plans with
 sets sampled from what it has seen, never the foe's real ones.
 
+## Team model
+
+The Team Builder can pick teams from your box with a team model: a set
+transformer trained on about 13,000 rated Gen 9 OU replays from Showdown
+(July to October 2026), scoring a team by its mean win chance against
+high-rated teams from the latest month ([model card](docs/models/team-gen9ou.md)).
+It reads species only; revealed sets would leak who won. Classic, the
+weighted heuristic, stays as an option and as the fallback.
+
+Does it pick better teams? For one box of 30 Pokémon, each method's team
+played 500 games against the same 100 meta teams on the same seeds, with the
+Search bot on both sides (`npm run teamproof`,
+[details](docs/team-proof-gen9ou.md)):
+
+| Team | Win rate (95% interval) |
+| --- | --- |
+| Team model | 50.0% (45.6% to 54.4%) |
+| Classic | 48.6% (44.2% to 53.0%) |
+
+The difference, +1.4% (-4.3% to 7.1%), is within noise: on this much data the
+model is no better than Classic yet. Its held-out AUC is 0.53 from species
+alone, so more replays are the next step.
+
 ## Getting started
 
 ```bash

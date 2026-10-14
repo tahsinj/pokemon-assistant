@@ -76,7 +76,7 @@ def species_only(t: np.ndarray) -> np.ndarray:
     return out
 
 
-def fit(model: TeamModel, a, b, r, y, va, vb, vr, vy, epochs: int = 40, seed: int = 7) -> int:
+def fit(model: TeamModel, a, b, r, y, va, vb, vr, vy, epochs: int = 40, seed: int = 7, reveal_drop: float = 0.5) -> int:
     torch.manual_seed(seed)
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
     a, b, r, y = map(torch.as_tensor, (a, b, r, y))
@@ -87,7 +87,7 @@ def fit(model: TeamModel, a, b, r, y, va, vb, vr, vy, epochs: int = 40, seed: in
         for i in range(0, len(y), 256):
             idx = order[i:i + 256]
             # Each game is also seen from the other side.
-            ab = torch.cat([drop_reveals(a[idx], 0.5), drop_reveals(b[idx], 0.5)])
+            ab = torch.cat([drop_reveals(a[idx], reveal_drop), drop_reveals(b[idx], reveal_drop)])
             ba = torch.cat([ab[len(idx):], ab[:len(idx)]])
             rr = torch.cat([r[idx], r[idx].flip(1)])
             yy = torch.cat([y[idx], 1 - y[idx]])
@@ -123,6 +123,10 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=ROOT / "data" / "models")
     ap.add_argument("--cards", type=Path, default=ROOT.parent / "docs" / "models")
     ap.add_argument("--meta-teams", type=int, default=500)
+    # Revealed sets come from the whole game, and the winner tends to reveal more,
+    # so they leak the result; species are what a pre-game prediction can use.
+    ap.add_argument("--inputs", choices=["species", "reveals"], default="species")
+    ap.add_argument("--dim", type=int, default=64)
     args = ap.parse_args()
     fmt = args.format
 
@@ -137,6 +141,9 @@ def main() -> None:
     fit_rows, val_rows = train_rows[:cut], train_rows[cut:]
 
     vocab = build_vocab(fit_rows)
+    if args.inputs == "species":
+        vocab = {t: i for t, i in vocab.items() if not t[1:2] == ":" or t.startswith("s:")}
+        vocab = {t: n for n, t in enumerate(vocab)}
     a, b, r, y = encode(fit_rows, vocab)
     va, vb, vr, vy = encode(val_rows, vocab)
     ta, tb, tr, ty = encode(test_rows, vocab)
@@ -150,14 +157,14 @@ def main() -> None:
     logistic = LogisticRegression(max_iter=3000, C=0.5).fit(lx, ly)
     lr_p = logistic.predict_proba(bag(ta, tr) - bag(tb, tr[:, ::-1]))[:, 1]
 
-    model = TeamModel(len(vocab))
-    epochs = fit(model, a, b, r, y, va, vb, vr, vy)
+    model = TeamModel(len(vocab), dim=args.dim)
+    epochs = fit(model, a, b, r, y, va, vb, vr, vy, reveal_drop=0.0 if args.inputs == "species" else 0.5)
     metrics = {
         "format": fmt,
         "label": LABELS.get(fmt, fmt),
         "trained": date.today().isoformat(),
         "data": {"games": len(rows), "months": months, "test_month": test_month, "train_games": len(train_rows), "test_games": len(test_rows),
-                 "vocab": len(vocab), "epochs": epochs},
+                 "vocab": len(vocab), "epochs": epochs, "inputs": args.inputs},
         "transformer": report(predict(model, ta, tb, tr), ty),
         "transformer_equal_ratings": report(predict(model, ta, tb, zeros), ty),
         "transformer_species_only": report(predict(model, species_only(ta), species_only(tb), zeros), ty),
@@ -178,7 +185,8 @@ def main() -> None:
     (out / "team-metrics.json").write_text(json.dumps(metrics, indent=2))
     # The meta: recent high-rated teams, species and what they revealed, for the app's meta score.
     meta = sorted(test_rows, key=lambda x: -(x.get("rating") or 0))[: args.meta_teams]
-    teams = [{"species": m[s], "revealed": {k.split(":", 1)[1]: v for k, v in m["revealed"].items() if k.startswith(s)}} for m in meta for s in ("p1", "p2")]
+    keep = args.inputs == "reveals"
+    teams = [{"species": m[s], "revealed": {k.split(":", 1)[1]: v for k, v in m["revealed"].items() if keep and k.startswith(s)}} for m in meta for s in ("p1", "p2")]
     (out / "meta-teams.json").write_text(json.dumps({"month": test_month, "teams": teams[: args.meta_teams]}))
     card = team_card(fmt, metrics)
     (out / "TEAM_MODEL_CARD.md").write_text(card)
@@ -207,11 +215,20 @@ def team_card(fmt: str, m: dict) -> str:
 
     cal = "\n".join(f"| {c['from']:.1f} to {c['to']:.1f} | {c['n']} | {c['predicted']:.3f} | {c['actual']:.3f} |"
                     for c in m["transformer_equal_ratings"]["calibration"])
+    inputs = (
+        "each team's six species, the information a player has before the game"
+        if d.get("inputs") == "species"
+        else "each team's species and whatever their sets revealed during the game"
+    )
     return f"""# Team model: {m['label']}
 
 Predicts how likely team A is to beat team B in {m['label']} (`{fmt}`), from
-each team's species and whatever their sets revealed. Trained {m['trained']}
-by `ml/train/team.py`.
+{inputs}. Trained {m['trained']} by `ml/train/team.py`.
+
+Revealed moves and items are left out on purpose: replays reveal them over
+the whole game, and the winner tends to show more of its sets, so a model
+that reads them partly learns the result (an AUC of 0.62 here, against 0.53
+for species alone on the same month).
 
 ## Data
 
@@ -227,8 +244,7 @@ by `ml/train/team.py`.
 ## Metrics ({d['test_month']}, held out)
 
 Player ratings are inputs during training and set equal for scoring teams,
-so the numbers that matter for the app are the middle two rows; "species
-only" hides every revealed set, as when scoring a box team against the meta.
+as the app does.
 
 | Model | AUC | Log loss | Brier |
 | --- | --- | --- | --- |
@@ -249,9 +265,11 @@ Calibration (set transformer, equal ratings):
 
 - Ladder games at 1300 and up only; low-usage species have few examples, so
   their tokens are weak or unknown.
-- Revealed sets are partial: unrevealed moves and items are simply absent.
-- Who pilots the team still matters more than the team; AUC well below 1 is
-  expected.
+- Species alone say little about who wins a single game: the pilot and the
+  sets matter more. The model is a weak signal (AUC barely above 0.5), so
+  the proof below, which plays the teams out, is the better guide.
+- About 13,000 games is small for this task; more months of replays should
+  help.
 """
 
 
