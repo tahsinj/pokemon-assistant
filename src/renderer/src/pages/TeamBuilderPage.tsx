@@ -485,7 +485,7 @@ export function TeamBuilderPage({
     const scorer = await loadTeamScorer(format.id);
     if (run !== searchRun.current) return;
     if (!scorer) {
-      setModelNote('The team model has not downloaded yet, so these are Classic teams.');
+      setModelNote('There is no team model for this format yet (or it has not downloaded), so these are Classic teams.');
       return;
     }
     const box = buildPool(pc.mons, pokemonById, moves, smogon, { legalOnly, allowItem });

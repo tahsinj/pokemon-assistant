@@ -5,9 +5,8 @@ Everything left to do, in order, as tasks small enough to pick up cold.
 build, where, and how to tell it is done. Tick the boxes as tasks land and
 keep the "Status" line of each milestone current.
 
-M0 to M5 are done (see the Status list in SPEC.md section 7); M5's National
-Dex OU team model follows its crawl (section 3). M6 is done apart from the
-level 4 stretch goal.
+M0 to M5 are done (see the Status list in SPEC.md section 7). M6 is done
+apart from the level 4 stretch goal.
 
 ## 0. Before you start
 
@@ -280,8 +279,9 @@ Status: done (see SPEC.md section 7).
 Goal: build teams from the box with a learned team model. Acceptance is the
 Classic vs model comparison in the README.
 
-Status: done for Gen 9 OU (see SPEC.md section 7); National Dex OU is being
-crawled. To finish or refresh a format:
+Status: done (see SPEC.md section 7). Gen 9 OU's team model is published;
+National Dex OU's was trained and proved worse than Classic, so it is not.
+To refresh a format with more replays:
 
 1. Crawl (resumable; positions in `ml/data/replays/<format>.cursors.json`,
    one request a second, a few hours for 12,000 replays):
@@ -291,7 +291,9 @@ crawled. To finish or refresh a format:
 2. Train: `uv run --group train python -m train.team --format
    gen9nationaldex --dim 32` (species only by default).
 3. Prove: `npm run teamproof -- --format gen9nationaldex --games 500`.
-4. Publish: `npm run publish-packs -- --publish`.
+4. Publish only if the proof beats Classic: `npm run publish-packs --
+   --publish`. Anything under `ml/data/models/<format>/unpublished/` is
+   left out (National Dex OU's team model is parked there).
 
 - [x] Replay ingestion (`ml/ingest/replays.py`): Showdown's public replay
   API (decision in section 7), rated games of 1300 and up, months crawled
@@ -316,7 +318,9 @@ crawled. To finish or refresh a format:
 - [x] Proof: `npm run teamproof` (`tools/teamproof`) plays both teams against
   the same meta teams and seeds. Gen 9 OU, 500 games each
   ([result](team-proof-gen9ou.md), in the README): team model 50.0%,
-  Classic 48.6%, difference +1.4% (-4.3% to 7.1%), within noise.
+  Classic 48.6%, difference +1.4% (-4.3% to 7.1%), within noise. National
+  Dex OU ([result](team-proof-gen9nationaldex.md)): 56.8% against 69.4%,
+  difference -12.6% (-18.5% to -6.7%); not published.
 
 ## 4. M6: Bots v2
 

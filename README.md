@@ -69,6 +69,12 @@ The difference, +1.4% (-4.3% to 7.1%), is within noise: on this much data the
 model is no better than Classic yet. Its held-out AUC is 0.53 from species
 alone, so more replays are the next step.
 
+National Dex OU went worse. A model trained the same way on about 12,000
+replays ([model card](docs/models/team-gen9nationaldex.md)) picked a team that
+won 56.8% against Classic's 69.4% (difference -12.6%, -18.5% to -6.7%,
+[details](docs/team-proof-gen9nationaldex.md)), so it is not published and
+National Dex uses Classic only.
+
 ## Getting started
 
 ```bash

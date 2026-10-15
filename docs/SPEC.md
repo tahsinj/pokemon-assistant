@@ -859,8 +859,7 @@ Status:
   - Simulated raids apply the HP multiplier and boosts; the boss's extra
     actions per turn count only in the quick estimate.
 
-- **M5 done** (Gen 9 OU; National Dex OU follows the same steps, WORKPLAN.md
-  section 3). 13,093 rated Gen 9 OU games from July to October 2026 came
+- **M5 done.** 13,093 rated Gen 9 OU games from July to October 2026 came
   from Showdown's public replay API (`ml/ingest/replays.py`, one request a
   second, derived data only). The set transformer reads species only and
   scores AUC 0.528 on the held-out month (logistic baseline 0.526,
@@ -878,6 +877,10 @@ Status:
     500 games each against the same meta teams, team model 50.0%, Classic
     48.6%, difference +1.4% (-4.3% to 7.1%). No measurable gain yet; more
     replays are the obvious next step.
+  - National Dex OU: 11,920 games, AUC 0.518 (baseline 0.534), and its team
+    lost to Classic's, 56.8% against 69.4% (difference -12.6%, -18.5% to
+    -6.7%, [team-proof-gen9nationaldex.md](team-proof-gen9nationaldex.md)).
+    It is not published; National Dex uses Classic.
 - **M6 mostly done.** Level 3 MCTS with determinization and decoupled UCT
   beats Search 64 of 100 ([bot-elo.md](bot-elo.md)); flagged turns in the
   search review give HP and the expected line, and a finished practice
