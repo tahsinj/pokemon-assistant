@@ -581,7 +581,9 @@ game you are collecting in.
 - Worst matchups: the meta teams this team loses to most often, with the mons
   responsible.
 - Old heuristic stays available as "Classic" and is the fallback when no model
-  is installed.
+  is installed. Classic also scores field synergy: weather, terrain and Trick
+  Room setters with the teammates that gain from them, screens with setup
+  sweepers, and penalties for clashing weathers or an abuser with no setter.
 
 **Proof it works**: for the same box, build a team with Classic and with the
 model, then have both play 500 simulated games against meta teams with level 2
@@ -878,8 +880,8 @@ Status:
     48.6%, difference +1.4% (-4.3% to 7.1%). No measurable gain yet; more
     replays are the obvious next step.
   - National Dex OU: 11,920 games, AUC 0.518 (baseline 0.534), and its team
-    lost to Classic's, 56.8% against 69.4% (difference -12.6%, -18.5% to
-    -6.7%, [team-proof-gen9nationaldex.md](team-proof-gen9nationaldex.md)).
+    lost to Classic's, 56.8% against 70.4% (difference -13.6%, -19.5% to
+    -7.7%, [team-proof-gen9nationaldex.md](team-proof-gen9nationaldex.md)).
     It is not published; National Dex uses Classic.
 - **M6 mostly done.** Level 3 MCTS with determinization and decoupled UCT
   beats Search 64 of 100 ([bot-elo.md](bot-elo.md)); flagged turns in the

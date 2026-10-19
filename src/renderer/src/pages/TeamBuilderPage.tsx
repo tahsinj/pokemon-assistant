@@ -1172,14 +1172,23 @@ export function TeamBuilderPage({
                           .join('; ')}
                       </div>
                     ) : (
-                      <div
-                        className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2"
-                        title="quality · chemistry · defense · offense · roles"
-                      >
-                        Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
-                        {c.breakdown.defense.toFixed(1)} · O {c.breakdown.offense.toFixed(1)} · R{' '}
-                        {c.breakdown.roles.toFixed(1)}
-                      </div>
+                      <>
+                        <div
+                          className="font-mono-hud text-[14px] uppercase tracking-wider text-ink-2"
+                          title="quality · chemistry · defense · offense · roles · synergy"
+                        >
+                          Q {c.breakdown.quality.toFixed(1)} · C {c.breakdown.chemistry.toFixed(1)} · D{' '}
+                          {c.breakdown.defense.toFixed(1)} · O {c.breakdown.offense.toFixed(1)} · R{' '}
+                          {c.breakdown.roles.toFixed(1)} · S {c.breakdown.synergy.toFixed(1)}
+                        </div>
+                        {c.synergyNotes.length > 0 && (
+                          <ul className="font-sans text-[13px] text-ink-2">
+                            {c.synergyNotes.map((n) => (
+                              <li key={n}>{n}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
                     )}
                     <div className="flex flex-col gap-1">
                       {c.members.map((a, mi) => {

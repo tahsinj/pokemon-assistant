@@ -319,8 +319,8 @@ To refresh a format with more replays:
   the same meta teams and seeds. Gen 9 OU, 500 games each
   ([result](team-proof-gen9ou.md), in the README): team model 50.0%,
   Classic 48.6%, difference +1.4% (-4.3% to 7.1%), within noise. National
-  Dex OU ([result](team-proof-gen9nationaldex.md)): 56.8% against 69.4%,
-  difference -12.6% (-18.5% to -6.7%); not published.
+  Dex OU ([result](team-proof-gen9nationaldex.md)): 56.8% against 70.4%,
+  difference -13.6% (-19.5% to -7.7%); not published.
 
 ## 4. M6: Bots v2
 

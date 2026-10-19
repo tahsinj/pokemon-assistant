@@ -21,6 +21,7 @@ import { learnableMoves, scoreMove } from './recommender';
 import { bestMatchingSet, type MatchedSet } from './smogonSets';
 import { isFormatLegal } from './legality';
 import { classifyMember, HAZARD_CONTROL, HAZARD_MOVES, type RoleTag } from './teamRoles';
+import { battleAbility, fieldSynergy, fieldTraits, type Field, type FieldTraits } from './fieldSynergy';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -67,8 +68,10 @@ export interface TeamCandidate {
   preset: TeamPresetId;
   label: string;
   score: number;
-  breakdown: { quality: number; chemistry: number; defense: number; offense: number; roles: number };
+  breakdown: { quality: number; chemistry: number; defense: number; offense: number; roles: number; synergy: number };
   members: MemberAdvice[];
+  /** Weather, terrain, Trick Room and screens synergies and clashes. */
+  synergyNotes: string[];
   /** Types >=2 members are weak to with no resist on the team. */
   stackedWeaknesses: string[];
   /** Types no member hits super-effectively with STAB. */
@@ -131,6 +134,8 @@ export interface PoolMember {
   weakTo: Set<string>;
   resists: Set<string>;
   stabSE: Set<string>;
+  /** Weather, terrain, Trick Room and screens it sets or needs. */
+  field: FieldTraits;
 }
 
 interface PresetWeights {
@@ -139,6 +144,8 @@ interface PresetWeights {
   d: number;
   o: number;
   r: number;
+  /** Field synergy (weather, terrain, Trick Room, screens). */
+  s: number;
   /** Max offensive roles before the role-balance penalty kicks in. */
   maxOffense: number;
   bulkBonus: number;
@@ -146,9 +153,9 @@ interface PresetWeights {
 }
 
 const PRESETS: Record<TeamPresetId, PresetWeights> = {
-  balanced: { q: 1, c: 1.5, d: 1.2, o: 1, r: 1, maxOffense: 4, bulkBonus: 0.5, label: 'Balanced' },
-  offense: { q: 1.1, c: 1.5, d: 0.6, o: 1.8, r: 0.6, maxOffense: 5, bulkBonus: 0.25, label: 'Hyper offense' },
-  defense: { q: 1, c: 1.5, d: 2.2, o: 0.5, r: 1.4, maxOffense: 3, bulkBonus: 1, label: 'Defensive core' },
+  balanced: { q: 1, c: 1.5, d: 1.2, o: 1, r: 1, s: 1, maxOffense: 4, bulkBonus: 0.5, label: 'Balanced' },
+  offense: { q: 1.1, c: 1.5, d: 0.6, o: 1.8, r: 0.6, s: 1.2, maxOffense: 5, bulkBonus: 0.25, label: 'Hyper offense' },
+  defense: { q: 1, c: 1.5, d: 2.2, o: 0.5, r: 1.4, s: 0.8, maxOffense: 3, bulkBonus: 1, label: 'Defensive core' },
 };
 
 function evArrayToStats(arr: number[]): BaseStats {
@@ -269,6 +276,7 @@ interface TeamEval {
   breakdown: TeamCandidate['breakdown'];
   stacked: string[];
   uncovered: string[];
+  synergyNotes: string[];
 }
 
 function evaluateTeam(team: PoolMember[], chem: number[][], idx: number[], w: PresetWeights): TeamEval {
@@ -315,6 +323,8 @@ function evaluateTeam(team: PoolMember[], chem: number[][], idx: number[], w: Pr
     if (!hasTag('hazard-setter')) roles -= 0.5;
   }
 
+  const field = fieldSynergy(team.map((m) => m.field));
+
   const breakdown = {
     quality: w.q * quality,
     chemistry: w.c * chemistry,
@@ -322,10 +332,11 @@ function evaluateTeam(team: PoolMember[], chem: number[][], idx: number[], w: Pr
     defense: -w.d * (Math.pow(2, stacked.length) - 1),
     offense: w.o * (seCount / 3),
     roles: w.r * roles,
+    synergy: w.s * field.score,
   };
   const score =
-    breakdown.quality + breakdown.chemistry + breakdown.defense + breakdown.offense + breakdown.roles;
-  return { score, breakdown, stacked, uncovered };
+    breakdown.quality + breakdown.chemistry + breakdown.defense + breakdown.offense + breakdown.roles + breakdown.synergy;
+  return { score, breakdown, stacked, uncovered, synergyNotes: field.notes };
 }
 
 // ---------------------------------------------------------------------------
@@ -418,6 +429,20 @@ function coreSeeds(pool: PoolMember[], banned: Set<number>): number[][] {
   const pivot = firstWith((m) => m.tags.has('pivot'));
   const roleCore = [...new Set([winCon, breaker, pivot].filter((i): i is number => i != null))];
   if (roleCore.length >= 2) seeds.push(roleCore);
+
+  // Field cores: each automatic weather or terrain setter with the two members
+  // that gain most from it, so a sun or rain team is tried as a whole.
+  for (const s of avail) {
+    for (const [f, v] of Object.entries(pool[s].field.sets) as [Field, number][]) {
+      if (v !== 1) continue;
+      const gain = (i: number) => pool[i].field.uses[f] ?? 0;
+      const abusers = avail
+        .filter((i) => i !== s && gain(i) >= 0.5)
+        .sort((a, b) => gain(b) - gain(a))
+        .slice(0, 2);
+      if (abusers.length) seeds.push([s, ...abusers]);
+    }
+  }
 
   // Defensive core: greedily grow a trio that shares the fewest weaknesses.
   if (avail.length >= 3) {
@@ -777,10 +802,22 @@ export function buildPool(
       item: rec.item, ability: rec.ability || null, nature: rec.nature,
       level: rec.level, ivs: null, evs: rec.evs as unknown as Record<string, number>, moves: rec.moves,
     };
-    const tags = new Set(classifyMember(p, detail, intel, moves).tags);
+    const roles = classifyMember(p, detail, intel, moves);
+    const tags = new Set(roles.tags);
 
     const base = { rec, p, intel, matched, quality, tags, weakTo, resists, stabSE };
-    return { ...base, role: inferRole(base) };
+    const role = inferRole(base);
+    const ability = battleAbility(
+      p,
+      rec.ability || matched?.set.ability || intel?.abilities[0]?.name || '',
+      rec.item,
+      pokemonById,
+    );
+    const field = fieldTraits(p, ability, rec.item, roles.effectiveMoves, {
+      attacker: role !== 'bulk',
+      sweeper: tags.has('setup-sweeper'),
+    });
+    return { ...base, role, field };
   });
 
   members.sort((a, b) => b.quality - a.quality);
@@ -825,10 +862,12 @@ export function candidateFor(
       defense: Math.round(ev.breakdown.defense * 100) / 100,
       offense: Math.round(ev.breakdown.offense * 100) / 100,
       roles: Math.round(ev.breakdown.roles * 100) / 100,
+      synergy: Math.round(ev.breakdown.synergy * 100) / 100,
     },
     members: team.map((m) => buildAdvice(m, box.refLevel, moves, allowItem)),
     stackedWeaknesses: ev.stacked,
     uncoveredTypes: ev.uncovered,
+    synergyNotes: ev.synergyNotes,
   };
 }
 
@@ -886,10 +925,12 @@ export function buildBestTeams(
         defense: Math.round(ev.breakdown.defense * 100) / 100,
         offense: Math.round(ev.breakdown.offense * 100) / 100,
         roles: Math.round(ev.breakdown.roles * 100) / 100,
+        synergy: Math.round(ev.breakdown.synergy * 100) / 100,
       },
       members: team.map((m) => buildAdvice(m, refLevel, moves, allowItem)),
       stackedWeaknesses: ev.stacked,
       uncoveredTypes: ev.uncovered,
+      synergyNotes: ev.synergyNotes,
     });
   }
 

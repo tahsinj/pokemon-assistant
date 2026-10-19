@@ -186,6 +186,34 @@ describe('buildBestTeams - scoring signals', () => {
     expect(def.stackedWeaknesses.length).toBeLessThanOrEqual(off.stackedWeaknesses.length);
   });
 
+  it('builds a sun team around a Drought Mega and keeps a rain setter off it', () => {
+    const byId: Record<string, Pokemon> = {
+      ...pokemonById,
+      charizard: species('charizard', ['fire', 'flying'], { abilities: ['blaze'] }),
+      charizardmegay: species('charizardmegay', ['fire', 'flying'], { abilities: ['drought'], forme: 'Mega-Y' }),
+      pelipper: species('pelipper', ['water', 'flying'], { abilities: ['drizzle'] }),
+      venusaur: species('venusaur', ['grass', 'poison'], { abilities: ['chlorophyll'] }),
+      exeggutor: species('exeggutor', ['psychic'], { abilities: ['chlorophyll'] }),
+    };
+    const records = [
+      ...tenRecords,
+      rec('zard', 'charizard', 55, { ability: 'Blaze', item: 'Charizardite Y' }),
+      rec('peli', 'pelipper', 55, { ability: 'Drizzle' }),
+      rec('venu', 'venusaur', 55, { ability: 'Chlorophyll' }),
+      rec('eggs', 'exeggutor', 55, { ability: 'Chlorophyll' }),
+    ];
+    const out = buildBestTeams(records, byId, MOVES, null);
+    const balanced = out.candidates.find((c) => c.preset === 'balanced')!;
+    const ids = balanced.members.map((m) => m.rec.id);
+    expect(ids).toEqual(expect.arrayContaining(['zard', 'venu', 'eggs']));
+    expect(balanced.breakdown.synergy).toBeGreaterThan(0);
+    expect(balanced.synergyNotes).toContain('Sun: Charizard sets it for Venusaur, Exeggutor');
+    for (const c of out.candidates) {
+      const team = c.members.map((m) => m.rec.id);
+      expect(team.includes('zard') && team.includes('peli')).toBe(false);
+    }
+  });
+
   it('keeps a Slow Start mon out of the team despite very high BST', () => {
     const byId = {
       ...pokemonById,

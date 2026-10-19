@@ -55,6 +55,14 @@ It reads species only; revealed sets would leak who won. Classic, the
 weighted heuristic, is the default and the fallback; the model is one switch
 away.
 
+Classic scores a team on quality, teammate usage, shared weaknesses, coverage,
+roles and field synergy. Synergy pairs a weather, terrain or Trick Room setter
+with the teammates that gain from it (Drought with Chlorophyll or
+Protosynthesis, Electric Surge with Quark Drive), and dual screens or Aurora
+Veil with setup sweepers. Two automatic weathers on one team, a Swift Swim or
+Chlorophyll user with no setter, and Aurora Veil without snow cost points. The
+team card lists each synergy and clash.
+
 Does it pick better teams? For one box of 30 Pokémon, each method's team
 played 500 games against the same 100 meta teams on the same seeds, with the
 Search bot on both sides (`npm run teamproof`,
@@ -71,7 +79,7 @@ alone, so more replays are the next step.
 
 National Dex OU went worse. A model trained the same way on about 12,000
 replays ([model card](docs/models/team-gen9nationaldex.md)) picked a team that
-won 56.8% against Classic's 69.4% (difference -12.6%, -18.5% to -6.7%,
+won 56.8% against Classic's 70.4% (difference -13.6%, -19.5% to -7.7%,
 [details](docs/team-proof-gen9nationaldex.md)), so it is not published and
 National Dex uses Classic only.
 
